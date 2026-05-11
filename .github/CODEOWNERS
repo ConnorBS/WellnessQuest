@@ -1,0 +1,10 @@
+# Default: repo owner reviews everything not matched below.
+*                              @ConnorBS
+
+# Schema and infra changes always need a human ack, even from agent-generated PRs.
+/backend/alembic/              @ConnorBS
+/infra/                        @ConnorBS
+/.github/                      @ConnorBS
+/docker-compose.yml            @ConnorBS
+/docker-compose.dev.yml        @ConnorBS
+/docker-compose.ci.yml         @ConnorBS

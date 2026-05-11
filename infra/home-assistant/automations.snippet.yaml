@@ -1,0 +1,19 @@
+# Use the same webhook id you pasted into the WellnessQuest integration row
+# (Settings → Integrations → Home Assistant). Keep it local-only.
+
+- alias: "WQ — water goal met"
+  id: wq_water_goal_met
+  trigger:
+    - platform: webhook
+      webhook_id: REPLACE_WITH_YOUR_WEBHOOK_ID
+      allowed_methods: [POST]
+      local_only: true
+  condition:
+    - condition: template
+      value_template: "{{ trigger.json.event == 'water.goal_met' }}"
+  action:
+    - service: notify.notify
+      data:
+        title: "Hydration goal hit"
+        message: >-
+          {{ trigger.json.total_ml }} ml today (goal {{ trigger.json.goal_ml }} ml). Nice work.

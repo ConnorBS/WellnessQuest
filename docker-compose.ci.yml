@@ -1,0 +1,14 @@
+services:
+  postgres:
+    tmpfs:
+      - /var/lib/postgresql/data
+  backend:
+    environment:
+      LOG_LEVEL: DEBUG
+  frontend:
+    environment:
+      NODE_ENV: test
+  caddy:
+    profiles: ["disabled"]
+  backup:
+    profiles: ["disabled"]

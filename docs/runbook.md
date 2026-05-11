@@ -1,0 +1,67 @@
+# Runbook
+
+## First run
+
+```bash
+cp .env.example .env
+# generate secrets
+python -c "import secrets; print(secrets.token_urlsafe(32))"           # JWT_SECRET
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"  # FERNET_KEY
+# pick a strong POSTGRES_PASSWORD, ADMIN_PASSWORD, PARTNER_PASSWORD
+make dev
+# in another terminal once backend is up:
+make seed
+```
+
+Open <https://wellnessquest.lan> (after you install Caddy's internal root CA on your devices) or <http://localhost:3000> for plain dev.
+
+## Daily ops
+
+- Logs: `make logs`
+- DB shell: `make psql`
+- Migrate after pulling: `make migrate`
+- Reseed (idempotent): `make seed`
+
+## Backups
+
+The `backup` container runs `pg_dump` nightly at 02:30 UTC and gzips the result into `./backups/`. Retention: 14 daily + 8 weekly.
+
+Restore a dump:
+
+```bash
+# 1. Stop the backend so nothing writes during restore
+docker compose stop backend
+
+# 2. Drop and recreate the database
+docker compose exec postgres psql -U wq -d postgres -c "DROP DATABASE wellnessquest; CREATE DATABASE wellnessquest;"
+
+# 3. Pipe the chosen dump in. Both -Fc and gzipped -Fc work:
+gunzip -c ./backups/wq-YYYYMMDD-HHMM.dump.gz \
+  | docker compose exec -T postgres pg_restore -U wq -d wellnessquest --clean --if-exists
+
+# 4. Bring the backend back up
+docker compose start backend
+```
+
+## Upgrades
+
+1. `git pull`
+2. `docker compose pull` (after the deploy workflow has pushed images), or `make build`
+3. `docker compose up -d`
+4. Backend container runs `alembic upgrade head` automatically on start.
+
+For agent-pipeline deployments via Watchtower, label-scoped to the WQ services: container labels `com.centurylinklabs.watchtower.enable=true` are set on `backend` and `frontend` only. Postgres, Caddy, and backup are explicitly opted out.
+
+## HA token rotation
+
+1. Settings → Tokens → revoke the old one.
+2. Create a new token with the same scopes, paste it into HA's `secrets.yaml` as `wq_ha_token`, reload HA.
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `401 invalid_token` on the PWA | Refresh token rotated (or expired) | Sign out and back in |
+| HA sensor stuck at last value | Backend down or token revoked | Check `docker compose ps`, check Settings → Tokens for `last_used_at` |
+| Water entries duplicated | Same `client_id` reused across different totals | Generate a fresh `crypto.randomUUID()` per click; offline queue already does this |
+| Webhook never fires in HA | `webhook_id` mismatch | Compare WQ integration `config.webhook_id` with the id in your HA automation |

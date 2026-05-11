@@ -1,0 +1,43 @@
+# env
+.env
+.env.local
+*.env
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# node
+node_modules/
+.next/
+.turbo/
+.pnpm-store/
+*.tsbuildinfo
+.eslintcache
+playwright-report/
+test-results/
+blob-report/
+
+# editors
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# data / runtime
+backups/
+pg_data/
+caddy_data/
+caddy_config/
+
+# build artifacts
+dist/
+build/

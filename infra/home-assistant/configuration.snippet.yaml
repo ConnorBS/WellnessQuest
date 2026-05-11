@@ -1,0 +1,40 @@
+# Paste into Home Assistant's configuration.yaml (or split file).
+# Put the HA token under secrets.yaml as: wq_ha_token: "wq_ha_..."
+
+rest:
+  - resource: http://wellnessquest.lan/api/v1/ha/water/today
+    scan_interval: 60
+    headers:
+      X-WQ-Token: !secret wq_ha_token
+    sensor:
+      - name: "WQ Water Today"
+        unique_id: wq_water_today
+        value_template: "{{ value_json.total_ml }}"
+        unit_of_measurement: "ml"
+        state_class: total_increasing
+        json_attributes:
+          - goal_ml
+          - percent
+          - date
+
+  - resource: http://wellnessquest.lan/api/v1/ha/me/stats
+    scan_interval: 120
+    headers:
+      X-WQ-Token: !secret wq_ha_token
+    sensor:
+      - name: "WQ Level"
+        unique_id: wq_level
+        value_template: "{{ value_json.level }}"
+        json_attributes:
+          - xp_total
+          - streaks
+
+rest_command:
+  wq_add_water:
+    url: http://wellnessquest.lan/api/v1/ha/water/add
+    method: POST
+    headers:
+      X-WQ-Token: !secret wq_ha_token
+      Content-Type: application/json
+    payload: >-
+      {"ml": {{ ml | int }}, "client_id": "{{ now().timestamp() | int }}-ha"}

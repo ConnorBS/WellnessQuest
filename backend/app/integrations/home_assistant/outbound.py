@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+from typing import Any
+
+import httpx
+
+from app.integrations.base import IntegrationChannel, channels
+from app.integrations.home_assistant.schemas import HomeAssistantConfig
+
+
+@channels.register
+class HomeAssistantChannel(IntegrationChannel):
+    kind = "home_assistant"
+    label = "Home Assistant"
+    config_schema = HomeAssistantConfig
+
+    async def emit(self, event: str, payload: dict[str, Any]) -> tuple[int, str]:
+        base_url = str(self.config["base_url"]).rstrip("/")
+        url = f"{base_url}/api/webhook/{self.config['webhook_id']}"
+        body = {"event": event, **payload}
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.post(url, json=body)
+            return resp.status_code, resp.text[:512]

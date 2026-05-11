@@ -1,0 +1,19 @@
+# LAN-only HTTPS via Caddy's internal CA.
+# Replace wellnessquest.lan with your chosen hostname; install Caddy's root cert
+# on phones/HA so the cert is trusted. For LAN-without-HTTPS, swap to :80 below.
+
+wellnessquest.lan {
+    tls internal
+
+    @api path /api/* /openapi.json /docs
+    reverse_proxy @api backend:8000
+
+    reverse_proxy frontend:3000
+
+    encode zstd gzip
+
+    log {
+        output stdout
+        format json
+    }
+}

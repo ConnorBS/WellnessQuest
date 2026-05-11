@@ -1,0 +1,85 @@
+/* WellnessQuest base styles. No Tailwind toolchain wired yet — utility classes in source
+   are read by IDE tooling and will activate when tailwind is added in a follow-up. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #020617;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Minimal utility shims so the slice-1 UI is legible without Tailwind installed. */
+.min-h-screen { min-height: 100vh; }
+.rounded-xl { border-radius: 14px; }
+.rounded-md { border-radius: 8px; }
+.rounded-full { border-radius: 9999px; }
+.border { border: 1px solid #334155; }
+.border-slate-600 { border-color: #475569; }
+.border-slate-700 { border-color: #334155; }
+.border-emerald-500 { border-color: #10b981; }
+.bg-slate-900\/40 { background: rgba(15, 23, 42, 0.5); }
+.bg-slate-950 { background: #020617; }
+.bg-slate-800 { background: #1e293b; }
+.bg-emerald-500 { background: #10b981; }
+.bg-amber-400 { background: #fbbf24; }
+.p-5 { padding: 20px; }
+.p-4 { padding: 16px; }
+.px-4 { padding-left: 16px; padding-right: 16px; }
+.py-3 { padding-top: 12px; padding-bottom: 12px; }
+.px-3 { padding-left: 12px; padding-right: 12px; }
+.py-1 { padding-top: 4px; padding-bottom: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.my-4 { margin-top: 16px; margin-bottom: 16px; }
+.gap-2 { gap: 8px; }
+.gap-1 { gap: 4px; }
+.grid { display: grid; }
+.grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.flex { display: flex; }
+.inline-flex { display: inline-flex; }
+.items-baseline { align-items: baseline; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.h-3 { height: 12px; }
+.h-2 { height: 8px; }
+.h-full { height: 100%; }
+.w-full { width: 100%; }
+.overflow-hidden { overflow: hidden; }
+.text-base { font-size: 16px; }
+.text-lg { font-size: 18px; }
+.text-sm { font-size: 14px; }
+.text-xs { font-size: 12px; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-normal { font-weight: 400; }
+.text-slate-100 { color: #e2e8f0; }
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-emerald-300 { color: #6ee7b7; }
+.antialiased { -webkit-font-smoothing: antialiased; }
+.transition-all { transition: all 200ms ease; }
+.disabled\:opacity-50:disabled { opacity: 0.5; }
+.hover\:bg-slate-800:hover { background: #1e293b; }
