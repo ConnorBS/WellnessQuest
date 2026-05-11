@@ -5,10 +5,7 @@
 wellnessquest.lan {
     tls internal
 
-    @api path /api/* /openapi.json /docs
-    reverse_proxy @api backend:8000
-
-    reverse_proxy frontend:3000
+    reverse_proxy app:8000
 
     encode zstd gzip
 

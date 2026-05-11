@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>wellnessquest</Name>
+  <Repository>ghcr.io/connorbs/wellnessquest:preview</Repository>
+  <Registry>https://ghcr.io/connorbs/wellnessquest</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/ConnorBS/WellnessQuest/issues</Support>
+  <Project>https://github.com/ConnorBS/WellnessQuest</Project>
+  <Overview>WellnessQuest — a two-person wellness tracker with a Home Assistant adapter.&#xD;
+&#xD;
+This single container serves:&#xD;
+&#x2022; the PWA at  /&#xD;
+&#x2022; the REST API + HA webhook adapter at  /api/v1/*&#xD;
+&#x2022; the OpenAPI/Swagger docs at  /docs&#xD;
+&#xD;
+Bring your own Postgres 16. Set DATABASE_URL below to point at it (a separate container, a VM, or anything reachable from this container's network). On first boot the app runs Alembic migrations against your database, so the configured Postgres user needs CREATE privileges on the target database.&#xD;
+&#xD;
+After it's healthy, seed the two initial users once:&#xD;
+&#xD;
+    docker exec wellnessquest python -m app.db.seed&#xD;
+&#xD;
+First-time secret generation:&#xD;
+&#xD;
+    python3 -c "import secrets; print(secrets.token_urlsafe(32))"                              # JWT_SECRET&#xD;
+    python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())" # FERNET_KEY</Overview>
+  <Category>Productivity: Tools: Network:Web</Category>
+  <WebUI>http://[IP]:[PORT:8000]/</WebUI>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/ConnorBS/WellnessQuest/main/frontend/public/icons/icon-192.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>A reachable Postgres 16 server (host:port + user/password/db) and GHCR auth for the private package (`docker login ghcr.io`). See docs/unraid.md.</Requires>
+
+  <Config Name="App port" Target="8000" Default="8000" Mode="tcp" Description="Host port that maps to the unified container. Browse to http://&lt;unraid-ip&gt;:&lt;this-port&gt;/ to reach the PWA and /api/v1/* for the API." Type="Port" Display="always" Required="true" Mask="false">8000</Config>
+
+  <Config Name="DATABASE_URL" Target="DATABASE_URL" Default="postgresql+asyncpg://wq:CHANGE_ME@192.168.1.10:5432/wellnessquest" Mode="" Description="SQLAlchemy async DSN to your Postgres 16. Format: postgresql+asyncpg://USER:PASSWORD@HOST:PORT/DBNAME. HOST can be an Unraid container name (only if you've placed both this container and your Postgres on the same custom docker network), an IP, or a hostname. The user must already exist and have rights to CREATE on DBNAME — Alembic builds the schema on startup. Example: postgresql+asyncpg://wq:hunter2@192.168.1.10:5432/wellnessquest" Type="Variable" Display="always" Required="true" Mask="true">postgresql+asyncpg://wq:CHANGE_ME@192.168.1.10:5432/wellnessquest</Config>
+
+  <Config Name="JWT_SECRET" Target="JWT_SECRET" Default="" Mode="" Description="32+ byte random string used to sign access tokens. Generate with: python3 -c 'import secrets; print(secrets.token_urlsafe(32))'" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+
+  <Config Name="FERNET_KEY" Target="FERNET_KEY" Default="" Mode="" Description="Fernet key used to encrypt long-lived Home Assistant tokens at rest. Generate with: python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+
+  <Config Name="CORS_ORIGINS" Target="CORS_ORIGINS" Default="http://wellnessquest.lan:8000,http://localhost:8000" Mode="" Description="Comma-separated allow-list for browser CORS. Same-origin requests from the bundled PWA do not need to appear here; only add additional origins if you proxy the app behind a different hostname (e.g. https://wq.example.com) or hit the API directly from another web app. Home Assistant is not a browser and ignores CORS." Type="Variable" Display="always" Required="true" Mask="false">http://wellnessquest.lan:8000,http://localhost:8000</Config>
+
+  <Config Name="ADMIN_EMAIL" Target="ADMIN_EMAIL" Default="admin@local" Mode="" Description="Email for the first user the seed script creates. Only read during `python -m app.db.seed`; afterwards the user lives in Postgres." Type="Variable" Display="always" Required="true" Mask="false">admin@local</Config>
+
+  <Config Name="ADMIN_PASSWORD" Target="ADMIN_PASSWORD" Default="" Mode="" Description="Initial admin password. Argon2-hashed by the seed script; rotate it from the UI after first login." Type="Variable" Display="always" Required="true" Mask="true"></Config>
+
+  <Config Name="PARTNER_EMAIL" Target="PARTNER_EMAIL" Default="partner@local" Mode="" Description="Email for the second seeded user (optional)." Type="Variable" Display="always" Required="false" Mask="false">partner@local</Config>
+
+  <Config Name="PARTNER_PASSWORD" Target="PARTNER_PASSWORD" Default="" Mode="" Description="Initial password for the partner user (optional). Leave blank to skip seeding a second user." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+
+  <Config Name="ACCESS_TOKEN_TTL_SECONDS" Target="ACCESS_TOKEN_TTL_SECONDS" Default="900" Mode="" Description="JWT access-token lifetime in seconds (default 15 min)." Type="Variable" Display="advanced" Required="false" Mask="false">900</Config>
+
+  <Config Name="REFRESH_TOKEN_TTL_SECONDS" Target="REFRESH_TOKEN_TTL_SECONDS" Default="2592000" Mode="" Description="Refresh-token lifetime in seconds (default 30 days)." Type="Variable" Display="advanced" Required="false" Mask="false">2592000</Config>
+
+  <Config Name="TZ" Target="TZ" Default="America/Toronto" Mode="" Description="IANA timezone for streak and day-rollover calculations." Type="Variable" Display="always" Required="false" Mask="false">America/Toronto</Config>
+
+  <Config Name="LOG_LEVEL" Target="LOG_LEVEL" Default="INFO" Mode="" Description="Python logging level (DEBUG / INFO / WARNING / ERROR)." Type="Variable" Display="advanced" Required="false" Mask="false">INFO</Config>
+</Container>

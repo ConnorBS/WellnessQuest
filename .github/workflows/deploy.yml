@@ -21,10 +21,6 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        service: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
 
@@ -33,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
-          IMG="ghcr.io/${OWNER}/wellnessquest-${{ matrix.service }}"
+          IMG="ghcr.io/${OWNER}/wellnessquest"
           SHA_SHORT=$(echo '${{ github.sha }}' | cut -c1-7)
           TAGS="${IMG}:sha-${SHA_SHORT}"
           case "${{ github.ref }}" in
@@ -62,10 +58,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push ${{ matrix.service }}
+      - name: Build and push unified image
         uses: docker/build-push-action@v6
         with:
-          context: ./${{ matrix.service }}
+          context: .
+          file: Dockerfile
           target: prod
           push: true
           tags: ${{ steps.t.outputs.tags }}
@@ -73,12 +70,12 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          cache-from: type=gha,scope=wellnessquest
+          cache-to: type=gha,mode=max,scope=wellnessquest
 
       - name: Summary
         run: |
-          echo "### Published ${{ matrix.service }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Published wellnessquest" >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo '${{ steps.t.outputs.tags }}' | tr ',' '\n' >> "$GITHUB_STEP_SUMMARY"

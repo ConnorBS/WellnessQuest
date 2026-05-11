@@ -17,8 +17,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "false"
 
-  backend:
-    image: ghcr.io/${WQ_IMAGE_OWNER:-connorbs}/wellnessquest-backend:${WQ_IMAGE_TAG:-preview}
+  app:
+    image: ghcr.io/${WQ_IMAGE_OWNER:-connorbs}/wellnessquest:${WQ_IMAGE_TAG:-preview}
     restart: unless-stopped
     env_file: .env
     environment:
@@ -27,24 +27,13 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
-
-  frontend:
-    image: ghcr.io/${WQ_IMAGE_OWNER:-connorbs}/wellnessquest-frontend:${WQ_IMAGE_TAG:-preview}
-    restart: unless-stopped
-    env_file: .env
-    depends_on:
-      - backend
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${APP_PORT:-8000}:8000"
     labels:
       com.centurylinklabs.watchtower.enable: "true"
 
   # Caddy is opt-in. Bring it up with:  docker compose --profile proxy up -d
   # Useful if you want LAN HTTPS via Caddy's internal CA. Default first run skips it
-  # and exposes backend/frontend directly on the BACKEND_PORT / FRONTEND_PORT.
+  # and exposes the app directly on APP_PORT.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -57,8 +46,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - frontend
-      - backend
+      - app
     labels:
       com.centurylinklabs.watchtower.enable: "false"
 
