@@ -1,13 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { apiPost } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
 import { SignupOutSchema } from "@/lib/schemas";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
   const params = useSearchParams();
   const [code, setCode] = useState("");
@@ -85,5 +85,13 @@ export default function SignupPage() {
         </button>
       </form>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<main style={{ maxWidth: 360, margin: "4rem auto", padding: "0 1rem" }}>Loading…</main>}>
+      <SignupForm />
+    </Suspense>
   );
 }

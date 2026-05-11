@@ -16,12 +16,13 @@ ARG NODE_VERSION=22-alpine
 # --- Stage 1: build the frontend as a static export
 FROM node:${NODE_VERSION} AS frontend-builder
 WORKDIR /build
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+    NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
-COPY frontend/package.json frontend/pnpm-lock.yaml* ./
+COPY frontend/package.json ./
 RUN pnpm install --no-frozen-lockfile
 COPY frontend/ .
 ENV NEXT_OUTPUT_MODE=export \
-    NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_API_BASE=/api/v1
 RUN pnpm build
 
