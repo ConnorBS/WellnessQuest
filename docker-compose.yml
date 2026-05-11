@@ -18,9 +18,7 @@ services:
       com.centurylinklabs.watchtower.enable: "false"
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/${WQ_IMAGE_OWNER:-connorbs}/wellnessquest-backend:${WQ_IMAGE_TAG:-preview}
     restart: unless-stopped
     env_file: .env
     environment:
@@ -28,31 +26,29 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command:
-      - sh
-      - -c
-      - "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers"
-    expose:
-      - "8000"
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
     labels:
       com.centurylinklabs.watchtower.enable: "true"
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/${WQ_IMAGE_OWNER:-connorbs}/wellnessquest-frontend:${WQ_IMAGE_TAG:-preview}
     restart: unless-stopped
     env_file: .env
     depends_on:
       - backend
-    expose:
-      - "3000"
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
     labels:
       com.centurylinklabs.watchtower.enable: "true"
 
+  # Caddy is opt-in. Bring it up with:  docker compose --profile proxy up -d
+  # Useful if you want LAN HTTPS via Caddy's internal CA. Default first run skips it
+  # and exposes backend/frontend directly on the BACKEND_PORT / FRONTEND_PORT.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    profiles: ["proxy"]
     ports:
       - "80:80"
       - "443:443"
@@ -71,6 +67,11 @@ services:
       context: ./infra/backup
     restart: unless-stopped
     env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-wellnessquest}
+      POSTGRES_HOST: postgres
     depends_on:
       postgres:
         condition: service_healthy

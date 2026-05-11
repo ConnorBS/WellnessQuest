@@ -2,13 +2,26 @@ services:
   postgres:
     tmpfs:
       - /var/lib/postgresql/data
+
   backend:
+    image: wq-backend:ci
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: prod
+    pull_policy: never
     environment:
       LOG_LEVEL: DEBUG
+
   frontend:
+    image: wq-frontend:ci
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: prod
+    pull_policy: never
     environment:
-      NODE_ENV: test
-  caddy:
-    profiles: ["disabled"]
+      NODE_ENV: production
+
   backup:
     profiles: ["disabled"]

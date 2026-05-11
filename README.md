@@ -14,7 +14,11 @@ Slice 1 (vertical proof of stack): multi-user water tracking with HA two-way int
 - **Integration**: REST API + outbound webhooks, with pluggable provider/integration registries
 - **Infra**: Docker Compose, Caddy (LAN HTTPS via internal CA)
 
-## Local quickstart
+## Quickstart
+
+**Unraid (production target)**: see [`docs/unraid.md`](docs/unraid.md). Compose Manager + GHCR pull, no reverse proxy required.
+
+**Local dev (laptop, builds from source)**:
 
 ```bash
 cp .env.example .env
@@ -23,15 +27,17 @@ make dev          # build + run the dev stack with hot reload
 make seed         # create admin@local + partner@local
 ```
 
-Backend: <http://localhost:8000/docs>. Frontend: <http://localhost:3000>. LAN: <https://wellnessquest.lan>.
+Frontend: <http://localhost:3000>. Backend docs: <http://localhost:8000/docs>.
 
 ## Docs
 
+- `docs/unraid.md` — Unraid + GHCR first-run guide
 - `docs/architecture.md` — services, modules, conventions
 - `docs/api.md` — REST surface
 - `docs/home-assistant.md` — HA snippets, token issuance, webhooks
 - `docs/providers.md` — adding a provider or integration
-- `docs/runbook.md` — backup/restore, upgrades
+- `docs/runbook.md` — backup/restore, upgrades, pinning
+- `docs/agent-pipeline.md` — planned M2 multi-agent workflow
 
 ## License
 

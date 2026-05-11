@@ -1,8 +1,12 @@
 # Paste into Home Assistant's configuration.yaml (or split file).
 # Put the HA token under secrets.yaml as: wq_ha_token: "wq_ha_..."
+#
+# Default first-run setup: WellnessQuest is reachable at http://wellnessquest.lan:8000
+# (no reverse proxy). If you later put NPM/SWAG/Caddy in front, drop ":8000"
+# and use https://wellnessquest.lan.
 
 rest:
-  - resource: http://wellnessquest.lan/api/v1/ha/water/today
+  - resource: http://wellnessquest.lan:8000/api/v1/ha/water/today
     scan_interval: 60
     headers:
       X-WQ-Token: !secret wq_ha_token
@@ -17,7 +21,7 @@ rest:
           - percent
           - date
 
-  - resource: http://wellnessquest.lan/api/v1/ha/me/stats
+  - resource: http://wellnessquest.lan:8000/api/v1/ha/me/stats
     scan_interval: 120
     headers:
       X-WQ-Token: !secret wq_ha_token
@@ -31,7 +35,7 @@ rest:
 
 rest_command:
   wq_add_water:
-    url: http://wellnessquest.lan/api/v1/ha/water/add
+    url: http://wellnessquest.lan:8000/api/v1/ha/water/add
     method: POST
     headers:
       X-WQ-Token: !secret wq_ha_token

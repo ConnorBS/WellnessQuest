@@ -1,9 +1,11 @@
 services:
   backend:
+    image: wq-backend:dev
     build:
       context: ./backend
       dockerfile: Dockerfile
       target: dev
+    pull_policy: never
     command:
       - sh
       - -c
@@ -12,22 +14,20 @@ services:
       - ./backend/app:/app/app
       - ./backend/alembic:/app/alembic
       - ./backend/alembic.ini:/app/alembic.ini
-    ports:
-      - "8000:8000"
 
   frontend:
+    image: wq-frontend:dev
     build:
       context: ./frontend
       dockerfile: Dockerfile
       target: dev
+    pull_policy: never
     command: ["pnpm", "dev", "--port", "3000", "--hostname", "0.0.0.0"]
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
       - ./frontend/next.config.mjs:/app/next.config.mjs
       - ./frontend/tsconfig.json:/app/tsconfig.json
-    ports:
-      - "3000:3000"
 
   postgres:
     ports:

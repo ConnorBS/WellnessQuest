@@ -2,6 +2,10 @@
 
 ## First run
 
+**Deploying to Unraid?** Follow [`unraid.md`](./unraid.md) — Compose Manager + GHCR pull, no reverse proxy.
+
+**Local dev (laptop, builds from source):**
+
 ```bash
 cp .env.example .env
 # generate secrets
@@ -13,7 +17,7 @@ make dev
 make seed
 ```
 
-Open <https://wellnessquest.lan> (after you install Caddy's internal root CA on your devices) or <http://localhost:3000> for plain dev.
+Open <http://localhost:3000>.
 
 ## Daily ops
 
@@ -45,12 +49,16 @@ docker compose start backend
 
 ## Upgrades
 
-1. `git pull`
-2. `docker compose pull` (after the deploy workflow has pushed images), or `make build`
+1. `git pull` (only needed for compose / infra / HA-snippet changes)
+2. `docker compose pull` — fetches the latest published images from GHCR
 3. `docker compose up -d`
 4. Backend container runs `alembic upgrade head` automatically on start.
 
 For agent-pipeline deployments via Watchtower, label-scoped to the WQ services: container labels `com.centurylinklabs.watchtower.enable=true` are set on `backend` and `frontend` only. Postgres, Caddy, and backup are explicitly opted out.
+
+## Pinning a specific build
+
+If something breaks after a pull, switch `WQ_IMAGE_TAG` in `.env` from `latest` (or `preview`) to a specific `sha-XXXXXXX` from a known-good run, then `docker compose pull && docker compose up -d`.
 
 ## HA token rotation
 
