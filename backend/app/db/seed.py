@@ -1,4 +1,4 @@
-"""Idempotent dev seed. Run via: python -m app.db.seed"""
+"""Idempotent seed run on container startup. Also runnable via `python -m app.db.seed`."""
 
 from __future__ import annotations
 
@@ -17,7 +17,10 @@ from app.telemetry.logger import configure_logging, get_logger
 log = get_logger(__name__)
 
 
-async def _upsert_user(db, *, email: str, password: str, display_name: str, role: str) -> User:
+async def _upsert_user(db, *, email: str, password: str, display_name: str, role: str) -> User | None:
+    if not (email and password and password.strip()):
+        log.info("seed_user_skipped_blank_credentials", role=role)
+        return None
     row = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
     if row is None:
         row = User(
@@ -76,8 +79,10 @@ async def run() -> None:
             display_name="Partner",
             role="user",
         )
-        await _ensure_water_goal(db, admin)
-        await _ensure_water_goal(db, partner)
+        if admin is not None:
+            await _ensure_water_goal(db, admin)
+        if partner is not None:
+            await _ensure_water_goal(db, partner)
         await db.commit()
         log.info("seed_done")
 

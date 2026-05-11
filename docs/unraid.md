@@ -72,13 +72,31 @@ Plus pick passwords for the two seeded users (`ADMIN_PASSWORD`, `PARTNER_PASSWOR
    - **App port** — defaults to 8000; change if it conflicts with another service.
 4. **Apply**. The image pulls from GHCR (~30 s), then the container runs `alembic upgrade head` and starts uvicorn. Watch the log until you see `Uvicorn running on 0.0.0.0:8000`. The healthcheck flips the badge to `healthy` after ~30 s.
 
-## Seed the first users (once)
+## First users
 
-```bash
-docker exec wellnessquest python -m app.db.seed
-```
+The container auto-seeds them on every start (right after Alembic migrations, before uvicorn). It reads `ADMIN_EMAIL` / `ADMIN_PASSWORD` (and `PARTNER_EMAIL` / `PARTNER_PASSWORD` if set) and inserts them only if they don't already exist.
 
-Idempotent — safe to re-run. Reads `ADMIN_EMAIL`/`PASSWORD` and `PARTNER_EMAIL`/`PASSWORD` from the container's env.
+A few gotchas worth knowing:
+
+- The seed **does not rotate passwords**. Once the user row exists in Postgres, changing `ADMIN_PASSWORD` in the template does nothing — change passwords from the UI instead.
+- If you initially set the wrong password and want to start over, delete the user row and the next container restart will re-seed:
+  ```bash
+  docker exec wellnessquest python -c "
+  import asyncio
+  from sqlalchemy import delete
+  from app.db.session import async_session
+  from app.models.user import User
+  async def main():
+      async with async_session() as db:
+          await db.execute(delete(User).where(User.email == 'admin@local'))
+          await db.commit()
+  asyncio.run(main())
+  "
+  docker restart wellnessquest
+  ```
+  (Replace `admin@local` with whatever you actually set in `ADMIN_EMAIL`.)
+- Email comparison is case-sensitive — log in with the exact value you set in `ADMIN_EMAIL`.
+- You can also run the seed manually anytime: `docker exec wellnessquest python -m app.db.seed`. Idempotent.
 
 ## First login
 
