@@ -15,6 +15,7 @@ from app.api.v1 import (
     water,
     water_presets,
     webhooks,
+    weight,
 )
 
 api_v1 = APIRouter(prefix="/api/v1")
@@ -25,6 +26,7 @@ api_v1.include_router(water_presets.router)
 api_v1.include_router(activity.router)
 api_v1.include_router(activity_presets.router)
 api_v1.include_router(habits.router)
+api_v1.include_router(weight.router)
 api_v1.include_router(uploads.router)
 api_v1.include_router(api_tokens.router)
 api_v1.include_router(integrations.router)

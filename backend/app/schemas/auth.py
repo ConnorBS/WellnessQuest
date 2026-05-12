@@ -38,6 +38,13 @@ class MeOut(BaseModel):
     xp_total: int
     level: int
     timezone: str
+    show_weight_card: bool = True
+    weight_unit: str = "kg"
+
+
+class MePatchIn(BaseModel):
+    show_weight_card: bool | None = None
+    weight_unit: str | None = None
 
 
 class SignupOut(BaseModel):

@@ -8,6 +8,8 @@ export const MeSchema = z.object({
   xp_total: z.number().int(),
   level: z.number().int(),
   timezone: z.string(),
+  show_weight_card: z.boolean(),
+  weight_unit: z.string(),
 });
 export type Me = z.infer<typeof MeSchema>;
 
@@ -159,3 +161,21 @@ export const HabitWithStatusSchema = z.object({
 export type HabitWithStatus = z.infer<typeof HabitWithStatusSchema>;
 
 export const HabitListSchema = z.array(HabitWithStatusSchema);
+
+export const WeightEntrySchema = z.object({
+  id: z.number().int(),
+  weight_kg: z.coerce.number(),
+  occurred_at: z.string(),
+  note: z.string().nullable().optional(),
+});
+export type WeightEntry = z.infer<typeof WeightEntrySchema>;
+
+export const WeightEntryListSchema = z.array(WeightEntrySchema);
+
+export const WeightSummarySchema = z.object({
+  unit: z.string(),
+  latest: WeightEntrySchema.nullable(),
+  prior_week: WeightEntrySchema.nullable(),
+  delta_kg: z.coerce.number().nullable(),
+});
+export type WeightSummary = z.infer<typeof WeightSummarySchema>;
