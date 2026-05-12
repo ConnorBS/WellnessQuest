@@ -21,11 +21,11 @@ os.environ.setdefault("FERNET_KEY", "test-fernet-key")
 os.environ.setdefault("ADMIN_PASSWORD", "TestAdminPass123!")
 os.environ.setdefault("PARTNER_PASSWORD", "TestPartnerPass123!")
 
+import app.db.session as session_mod  # noqa: E402
+from app import models  # noqa: F401,E402  -- register models with Base.metadata
 from app.config import settings  # noqa: E402
 from app.db import base as db_base  # noqa: E402
-import app.db.session as session_mod  # noqa: E402
 from app.main import create_app  # noqa: E402
-from app import models  # noqa: F401,E402  -- register models with Base.metadata
 
 
 @pytest.fixture(scope="session")
@@ -68,6 +68,6 @@ async def client(engine):
         yield ac
 
 
-@pytest.fixture()
+@pytest.fixture
 def unique_email() -> str:
     return f"u-{uuid.uuid4().hex[:8]}@example.com"

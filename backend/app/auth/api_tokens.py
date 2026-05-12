@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 
-TOKEN_PREFIX = "wq_ha_"
+TOKEN_PREFIX = "wq_ha_"  # noqa: S105 - public prefix, not a secret
 
 
 def generate_token() -> tuple[str, str]:
