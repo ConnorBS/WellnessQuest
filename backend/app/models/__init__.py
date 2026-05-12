@@ -5,6 +5,8 @@ from app.models.activity_preset import ActivityPreset
 from app.models.api_token import ApiToken
 from app.models.audit_log import AuditLog
 from app.models.error_log import ErrorLog
+from app.models.food_entry import FoodEntry
+from app.models.food_preset import FoodPreset
 from app.models.goal import Goal
 from app.models.habit import Habit
 from app.models.habit_checkin import HabitCheckin
@@ -27,6 +29,8 @@ __all__ = [
     "ApiToken",
     "AuditLog",
     "ErrorLog",
+    "FoodEntry",
+    "FoodPreset",
     "Goal",
     "Habit",
     "HabitCheckin",

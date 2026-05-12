@@ -191,3 +191,92 @@ export const WeightSummarySchema = z.object({
   current_target: WeightTargetSchema.nullable().optional(),
 });
 export type WeightSummary = z.infer<typeof WeightSummarySchema>;
+
+export const MealTypeSchema = z.enum(["breakfast", "lunch", "dinner", "snack"]);
+export type MealType = z.infer<typeof MealTypeSchema>;
+
+export const FoodEntrySchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  brand: z.string().nullable().optional(),
+  kcal: z.number().int(),
+  protein_g: z.coerce.number().nullable().optional(),
+  carbs_g: z.coerce.number().nullable().optional(),
+  fat_g: z.coerce.number().nullable().optional(),
+  meal_type: MealTypeSchema.nullable().optional(),
+  source: z.string(),
+  provider: z.string().nullable().optional(),
+  provider_id: z.string().nullable().optional(),
+  occurred_at: z.string(),
+  client_id: z.string().nullable().optional(),
+});
+export type FoodEntry = z.infer<typeof FoodEntrySchema>;
+
+export const FoodMacroTotalsSchema = z.object({
+  protein_g: z.coerce.number(),
+  carbs_g: z.coerce.number(),
+  fat_g: z.coerce.number(),
+});
+export type FoodMacroTotals = z.infer<typeof FoodMacroTotalsSchema>;
+
+export const FoodTodaySchema = z.object({
+  date: z.string(),
+  total_kcal: z.number().int(),
+  target_kcal: z.number().int(),
+  percent: z.number().int(),
+  over_target: z.boolean(),
+  remaining_kcal: z.number().int(),
+  macros: FoodMacroTotalsSchema,
+  entries: z.array(FoodEntrySchema),
+});
+export type FoodToday = z.infer<typeof FoodTodaySchema>;
+
+export const FoodAddOutSchema = z.object({
+  entry: FoodEntrySchema,
+  total_kcal: z.number().int(),
+  target_kcal: z.number().int(),
+  xp_delta: z.number().int(),
+  over_target: z.boolean(),
+});
+export type FoodAddOut = z.infer<typeof FoodAddOutSchema>;
+
+export const FoodGoalOutSchema = z.object({ target_kcal: z.number().int().positive() });
+export type FoodGoalOut = z.infer<typeof FoodGoalOutSchema>;
+
+export const FoodPresetSchema = z.object({
+  id: z.string().uuid(),
+  label: z.string(),
+  brand: z.string().nullable(),
+  kcal: z.number().int(),
+  protein_g: z.coerce.number().nullable(),
+  carbs_g: z.coerce.number().nullable(),
+  fat_g: z.coerce.number().nullable(),
+  meal_type: MealTypeSchema.nullable(),
+  provider: z.string().nullable(),
+  provider_id: z.string().nullable(),
+  icon_kind: IconKindSchema,
+  icon_key: z.string().nullable(),
+  sort_order: z.number().int(),
+});
+export type FoodPreset = z.infer<typeof FoodPresetSchema>;
+
+export const FoodPresetListSchema = z.array(FoodPresetSchema);
+
+export const FoodSearchHitSchema = z.object({
+  provider: z.string(),
+  provider_id: z.string(),
+  name: z.string(),
+  brand: z.string().nullable().optional(),
+  serving_g: z.number().nullable().optional(),
+  kcal_per_100g: z.number().nullable().optional(),
+  protein_per_100g: z.number().nullable().optional(),
+  carbs_per_100g: z.number().nullable().optional(),
+  fat_per_100g: z.number().nullable().optional(),
+});
+export type FoodSearchHit = z.infer<typeof FoodSearchHitSchema>;
+
+export const FoodSearchSchema = z.object({
+  query: z.string(),
+  hits: z.array(FoodSearchHitSchema),
+});
+export type FoodSearch = z.infer<typeof FoodSearchSchema>;

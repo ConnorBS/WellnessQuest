@@ -13,6 +13,7 @@ from app.services.time_utils import day_bounds_for_user
 #   goal_met:<metric>:     +50                    (one-shot per crossing; service layer enforces)
 WATER_DAILY_CAP = 20
 ACTIVITY_DAILY_CAP = 30
+FOOD_DAILY_CAP = 5
 GOAL_MET_XP = 50
 
 
@@ -82,6 +83,39 @@ async def grant_for_activity(
     user.xp_total += grant
     user.level = _level_for_xp(user.xp_total)
     return grant
+
+
+async def grant_for_food(
+    db: AsyncSession, *, user: User, kcal: int, ref_id: int
+) -> int:
+    """Grant 1 XP per logged food entry, capped daily. Returns amount granted.
+
+    Food has 'ceiling' goal semantics, so we don't grant any XP based on kcal
+    amount — that would reward over-eating. Just a flat per-log reward.
+    """
+    del kcal  # not used; XP is per-log, not per-kcal
+    start, end = day_bounds_for_user(user.timezone, _today_for(user))
+    stmt = select(func.coalesce(func.sum(XpEvent.amount), 0)).where(
+        XpEvent.user_id == user.id,
+        XpEvent.reason == "food_entry",
+        XpEvent.created_at >= start,
+        XpEvent.created_at < end,
+    )
+    earned_today = int((await db.execute(stmt)).scalar_one())
+    if earned_today >= FOOD_DAILY_CAP:
+        return 0
+    db.add(
+        XpEvent(
+            user_id=user.id,
+            amount=1,
+            reason="food_entry",
+            ref_type="food_entry",
+            ref_id=str(ref_id),
+        )
+    )
+    user.xp_total += 1
+    user.level = _level_for_xp(user.xp_total)
+    return 1
 
 
 async def grant_goal_met(
