@@ -24,10 +24,12 @@ DEFAULT_WATER_PRESETS: tuple[tuple[str, int, str, str, int], ...] = (
 log = get_logger(__name__)
 
 
-async def _upsert_user(db, *, email: str, password: str, display_name: str, role: str) -> User | None:
+async def _upsert_user(
+    db, *, email: str, password: str, display_name: str, role: str
+) -> tuple[User | None, bool]:
     if not (email and password and password.strip()):
         log.info("seed_user_skipped_blank_credentials", role=role)
-        return None
+        return None, False
     row = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
     if row is None:
         row = User(
@@ -40,9 +42,9 @@ async def _upsert_user(db, *, email: str, password: str, display_name: str, role
         db.add(row)
         await db.flush()
         log.info("seed_user_created", email=email, role=role)
-    else:
-        log.info("seed_user_exists", email=email)
-    return row
+        return row, True
+    log.info("seed_user_exists", email=email)
+    return row, False
 
 
 async def _ensure_water_goal(db, user: User) -> None:
@@ -69,12 +71,10 @@ async def _ensure_water_goal(db, user: User) -> None:
         log.info("seed_water_goal_created", user=user.email)
 
 
-async def _ensure_water_presets(db, user: User) -> None:
-    existing = (
-        await db.execute(select(WaterPreset).where(WaterPreset.user_id == user.id).limit(1))
-    ).scalar_one_or_none()
-    if existing is not None:
-        return
+async def _seed_default_water_presets(db, user: User) -> None:
+    """Create default presets. Only call this for newly-created users — once a
+    user owns their preset list, we never re-seed defaults, so deleting all
+    presets and restarting the container won't resurrect them."""
     for label, ml, kind, key, sort in DEFAULT_WATER_PRESETS:
         db.add(
             WaterPreset(
@@ -92,14 +92,14 @@ async def _ensure_water_presets(db, user: User) -> None:
 async def run() -> None:
     configure_logging()
     async with async_session() as db:
-        admin = await _upsert_user(
+        admin, admin_created = await _upsert_user(
             db,
             email=settings.admin_email,
             password=settings.admin_password,
             display_name="Admin",
             role="admin",
         )
-        partner = await _upsert_user(
+        partner, partner_created = await _upsert_user(
             db,
             email=settings.partner_email,
             password=settings.partner_password,
@@ -108,10 +108,12 @@ async def run() -> None:
         )
         if admin is not None:
             await _ensure_water_goal(db, admin)
-            await _ensure_water_presets(db, admin)
+            if admin_created:
+                await _seed_default_water_presets(db, admin)
         if partner is not None:
             await _ensure_water_goal(db, partner)
-            await _ensure_water_presets(db, partner)
+            if partner_created:
+                await _seed_default_water_presets(db, partner)
         await db.commit()
         log.info("seed_done")
 

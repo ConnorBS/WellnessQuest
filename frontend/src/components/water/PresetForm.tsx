@@ -172,8 +172,8 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
       </div>
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button type="submit" disabled={busy} style={buttonStyle}>
-          {busy ? "Saving…" : initial ? "Save changes" : "Add preset"}
+        <button type="submit" disabled={busy || upload.isPending} style={buttonStyle}>
+          {busy ? "Saving…" : upload.isPending ? "Uploading…" : initial ? "Save changes" : "Add preset"}
         </button>
         {onCancel && (
           <button type="button" onClick={onCancel} style={secondaryButtonStyle}>
