@@ -14,6 +14,8 @@ export function WeightCard() {
   const unit = me?.weight_unit ?? "kg";
   const latest = summary.data?.latest;
   const delta = summary.data?.delta_kg;
+  const target = me?.weight_target_kg ?? null;
+  const toTarget = latest && target != null ? latest.weight_kg - target : null;
 
   return (
     <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
@@ -48,6 +50,18 @@ export function WeightCard() {
               day: "numeric",
             })}
           </p>
+          {target != null && toTarget != null && (
+            <p style={{ color: "#cbd5e1", fontSize: 13, marginTop: 6 }}>
+              Target: {formatWeight(target, unit)} ·{" "}
+              {Math.abs(toTarget) < 0.05 ? (
+                <span style={{ color: "#6ee7b7" }}>at target</span>
+              ) : toTarget > 0 ? (
+                <span>{formatWeightDelta(-toTarget, unit)} to go</span>
+              ) : (
+                <span>{formatWeightDelta(-toTarget, unit)} past target</span>
+              )}
+            </p>
+          )}
           {history.data && history.data.length >= 2 && (
             <div style={{ marginTop: 10 }}>
               <WeightSparkline entries={history.data} unit={unit} height={72} />

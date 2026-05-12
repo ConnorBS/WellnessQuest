@@ -1,0 +1,13 @@
+{
+  "name": "WellnessQuest",
+  "short_name": "WQ",
+  "description": "Gamified wellness tracker.",
+  "start_url": "/dashboard/",
+  "display": "standalone",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "icons": [
+    { "src": "/icons/wq.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icons/wq-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

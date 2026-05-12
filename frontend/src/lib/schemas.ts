@@ -10,6 +10,7 @@ export const MeSchema = z.object({
   timezone: z.string(),
   show_weight_card: z.boolean(),
   weight_unit: z.string(),
+  weight_target_kg: z.coerce.number().nullable().optional(),
 });
 export type Me = z.infer<typeof MeSchema>;
 

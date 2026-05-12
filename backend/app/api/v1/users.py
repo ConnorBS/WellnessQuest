@@ -22,6 +22,7 @@ def _to_me_out(user: User) -> MeOut:
         timezone=user.timezone,
         show_weight_card=user.show_weight_card,
         weight_unit=user.weight_unit,
+        weight_target_kg=user.weight_target_kg,
     )
 
 
@@ -45,6 +46,15 @@ async def patch_me(
                 detail="weight_unit must be 'kg' or 'lb'",
             )
         user.weight_unit = payload.weight_unit
+    if payload.clear_weight_target:
+        user.weight_target_kg = None
+    elif payload.weight_target_kg is not None:
+        if payload.weight_target_kg <= 0 or payload.weight_target_kg >= 1000:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="weight_target_kg must be in (0, 1000)",
+            )
+        user.weight_target_kg = payload.weight_target_kg
     await db.flush()
     await audit(
         db,

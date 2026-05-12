@@ -8,6 +8,8 @@ import { MeSchema } from "@/lib/schemas";
 interface MePatch {
   show_weight_card?: boolean;
   weight_unit?: "kg" | "lb";
+  weight_target_kg?: number;
+  clear_weight_target?: boolean;
 }
 
 export function useUpdateMe() {
