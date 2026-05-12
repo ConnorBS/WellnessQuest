@@ -425,13 +425,21 @@ export function FoodLogModal({ onClose }: Props) {
                           ) : null}
                         </div>
                         <div style={{ fontSize: 12, color: "#94a3b8" }}>
-                          {h.kcal_per_100g != null
-                            ? `${Math.round(h.kcal_per_100g)} kcal / 100 g`
-                            : "no kcal data"}
+                          {(() => {
+                            const native = h.unit ?? DEFAULT_NATIVE_UNIT;
+                            const per100 =
+                              native === "ml"
+                                ? h.kcal_per_100ml ?? h.kcal_per_100g
+                                : h.kcal_per_100g ?? h.kcal_per_100ml;
+                            const unitLabel = native === "ml" ? "mL" : "g";
+                            return per100 != null
+                              ? `${Math.round(per100)} kcal / 100 ${unitLabel}`
+                              : "no kcal data";
+                          })()}
                           {h.serving_label
                             ? ` · serving: ${h.serving_label}`
                             : h.serving_g
-                              ? ` · serving: ${h.serving_g} g`
+                              ? ` · serving: ${h.serving_g} ${h.unit === "ml" ? "mL" : "g"}`
                               : ""}
                         </div>
                       </button>
