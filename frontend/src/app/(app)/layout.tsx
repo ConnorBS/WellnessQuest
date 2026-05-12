@@ -27,6 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <nav style={{ display: "flex", gap: 16, fontSize: 14 }}>
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/water">Water</Link>
+          <Link href="/activity">Activity</Link>
           <Link href="/settings">Settings</Link>
           <button onClick={onLogout} style={{ background: "transparent", color: "#94a3b8", border: 0 }}>
             Sign out

@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    activity,
+    activity_presets,
     admin,
     api_tokens,
     auth,
@@ -19,6 +21,8 @@ api_v1.include_router(auth.router)
 api_v1.include_router(users.router)
 api_v1.include_router(water.router)
 api_v1.include_router(water_presets.router)
+api_v1.include_router(activity.router)
+api_v1.include_router(activity_presets.router)
 api_v1.include_router(uploads.router)
 api_v1.include_router(api_tokens.router)
 api_v1.include_router(integrations.router)

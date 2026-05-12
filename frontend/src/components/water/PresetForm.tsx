@@ -6,7 +6,7 @@ import { useUploadIcon } from "@/hooks/useUploadIcon";
 import { BUILTIN_ICONS, BuiltinIcon } from "@/lib/builtin-icons";
 import type { IconKind, WaterPreset } from "@/lib/schemas";
 
-import { PresetIcon } from "./PresetIcon";
+import { PresetIcon } from "@/components/presets/PresetIcon";
 
 interface Props {
   initial?: WaterPreset;

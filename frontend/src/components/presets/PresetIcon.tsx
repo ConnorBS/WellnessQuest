@@ -1,15 +1,14 @@
 "use client";
 
 import { BuiltinIcon } from "@/lib/builtin-icons";
-import type { WaterPreset } from "@/lib/schemas";
+import type { IconKind } from "@/lib/schemas";
 
-export function PresetIcon({
-  preset,
-  size = 28,
-}: {
-  preset: Pick<WaterPreset, "icon_kind" | "icon_key">;
-  size?: number;
-}) {
+interface IconCarrier {
+  icon_kind: IconKind;
+  icon_key: string | null;
+}
+
+export function PresetIcon({ preset, size = 28 }: { preset: IconCarrier; size?: number }) {
   if (preset.icon_kind === "upload" && preset.icon_key) {
     return (
       <img

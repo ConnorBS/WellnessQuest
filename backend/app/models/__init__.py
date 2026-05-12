@@ -1,5 +1,7 @@
 """SQLAlchemy models. Importing this package registers every model on Base.metadata."""
 
+from app.models.activity_entry import ActivityEntry
+from app.models.activity_preset import ActivityPreset
 from app.models.api_token import ApiToken
 from app.models.audit_log import AuditLog
 from app.models.error_log import ErrorLog
@@ -16,6 +18,8 @@ from app.models.webhook import WebhookDelivery, WebhookSubscription
 from app.models.xp_event import XpEvent
 
 __all__ = [
+    "ActivityEntry",
+    "ActivityPreset",
     "ApiToken",
     "AuditLog",
     "ErrorLog",

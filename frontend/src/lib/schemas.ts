@@ -77,3 +77,45 @@ export const UploadOutSchema = z.object({
   url: z.string(),
 });
 export type UploadOut = z.infer<typeof UploadOutSchema>;
+
+export const ActivityEntrySchema = z.object({
+  id: z.number().int(),
+  minutes: z.number().int(),
+  source: z.string(),
+  occurred_at: z.string(),
+  client_id: z.string().nullable().optional(),
+});
+export type ActivityEntry = z.infer<typeof ActivityEntrySchema>;
+
+export const ActivityTodaySchema = z.object({
+  date: z.string(),
+  total_minutes: z.number().int(),
+  goal_minutes: z.number().int(),
+  percent: z.number().int(),
+  entries: z.array(ActivityEntrySchema),
+});
+export type ActivityToday = z.infer<typeof ActivityTodaySchema>;
+
+export const ActivityAddOutSchema = z.object({
+  entry: ActivityEntrySchema,
+  total_minutes: z.number().int(),
+  goal_minutes: z.number().int(),
+  xp_delta: z.number().int(),
+  goal_met: z.boolean(),
+});
+export type ActivityAddOut = z.infer<typeof ActivityAddOutSchema>;
+
+export const ActivityPresetSchema = z.object({
+  id: z.string().uuid(),
+  label: z.string(),
+  minutes: z.number().int().positive(),
+  icon_kind: IconKindSchema,
+  icon_key: z.string().nullable(),
+  sort_order: z.number().int(),
+});
+export type ActivityPreset = z.infer<typeof ActivityPresetSchema>;
+
+export const ActivityPresetListSchema = z.array(ActivityPresetSchema);
+
+export const ActivityGoalOutSchema = z.object({ target_minutes: z.number().int().positive() });
+export type ActivityGoalOut = z.infer<typeof ActivityGoalOutSchema>;

@@ -106,6 +106,95 @@ function Droplet({ size }: IconProps) {
   );
 }
 
+function Walk({ size }: IconProps) {
+  return (
+    <Svg size={size}>
+      <circle cx="13" cy="4.5" r="1.5" />
+      <path d="M13 6l-2 5 3 2v6" />
+      <path d="M14 13l3 1 1 4" />
+      <path d="M11 11l-3 3 1 5" />
+    </Svg>
+  );
+}
+
+function Run({ size }: IconProps) {
+  return (
+    <Svg size={size}>
+      <circle cx="15" cy="4.5" r="1.5" />
+      <path d="M15 6l-3 4 3 3-1 5" />
+      <path d="M16 14l3 0 1 3" />
+      <path d="M12 10l-4 1-2 4" />
+    </Svg>
+  );
+}
+
+function Bike({ size }: IconProps) {
+  return (
+    <Svg size={size}>
+      <circle cx="6" cy="17" r="3" />
+      <circle cx="18" cy="17" r="3" />
+      <circle cx="14" cy="5" r="1.2" />
+      <path d="M6 17l4-7h4l4 7" />
+      <path d="M10 10l3-3" />
+    </Svg>
+  );
+}
+
+function Dumbbell({ size }: IconProps) {
+  return (
+    <Svg size={size}>
+      <path d="M3 10v4" />
+      <path d="M5 8v8" />
+      <path d="M19 8v8" />
+      <path d="M21 10v4" />
+      <path d="M5 12h14" />
+    </Svg>
+  );
+}
+
+function Yoga({ size }: IconProps) {
+  return (
+    <Svg size={size}>
+      <circle cx="12" cy="4.5" r="1.5" />
+      <path d="M12 6v6" />
+      <path d="M5 9l7 3 7-3" />
+      <path d="M12 12l-4 8" />
+      <path d="M12 12l4 8" />
+    </Svg>
+  );
+}
+
+function Stretch({ size }: IconProps) {
+  return (
+    <Svg size={size}>
+      <circle cx="12" cy="4.5" r="1.5" />
+      <path d="M12 6v4" />
+      <path d="M5 7l7 3 7-3" />
+      <path d="M12 10v6" />
+      <path d="M9 20l3-4 3 4" />
+    </Svg>
+  );
+}
+
+function Cardio({ size }: IconProps) {
+  return (
+    <Svg size={size}>
+      <path d="M3 13h4l2-5 4 8 2-3h6" />
+    </Svg>
+  );
+}
+
+function Swim({ size }: IconProps) {
+  return (
+    <Svg size={size}>
+      <circle cx="17" cy="6" r="1.5" />
+      <path d="M3 12c2-1 3 1 5 0s3-1 5 0 3 1 5 0 2-1 3 0" />
+      <path d="M3 17c2-1 3 1 5 0s3-1 5 0 3 1 5 0 2-1 3 0" />
+      <path d="M9 11l4-3 3 2" />
+    </Svg>
+  );
+}
+
 export type BuiltinIconKey =
   | "glass-small"
   | "glass-tall"
@@ -115,7 +204,15 @@ export type BuiltinIconKey =
   | "mason-jar"
   | "pint"
   | "shot-glass"
-  | "droplet";
+  | "droplet"
+  | "walk"
+  | "run"
+  | "bike"
+  | "dumbbell"
+  | "yoga"
+  | "stretch"
+  | "cardio"
+  | "swim";
 
 export const BUILTIN_ICONS: { key: BuiltinIconKey; label: string }[] = [
   { key: "glass-small", label: "Small glass" },
@@ -127,6 +224,14 @@ export const BUILTIN_ICONS: { key: BuiltinIconKey; label: string }[] = [
   { key: "pint", label: "Pint" },
   { key: "shot-glass", label: "Shot glass" },
   { key: "droplet", label: "Droplet" },
+  { key: "walk", label: "Walk" },
+  { key: "run", label: "Run" },
+  { key: "bike", label: "Bike" },
+  { key: "dumbbell", label: "Weights" },
+  { key: "yoga", label: "Yoga" },
+  { key: "stretch", label: "Stretch" },
+  { key: "cardio", label: "Cardio" },
+  { key: "swim", label: "Swim" },
 ];
 
 export function BuiltinIcon({ name, size = 28 }: { name: string; size?: number }) {
@@ -149,6 +254,22 @@ export function BuiltinIcon({ name, size = 28 }: { name: string; size?: number }
       return <ShotGlass size={size} />;
     case "droplet":
       return <Droplet size={size} />;
+    case "walk":
+      return <Walk size={size} />;
+    case "run":
+      return <Run size={size} />;
+    case "bike":
+      return <Bike size={size} />;
+    case "dumbbell":
+      return <Dumbbell size={size} />;
+    case "yoga":
+      return <Yoga size={size} />;
+    case "stretch":
+      return <Stretch size={size} />;
+    case "cardio":
+      return <Cardio size={size} />;
+    case "swim":
+      return <Swim size={size} />;
     default:
       return <Droplet size={size} />;
   }

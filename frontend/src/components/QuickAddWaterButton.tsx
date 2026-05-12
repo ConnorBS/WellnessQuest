@@ -4,7 +4,7 @@ import { useAddWater } from "@/hooks/useAddWater";
 import type { WaterPreset } from "@/lib/schemas";
 import { uuidv4 } from "@/lib/uuid";
 
-import { PresetIcon } from "@/components/water/PresetIcon";
+import { PresetIcon } from "@/components/presets/PresetIcon";
 
 interface Props {
   preset?: WaterPreset;

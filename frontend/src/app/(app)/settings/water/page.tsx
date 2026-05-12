@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { PresetForm } from "@/components/water/PresetForm";
-import { PresetIcon } from "@/components/water/PresetIcon";
+import { PresetIcon } from "@/components/presets/PresetIcon";
 import { useUpdateWaterGoal } from "@/hooks/useWaterGoal";
 import {
   useCreatePreset,

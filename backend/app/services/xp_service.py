@@ -7,10 +7,12 @@ from app.models.user import User
 from app.models.xp_event import XpEvent
 from app.services.time_utils import day_bounds_for_user
 
-# XP rules (slice 1):
-#   water_entry:        floor(ml / 100)   capped at WATER_DAILY_CAP per local day
-#   goal_met:water_ml:  +50               (one-shot per crossing; service layer enforces)
+# XP rules (slice 1+2):
+#   water_entry:           floor(ml / 100)        capped at WATER_DAILY_CAP per local day
+#   activity_entry:        minutes                capped at ACTIVITY_DAILY_CAP per local day
+#   goal_met:<metric>:     +50                    (one-shot per crossing; service layer enforces)
 WATER_DAILY_CAP = 20
+ACTIVITY_DAILY_CAP = 30
 GOAL_MET_XP = 50
 
 
@@ -44,6 +46,36 @@ async def grant_for_water(
             amount=grant,
             reason="water_entry",
             ref_type="water_entry",
+            ref_id=str(ref_id),
+        )
+    )
+    user.xp_total += grant
+    user.level = _level_for_xp(user.xp_total)
+    return grant
+
+
+async def grant_for_activity(
+    db: AsyncSession, *, user: User, minutes: int, ref_id: int
+) -> int:
+    """Grant XP for an activity entry, respecting the daily cap. Returns amount granted."""
+    start, end = day_bounds_for_user(user.timezone, _today_for(user))
+    stmt = select(func.coalesce(func.sum(XpEvent.amount), 0)).where(
+        XpEvent.user_id == user.id,
+        XpEvent.reason == "activity_entry",
+        XpEvent.created_at >= start,
+        XpEvent.created_at < end,
+    )
+    earned_today = int((await db.execute(stmt)).scalar_one())
+    available = max(0, ACTIVITY_DAILY_CAP - earned_today)
+    grant = min(minutes, available)
+    if grant <= 0:
+        return 0
+    db.add(
+        XpEvent(
+            user_id=user.id,
+            amount=grant,
+            reason="activity_entry",
+            ref_type="activity_entry",
             ref_id=str(ref_id),
         )
     )
