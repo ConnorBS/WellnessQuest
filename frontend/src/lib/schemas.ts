@@ -289,3 +289,18 @@ export const FoodSearchSchema = z.object({
   hits: z.array(FoodSearchHitSchema),
 });
 export type FoodSearch = z.infer<typeof FoodSearchSchema>;
+
+export const FoodRecentEntrySchema = z.object({
+  name: z.string(),
+  brand: z.string().nullable().optional(),
+  kcal: z.number().int(),
+  protein_g: z.coerce.number().nullable().optional(),
+  carbs_g: z.coerce.number().nullable().optional(),
+  fat_g: z.coerce.number().nullable().optional(),
+  meal_type: MealTypeSchema.nullable().optional(),
+  provider: z.string().nullable().optional(),
+  provider_id: z.string().nullable().optional(),
+  last_logged_at: z.string(),
+});
+export type FoodRecentEntry = z.infer<typeof FoodRecentEntrySchema>;
+export const FoodRecentListSchema = z.array(FoodRecentEntrySchema);

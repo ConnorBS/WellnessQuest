@@ -17,6 +17,7 @@ from app.schemas.food import (
     FoodGoalOut,
     FoodGoalUpdate,
     FoodMacroTotals,
+    FoodRecentEntry,
     FoodSearchHit,
     FoodSearchOut,
     FoodTodayOut,
@@ -160,6 +161,31 @@ async def delete_food(
         target_type="food_entry",
         target_id=str(entry_id),
     )
+
+
+@router.get("/recent", response_model=list[FoodRecentEntry])
+async def food_recent(
+    limit: int = Query(default=8, ge=1, le=20),
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[FoodRecentEntry]:
+    """Most recently logged distinct foods for one-tap re-logging."""
+    rows = await food_service.recent_distinct(db, user=user, limit=limit)
+    return [
+        FoodRecentEntry(
+            name=r.name,
+            brand=r.brand,
+            kcal=r.kcal,
+            protein_g=r.protein_g,
+            carbs_g=r.carbs_g,
+            fat_g=r.fat_g,
+            meal_type=r.meal_type,
+            provider=r.provider,
+            provider_id=r.provider_id,
+            last_logged_at=r.occurred_at,
+        )
+        for r in rows
+    ]
 
 
 @router.get("/search", response_model=FoodSearchOut)

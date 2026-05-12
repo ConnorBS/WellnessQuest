@@ -67,6 +67,22 @@ class FoodAddOut(BaseModel):
     over_target: bool
 
 
+class FoodRecentEntry(BaseModel):
+    """Shape the /food/recent endpoint returns. Carries everything a one-tap
+    re-log needs — same fields a FoodPreset would, minus the icon/preset-id."""
+
+    name: str
+    brand: str | None = None
+    kcal: int
+    protein_g: Decimal | None = None
+    carbs_g: Decimal | None = None
+    fat_g: Decimal | None = None
+    meal_type: MealType | None = None
+    provider: str | None = None
+    provider_id: str | None = None
+    last_logged_at: datetime
+
+
 class FoodGoalUpdate(BaseModel):
     target_kcal: int = Field(..., gt=0, le=20000)
 

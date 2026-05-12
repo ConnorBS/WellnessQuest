@@ -181,6 +181,40 @@ async def _get_by_client_id(
     )
 
 
+async def recent_distinct(
+    db: AsyncSession, *, user: User, limit: int = 8
+) -> list[FoodEntry]:
+    """Return the user's most-recently-logged distinct foods.
+
+    "Distinct" is keyed on (lowercased name, brand) so duplicates of the same
+    item don't crowd out variety. The kcal/macros come from the latest entry
+    of each name — that's what they actually logged most recently, which is
+    what they likely want to re-log with one tap.
+    """
+    # Pull the most recent ~5x the requested count so dedup has variety to
+    # choose from. Caller-side dedup is cheap and avoids a window-function
+    # subquery that asyncpg + SQLAlchemy 2.x sometimes struggle to parameterise.
+    fetch_limit = max(limit * 5, 20)
+    stmt = (
+        select(FoodEntry)
+        .where(FoodEntry.user_id == user.id)
+        .order_by(FoodEntry.occurred_at.desc())
+        .limit(fetch_limit)
+    )
+    rows = list((await db.execute(stmt)).scalars().all())
+    seen: set[tuple[str, str]] = set()
+    result: list[FoodEntry] = []
+    for row in rows:
+        key = (row.name.strip().lower(), (row.brand or "").strip().lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(row)
+        if len(result) >= limit:
+            break
+    return result
+
+
 async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:
     stmt = select(FoodEntry).where(
         FoodEntry.id == entry_id, FoodEntry.user_id == user.id

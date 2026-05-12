@@ -83,6 +83,7 @@ export function useAddFood() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["food", "today", viewedDay] });
+      qc.invalidateQueries({ queryKey: ["food", "recent"] });
       qc.invalidateQueries({ queryKey: ["me"] });
     },
   });
@@ -95,6 +96,7 @@ export function useDeleteFood() {
     mutationFn: (entry_id) => apiDelete(`/food/${entry_id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["food", "today", viewedDay] });
+      qc.invalidateQueries({ queryKey: ["food", "recent"] });
     },
   });
 }
