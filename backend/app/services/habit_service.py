@@ -249,9 +249,9 @@ def _status_for(
 
 
 async def list_with_status(
-    db: AsyncSession, *, user: User
+    db: AsyncSession, *, user: User, as_of: date | None = None
 ) -> list[HabitWithStatusOut]:
-    today = day_for_user(user.timezone)
+    today = as_of or day_for_user(user.timezone)
 
     habits = list(
         (
@@ -294,16 +294,21 @@ async def list_with_status(
     ]
 
 
-async def toggle_checkin_today(
-    db: AsyncSession, *, user: User, habit: Habit
+async def toggle_checkin(
+    db: AsyncSession, *, user: User, habit: Habit, for_date: date | None = None
 ) -> tuple[bool, HabitWithStatusOut]:
-    """Returns (now_done, fresh_status). Tap = toggle today's checkin."""
-    today = day_for_user(user.timezone)
+    """Toggle the check-in for the given local date (default: today). Future
+    dates are rejected by the caller; this helper trusts its input.
+
+    Returns (now_done, fresh_status).
+    """
+    today_local = day_for_user(user.timezone)
+    target_day = for_date or today_local
     existing = (
         await db.execute(
             select(HabitCheckin).where(
                 HabitCheckin.habit_id == habit.id,
-                HabitCheckin.occurred_on == today,
+                HabitCheckin.occurred_on == target_day,
             )
         )
     ).scalar_one_or_none()
@@ -316,7 +321,7 @@ async def toggle_checkin_today(
                 HabitCheckin(
                     habit_id=habit.id,
                     user_id=user.id,
-                    occurred_on=today,
+                    occurred_on=target_day,
                 )
             )
             await db.flush()
@@ -325,8 +330,9 @@ async def toggle_checkin_today(
             await db.rollback()
             now_done = True  # someone else created it concurrently
 
-    # Recompute status for response
-    horizon = today - timedelta(days=120)
+    # Recompute status as of the viewed day so the response reflects the
+    # caller's perspective (the dashboard for that date), not always today.
+    horizon = target_day - timedelta(days=120)
     dates = set(
         (
             await db.execute(
@@ -339,7 +345,7 @@ async def toggle_checkin_today(
         .scalars()
         .all()
     )
-    status = _status_for(habit, today, dates, user.timezone)
+    status = _status_for(habit, target_day, dates, user.timezone)
     return now_done, HabitWithStatusOut(habit=_to_habit_out(habit), status=status)
 
 

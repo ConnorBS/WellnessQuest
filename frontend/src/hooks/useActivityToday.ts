@@ -2,12 +2,18 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import { useViewedDay } from "@/lib/day-context";
 import { apiFetch } from "@/lib/api";
 import { ActivityToday, ActivityTodaySchema } from "@/lib/schemas";
 
 export function useActivityToday() {
+  const { viewedDay, isToday } = useViewedDay();
   return useQuery<ActivityToday>({
-    queryKey: ["activity", "today"],
-    queryFn: () => apiFetch("/activity/today", ActivityTodaySchema),
+    queryKey: ["activity", "today", viewedDay],
+    queryFn: () =>
+      apiFetch(
+        isToday ? "/activity/today" : `/activity/today?date=${viewedDay}`,
+        ActivityTodaySchema,
+      ),
   });
 }

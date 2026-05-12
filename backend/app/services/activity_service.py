@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -33,9 +33,9 @@ class ActivityAddResult:
         self.newly_met = newly_met
 
 
-async def total_today(db: AsyncSession, *, user: User) -> int:
-    today = day_for_user(user.timezone)
-    start, end = day_bounds_for_user(user.timezone, today)
+async def total_today(db: AsyncSession, *, user: User, for_date: date | None = None) -> int:
+    day = for_date or day_for_user(user.timezone)
+    start, end = day_bounds_for_user(user.timezone, day)
     stmt = select(func.coalesce(func.sum(ActivityEntry.minutes), 0)).where(
         ActivityEntry.user_id == user.id,
         ActivityEntry.occurred_at >= start,
@@ -44,9 +44,9 @@ async def total_today(db: AsyncSession, *, user: User) -> int:
     return int((await db.execute(stmt)).scalar_one())
 
 
-async def list_today(db: AsyncSession, *, user: User) -> list[ActivityEntry]:
-    today = day_for_user(user.timezone)
-    start, end = day_bounds_for_user(user.timezone, today)
+async def list_today(db: AsyncSession, *, user: User, for_date: date | None = None) -> list[ActivityEntry]:
+    day = for_date or day_for_user(user.timezone)
+    start, end = day_bounds_for_user(user.timezone, day)
     stmt = (
         select(ActivityEntry)
         .where(

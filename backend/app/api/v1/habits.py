@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,7 +12,7 @@ from app.models.habit import Habit
 from app.models.user import User
 from app.schemas.habit import HabitIn, HabitOut, HabitWithStatusOut
 from app.services import habit_service
-from app.services.time_utils import utcnow
+from app.services.time_utils import day_for_user, utcnow
 from app.telemetry.recorder import audit
 
 router = APIRouter(prefix="/habits", tags=["habits"])
@@ -37,9 +38,11 @@ def _to_out(h: Habit) -> HabitOut:
 
 @router.get("", response_model=list[HabitWithStatusOut])
 async def list_habits(
-    user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+    date_: date | None = Query(default=None, alias="date"),
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> list[HabitWithStatusOut]:
-    return await habit_service.list_with_status(db, user=user)
+    return await habit_service.list_with_status(db, user=user, as_of=date_)
 
 
 @router.post("", response_model=HabitOut, status_code=status.HTTP_201_CREATED)
@@ -144,13 +147,20 @@ async def reorder_habits(
 @router.post("/{habit_id}/checkins/toggle", response_model=HabitWithStatusOut)
 async def toggle_today(
     habit_id: uuid.UUID,
+    date_: date | None = Query(default=None, alias="date"),
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ) -> HabitWithStatusOut:
     habit = await habit_service.get_owned(db, user=user, habit_id=habit_id)
     if habit is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
-    now_done, result = await habit_service.toggle_checkin_today(db, user=user, habit=habit)
+    if date_ is not None and date_ > day_for_user(user.timezone):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="future_date"
+        )
+    now_done, result = await habit_service.toggle_checkin(
+        db, user=user, habit=habit, for_date=date_
+    )
     await audit(
         db,
         actor=f"user:{user.id}",
@@ -158,5 +168,6 @@ async def toggle_today(
         user_id=user.id,
         target_type="habit",
         target_id=str(habit.id),
+        meta={"date": (date_ or day_for_user(user.timezone)).isoformat()},
     )
     return result

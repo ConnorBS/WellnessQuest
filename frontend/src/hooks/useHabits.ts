@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiDelete, apiFetch, apiPatch, apiPost, apiPostVoid } from "@/lib/api";
+import { useViewedDay } from "@/lib/day-context";
 import {
   type Habit,
   HabitListSchema,
@@ -13,9 +14,11 @@ import {
 type HabitInput = Omit<Habit, "id">;
 
 export function useHabits() {
+  const { viewedDay, isToday } = useViewedDay();
   return useQuery({
-    queryKey: ["habits"],
-    queryFn: () => apiFetch("/habits", HabitListSchema),
+    queryKey: ["habits", viewedDay],
+    queryFn: () =>
+      apiFetch(isToday ? "/habits" : `/habits?date=${viewedDay}`, HabitListSchema),
   });
 }
 
@@ -46,9 +49,16 @@ export function useDeleteHabit() {
 
 export function useToggleHabit() {
   const qc = useQueryClient();
+  const { viewedDay, isToday } = useViewedDay();
   return useMutation({
     mutationFn: (id: string) =>
-      apiPost(`/habits/${id}/checkins/toggle`, HabitWithStatusSchema, {}),
+      apiPost(
+        isToday
+          ? `/habits/${id}/checkins/toggle`
+          : `/habits/${id}/checkins/toggle?date=${viewedDay}`,
+        HabitWithStatusSchema,
+        {},
+      ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["habits"] }),
   });
 }

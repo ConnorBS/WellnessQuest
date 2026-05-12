@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import current_user, get_db
@@ -37,15 +39,18 @@ async def update_activity_goal(
 
 @router.get("/today", response_model=ActivityTodayOut)
 async def activity_today(
-    user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+    date_: date | None = Query(default=None, alias="date"),
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> ActivityTodayOut:
+    day = date_ or day_for_user(user.timezone)
     goal = await goal_service.get_or_create_default_activity(db, user_id=user.id)
-    total = await activity_service.total_today(db, user=user)
-    entries = await activity_service.list_today(db, user=user)
+    total = await activity_service.total_today(db, user=user, for_date=day)
+    entries = await activity_service.list_today(db, user=user, for_date=day)
     goal_minutes = int(goal.target)
     pct = min(100, round((total / goal_minutes) * 100)) if goal_minutes else 0
     return ActivityTodayOut(
-        date=day_for_user(user.timezone).isoformat(),
+        date=day.isoformat(),
         total_minutes=total,
         goal_minutes=goal_minutes,
         percent=pct,
