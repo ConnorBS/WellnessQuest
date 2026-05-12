@@ -54,9 +54,9 @@ export function FoodCard() {
         </div>
       ) : (
         <p className="text-sm text-slate-400">
-          No quick-add foods yet —{" "}
-          <Link href="/food" style={{ color: "#10b981" }}>
-            log one on the food page
+          No quick foods yet —{" "}
+          <Link href="/settings/food" style={{ color: "#10b981" }}>
+            add some in settings
           </Link>
           .
         </p>

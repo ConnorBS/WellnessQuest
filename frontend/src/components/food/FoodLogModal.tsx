@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useAddFood } from "@/hooks/useAddFood";
+import { useCreateFoodPreset } from "@/hooks/useFoodPresets";
 import { useFoodSearch } from "@/hooks/useFoodSearch";
 import type { FoodSearchHit, MealType } from "@/lib/schemas";
 import { uuidv4 } from "@/lib/uuid";
@@ -40,7 +41,9 @@ export function FoodLogModal({ onClose }: Props) {
   const [manualCarbs, setManualCarbs] = useState<number | "">("");
   const [manualFat, setManualFat] = useState<number | "">("");
   const [search, setSearch] = useState("");
+  const [saveAsPreset, setSaveAsPreset] = useState(false);
   const addFood = useAddFood();
+  const createPreset = useCreateFoodPreset();
   const { data, isLoading, isFetching } = useFoodSearch(search, mode === "search");
 
   useEffect(() => {
@@ -82,23 +85,67 @@ export function FoodLogModal({ onClose }: Props) {
         provider_id: selected.provider_id,
         client_id: uuidv4(),
       },
-      { onSuccess: () => onClose() },
+      {
+        onSuccess: () => {
+          if (saveAsPreset && computed.kcal != null) {
+            createPreset.mutate({
+              label: selected.name,
+              brand: selected.brand ?? null,
+              kcal: computed.kcal,
+              protein_g: computed.protein_g,
+              carbs_g: computed.carbs_g,
+              fat_g: computed.fat_g,
+              meal_type: meal,
+              provider: selected.provider,
+              provider_id: selected.provider_id,
+              icon_kind: "builtin",
+              icon_key: "food-apple",
+              sort_order: 0,
+            });
+          }
+          onClose();
+        },
+      },
     );
   }
 
   function logManual() {
     if (!manualName.trim() || manualKcal === "" || manualKcal < 0) return;
+    const kcal = Number(manualKcal);
+    const protein = manualProtein === "" ? null : Number(manualProtein);
+    const carbs = manualCarbs === "" ? null : Number(manualCarbs);
+    const fat = manualFat === "" ? null : Number(manualFat);
     addFood.mutate(
       {
         name: manualName.trim(),
-        kcal: Number(manualKcal),
-        protein_g: manualProtein === "" ? null : Number(manualProtein),
-        carbs_g: manualCarbs === "" ? null : Number(manualCarbs),
-        fat_g: manualFat === "" ? null : Number(manualFat),
+        kcal,
+        protein_g: protein,
+        carbs_g: carbs,
+        fat_g: fat,
         meal_type: meal,
         client_id: uuidv4(),
       },
-      { onSuccess: () => onClose() },
+      {
+        onSuccess: () => {
+          if (saveAsPreset) {
+            createPreset.mutate({
+              label: manualName.trim(),
+              brand: null,
+              kcal,
+              protein_g: protein,
+              carbs_g: carbs,
+              fat_g: fat,
+              meal_type: meal,
+              provider: null,
+              provider_id: null,
+              icon_kind: "builtin",
+              icon_key: "food-apple",
+              sort_order: 0,
+            });
+          }
+          onClose();
+        },
+      },
     );
   }
 
@@ -304,6 +351,7 @@ export function FoodLogModal({ onClose }: Props) {
                       )} · F ${fmt(computed.fat_g)}`
                     : "No kcal data for this product."}
                 </div>
+                <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
                 <button
                   type="button"
                   onClick={logSelected}
@@ -393,6 +441,7 @@ export function FoodLogModal({ onClose }: Props) {
                 />
               </label>
             </div>
+            <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
             <button
               type="button"
               onClick={logManual}
@@ -407,6 +456,34 @@ export function FoodLogModal({ onClose }: Props) {
         )}
       </div>
     </div>
+  );
+}
+
+function SaveAsPresetCheckbox({
+  value,
+  onChange,
+}: {
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        fontSize: 13,
+        color: "#cbd5e1",
+        cursor: "pointer",
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={value}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      Save as quick food
+    </label>
   );
 }
 
