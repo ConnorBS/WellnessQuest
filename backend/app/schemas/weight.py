@@ -19,6 +19,19 @@ class WeightEntryOut(BaseModel):
     note: str | None = None
 
 
+class WeightTargetIn(BaseModel):
+    # None = explicit "no target as of effective_at" (clears the goal). Non-None
+    # values are range-checked at the endpoint, not here, so that null can pass.
+    target_kg: Decimal | None = None
+    effective_at: datetime | None = None
+
+
+class WeightTargetOut(BaseModel):
+    id: int
+    target_kg: Decimal | None
+    effective_at: datetime
+
+
 class WeightSummaryOut(BaseModel):
     unit: str  # "kg" | "lb"
     latest: WeightEntryOut | None
@@ -26,3 +39,6 @@ class WeightSummaryOut(BaseModel):
     # "down/up X over a week" line on the dashboard card.
     prior_week: WeightEntryOut | None
     delta_kg: Decimal | None
+    # Current target (latest weight_targets row). None if user never set one
+    # OR if the latest row explicitly cleared the target (target_kg = NULL).
+    current_target: WeightTargetOut | None = None

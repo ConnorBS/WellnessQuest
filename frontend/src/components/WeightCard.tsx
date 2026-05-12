@@ -14,7 +14,7 @@ export function WeightCard() {
   const unit = me?.weight_unit ?? "kg";
   const latest = summary.data?.latest;
   const delta = summary.data?.delta_kg;
-  const target = me?.weight_target_kg ?? null;
+  const target = summary.data?.current_target?.target_kg ?? null;
   const toTarget = latest && target != null ? latest.weight_kg - target : null;
 
   return (

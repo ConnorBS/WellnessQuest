@@ -1,18 +1,24 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 
 import { useMe } from "@/hooks/useMe";
 import { useUpdateMe } from "@/hooks/useUpdateMe";
-import { displayToKg, kgToDisplay } from "@/lib/units";
+import { useWeightSummary } from "@/hooks/useWeight";
+import {
+  useAddWeightTarget,
+  useDeleteWeightTarget,
+  useWeightTargets,
+} from "@/hooks/useWeightTargets";
+import { displayToKg, formatWeight, kgToDisplay } from "@/lib/units";
 
 const primaryBtn: React.CSSProperties = {
-  padding: "8px 12px",
+  padding: "10px 14px",
   background: "#10b981",
   color: "#0b1220",
   border: 0,
   borderRadius: 6,
-  fontWeight: 500,
+  fontWeight: 600,
 };
 
 const ghostBtn: React.CSSProperties = {
@@ -24,22 +30,28 @@ const ghostBtn: React.CSSProperties = {
   fontSize: 13,
 };
 
+const dangerBtn: React.CSSProperties = {
+  padding: "4px 10px",
+  background: "transparent",
+  color: "#fca5a5",
+  border: "1px solid #7f1d1d",
+  borderRadius: 6,
+  fontSize: 12,
+};
+
 export default function WeightSettingsPage() {
   const { data: me } = useMe();
   const updateMe = useUpdateMe();
+  const summary = useWeightSummary();
+  const targets = useWeightTargets(60);
+  const addTarget = useAddWeightTarget();
+  const deleteTarget = useDeleteWeightTarget();
+
   const unit = me?.weight_unit ?? "kg";
+  const current = summary.data?.current_target ?? null;
 
-  const [targetDraft, setTargetDraft] = useState<string>("");
-  const [targetError, setTargetError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!me) return;
-    if (me.weight_target_kg == null) {
-      setTargetDraft("");
-    } else {
-      setTargetDraft(kgToDisplay(me.weight_target_kg, unit).toFixed(1));
-    }
-  }, [me, unit]);
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   if (!me) {
     return (
@@ -51,55 +63,137 @@ export default function WeightSettingsPage() {
 
   function saveTarget(e: FormEvent) {
     e.preventDefault();
-    setTargetError(null);
-    const v = parseFloat(targetDraft);
+    setError(null);
+    const v = parseFloat(draft);
     if (!Number.isFinite(v) || v <= 0) {
-      setTargetError("Enter a positive target.");
+      setError("Enter a positive target.");
       return;
     }
     const kg = displayToKg(v, unit);
-    updateMe.mutate({ weight_target_kg: Number(kg.toFixed(2)) });
+    addTarget.mutate(
+      { target_kg: Number(kg.toFixed(2)) },
+      {
+        onSuccess: () => setDraft(""),
+        onError: () => setError("Could not save — try again."),
+      },
+    );
   }
 
   function clearTarget() {
-    updateMe.mutate({ clear_weight_target: true });
+    addTarget.mutate(
+      { target_kg: null },
+      {
+        onError: () => setError("Could not save — try again."),
+      },
+    );
   }
 
   return (
     <>
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-        <h2 className="text-lg font-semibold" style={{ marginBottom: 12 }}>
+        <h2 className="text-lg font-semibold" style={{ marginBottom: 8 }}>
           Target weight
         </h2>
-        <form onSubmit={saveTarget} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <p style={{ color: "#94a3b8", fontSize: 14, margin: "0 0 12px" }}>
+          {current && current.target_kg != null ? (
+            <>
+              Current: <strong style={{ color: "#e2e8f0" }}>{formatWeight(current.target_kg, unit)}</strong>
+              <span style={{ color: "#64748b" }}>
+                {" "}
+                · set {new Date(current.effective_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+            </>
+          ) : current ? (
+            <>
+              No active target (cleared{" "}
+              {new Date(current.effective_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })})
+            </>
+          ) : (
+            <>No target set yet.</>
+          )}
+        </p>
+        <form onSubmit={saveTarget} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
           <input
             type="number"
             step="0.1"
             min="0"
             max="999"
-            value={targetDraft}
-            onChange={(e) => setTargetDraft(e.target.value)}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
             placeholder={unit === "lb" ? "e.g. 170.0" : "e.g. 77.0"}
             style={{ width: 140 }}
           />
           <span style={{ color: "#94a3b8" }}>{unit}</span>
-          <button
-            type="submit"
-            disabled={updateMe.isPending}
-            style={primaryBtn}
-          >
-            {updateMe.isPending ? "Saving…" : "Save target"}
+          <button type="submit" disabled={addTarget.isPending} style={primaryBtn}>
+            {addTarget.isPending ? "Saving…" : "Save new target"}
           </button>
-          {me.weight_target_kg != null && (
-            <button type="button" onClick={clearTarget} style={ghostBtn} disabled={updateMe.isPending}>
-              Clear
+          {current && current.target_kg != null && (
+            <button
+              type="button"
+              onClick={clearTarget}
+              style={ghostBtn}
+              disabled={addTarget.isPending}
+            >
+              Clear target
             </button>
           )}
         </form>
-        {targetError && <p style={{ color: "#fca5a5", fontSize: 13, marginTop: 6 }}>{targetError}</p>}
+        {error && <p style={{ color: "#fca5a5", fontSize: 13, marginTop: 6 }}>{error}</p>}
         <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
-          Shown on the Weight card and the /weight page as a goal you are moving toward.
+          Each save creates a new history row so you can graph your goal alongside your weight later.
+          &quot;Clear target&quot; records that you intentionally stopped tracking a goal as of now.
         </p>
+      </section>
+
+      <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+        <h2 className="text-lg font-semibold" style={{ marginBottom: 12 }}>
+          Target history
+        </h2>
+        {targets.isLoading ? (
+          <p style={{ color: "#94a3b8" }}>Loading…</p>
+        ) : !targets.data || targets.data.length === 0 ? (
+          <p style={{ color: "#94a3b8" }}>No history yet.</p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+            {targets.data.map((t) => (
+              <li
+                key={t.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "8px 0",
+                  borderBottom: "1px solid #1e293b",
+                  gap: 8,
+                }}
+              >
+                <div>
+                  <span style={{ fontWeight: 500 }}>
+                    {t.target_kg != null
+                      ? formatWeight(t.target_kg, unit)
+                      : <span style={{ color: "#94a3b8" }}>No target (cleared)</span>}
+                  </span>
+                  <span style={{ color: "#94a3b8", fontSize: 12, marginLeft: 8 }}>
+                    {new Date(t.effective_at).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("Remove this target history entry?")) deleteTarget.mutate(t.id);
+                  }}
+                  style={dangerBtn}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">

@@ -7,7 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import current_user, get_db
 from app.models.user import User
-from app.schemas.weight import WeightEntryIn, WeightEntryOut, WeightSummaryOut
+from app.models.weight_target import WeightTarget
+from app.schemas.weight import (
+    WeightEntryIn,
+    WeightEntryOut,
+    WeightSummaryOut,
+    WeightTargetIn,
+    WeightTargetOut,
+)
 from app.services import weight_service
 from app.services.time_utils import utcnow
 from app.telemetry.recorder import audit
@@ -24,6 +31,14 @@ def _to_out(row) -> WeightEntryOut:  # type: ignore[no-untyped-def]
     )
 
 
+def _target_to_out(row: WeightTarget) -> WeightTargetOut:
+    return WeightTargetOut(
+        id=row.id,
+        target_kg=row.target_kg,
+        effective_at=row.effective_at,
+    )
+
+
 @router.get("/summary", response_model=WeightSummaryOut)
 async def weight_summary(
     user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
@@ -37,11 +52,13 @@ async def weight_summary(
         )
         if prior is not None:
             delta = (latest.weight_kg - prior.weight_kg).quantize(Decimal("0.01"))
+    current_target = await weight_service.current_target(db, user=user)
     return WeightSummaryOut(
         unit=user.weight_unit,
         latest=_to_out(latest) if latest is not None else None,
         prior_week=_to_out(prior) if prior is not None else None,
         delta_kg=delta,
+        current_target=_target_to_out(current_target) if current_target is not None else None,
     )
 
 
@@ -97,4 +114,77 @@ async def delete_weight(
         user_id=user.id,
         target_type="weight_entry",
         target_id=str(entry_id),
+    )
+
+
+# --- targets (history-tracked) ----------------------------------------------
+
+@router.get("/targets", response_model=list[WeightTargetOut])
+async def list_weight_targets(
+    limit: int = 90,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[WeightTargetOut]:
+    limit = max(1, min(limit, 365))
+    rows = await weight_service.list_targets(db, user=user, limit=limit)
+    return [_target_to_out(r) for r in rows]
+
+
+@router.get("/targets/current", response_model=WeightTargetOut | None)
+async def get_current_target(
+    user: User = Depends(current_user), db: AsyncSession = Depends(get_db)
+) -> WeightTargetOut | None:
+    row = await weight_service.current_target(db, user=user)
+    return _target_to_out(row) if row is not None else None
+
+
+@router.post("/targets", response_model=WeightTargetOut, status_code=status.HTTP_201_CREATED)
+async def add_weight_target(
+    payload: WeightTargetIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> WeightTargetOut:
+    # Range-check non-null values here so that an explicit "no target" (null)
+    # still passes through to clear the goal.
+    if payload.target_kg is not None and (
+        payload.target_kg <= 0 or payload.target_kg >= 1000
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="target_kg must be in (0, 1000) or null",
+        )
+    row = await weight_service.add_target(
+        db,
+        user=user,
+        target_kg=payload.target_kg,
+        effective_at=payload.effective_at,
+    )
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="weight.target.set",
+        user_id=user.id,
+        target_type="weight_target",
+        target_id=str(row.id),
+        meta={"target_kg": str(row.target_kg) if row.target_kg is not None else None},
+    )
+    return _target_to_out(row)
+
+
+@router.delete("/targets/{target_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_weight_target(
+    target_id: int,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    ok = await weight_service.delete_target(db, user=user, target_id=target_id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="weight.target.delete",
+        user_id=user.id,
+        target_type="weight_target",
+        target_id=str(target_id),
     )

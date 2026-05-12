@@ -10,7 +10,6 @@ export const MeSchema = z.object({
   timezone: z.string(),
   show_weight_card: z.boolean(),
   weight_unit: z.string(),
-  weight_target_kg: z.coerce.number().nullable().optional(),
 });
 export type Me = z.infer<typeof MeSchema>;
 
@@ -175,10 +174,20 @@ export type WeightEntry = z.infer<typeof WeightEntrySchema>;
 
 export const WeightEntryListSchema = z.array(WeightEntrySchema);
 
+export const WeightTargetSchema = z.object({
+  id: z.number().int(),
+  target_kg: z.coerce.number().nullable(),
+  effective_at: z.string(),
+});
+export type WeightTarget = z.infer<typeof WeightTargetSchema>;
+
+export const WeightTargetListSchema = z.array(WeightTargetSchema);
+
 export const WeightSummarySchema = z.object({
   unit: z.string(),
   latest: WeightEntrySchema.nullable(),
   prior_week: WeightEntrySchema.nullable(),
   delta_kg: z.coerce.number().nullable(),
+  current_target: WeightTargetSchema.nullable().optional(),
 });
 export type WeightSummary = z.infer<typeof WeightSummarySchema>;

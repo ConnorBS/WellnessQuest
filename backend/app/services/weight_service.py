@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 from app.models.weight_entry import WeightEntry
+from app.models.weight_target import WeightTarget
 from app.services.time_utils import utcnow
 
 
@@ -84,6 +85,67 @@ async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:
         await db.execute(
             select(WeightEntry).where(
                 WeightEntry.id == entry_id, WeightEntry.user_id == user.id
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        return False
+    await db.delete(row)
+    return True
+
+
+# --- weight targets ---------------------------------------------------------
+
+async def add_target(
+    db: AsyncSession,
+    *,
+    user: User,
+    target_kg: Decimal | None,
+    effective_at: datetime | None = None,
+) -> WeightTarget:
+    row = WeightTarget(
+        user_id=user.id,
+        target_kg=target_kg,
+        effective_at=effective_at or utcnow(),
+    )
+    db.add(row)
+    await db.flush()
+    return row
+
+
+async def current_target(db: AsyncSession, *, user: User) -> WeightTarget | None:
+    return (
+        await db.execute(
+            select(WeightTarget)
+            .where(WeightTarget.user_id == user.id)
+            .order_by(WeightTarget.effective_at.desc(), WeightTarget.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+
+async def list_targets(
+    db: AsyncSession, *, user: User, limit: int = 90
+) -> list[WeightTarget]:
+    return list(
+        (
+            await db.execute(
+                select(WeightTarget)
+                .where(WeightTarget.user_id == user.id)
+                .order_by(WeightTarget.effective_at.desc(), WeightTarget.id.desc())
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def delete_target(db: AsyncSession, *, user: User, target_id: int) -> bool:
+    row = (
+        await db.execute(
+            select(WeightTarget).where(
+                WeightTarget.id == target_id, WeightTarget.user_id == user.id
             )
         )
     ).scalar_one_or_none()

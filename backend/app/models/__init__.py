@@ -18,6 +18,7 @@ from app.models.water_entry import WaterEntry
 from app.models.water_preset import WaterPreset
 from app.models.webhook import WebhookDelivery, WebhookSubscription
 from app.models.weight_entry import WeightEntry
+from app.models.weight_target import WeightTarget
 from app.models.xp_event import XpEvent
 
 __all__ = [
@@ -40,5 +41,6 @@ __all__ = [
     "WebhookDelivery",
     "WebhookSubscription",
     "WeightEntry",
+    "WeightTarget",
     "XpEvent",
 ]

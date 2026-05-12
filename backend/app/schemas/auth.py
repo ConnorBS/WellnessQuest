@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from decimal import Decimal
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -41,14 +40,11 @@ class MeOut(BaseModel):
     timezone: str
     show_weight_card: bool = True
     weight_unit: str = "kg"
-    weight_target_kg: Decimal | None = None
 
 
 class MePatchIn(BaseModel):
     show_weight_card: bool | None = None
     weight_unit: str | None = None
-    weight_target_kg: Decimal | None = None
-    clear_weight_target: bool = False
 
 
 class SignupOut(BaseModel):
