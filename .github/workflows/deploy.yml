@@ -13,6 +13,7 @@ on:
 permissions:
   contents: read
   packages: write
+  issues: write
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -80,6 +81,46 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo '${{ steps.t.outputs.tags }}' | tr ',' '\n' >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  notify-on-failure:
+    needs: [publish]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Open a tracking issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha.substring(0, 7);
+            const branch = context.ref.replace('refs/heads/', '');
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const commitUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${context.sha}`;
+            const messageHead = (context.payload.head_commit && context.payload.head_commit.message || "").split('\n')[0];
+            const body = [
+              `Deploy workflow failed for commit \`${sha}\` on branch \`${branch}\`.`,
+              '',
+              messageHead ? `> ${messageHead}` : '',
+              '',
+              `[View workflow run logs →](${runUrl})`,
+              '',
+              `Commit: ${commitUrl}`,
+              '',
+              '**Impact:** the published image on GHCR is still whatever the previous successful build produced. Force Update on Unraid will pull stale code until this is fixed.',
+              '',
+              'Common causes:',
+              '- Next.js prod-only lint error (e.g. `react/no-unescaped-entities`) — `pnpm typecheck` does NOT catch these; run `NEXT_OUTPUT_MODE=export pnpm build` locally.',
+              '- Alembic migration syntax error.',
+              '- Type error in newly-added code (Python or TypeScript).',
+            ].filter(line => line !== null).join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Deploy failed: ${sha} on ${branch}`,
+              body,
+            });
 
   migrations-sql:
     runs-on: ubuntu-latest

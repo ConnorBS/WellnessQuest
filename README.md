@@ -1,43 +1,56 @@
 # WellnessQuest
 
-A gamified health and wellness tracker that transforms daily habits into quests. Track weight, calories, water intake, and streaks while leveling up your character. Multi-user support with Home Assistant integration for a connected smart home experience.
+[![Deploy](https://github.com/ConnorBS/WellnessQuest/actions/workflows/deploy.yml/badge.svg)](https://github.com/ConnorBS/WellnessQuest/actions/workflows/deploy.yml)
+
+A gamified household wellness tracker. Log water, activity, habits, and weight; see progress against goals on a single dashboard; tie it to Home Assistant for two-way automation. Designed for a two-person home running on Unraid.
 
 ## Status
 
-Slice 1 (vertical proof of stack): multi-user water tracking with HA two-way integration, XP/level scaffolding, and telemetry/error capture.
+Four trackers wired up, day-by-day navigation, Material Design icon picker, PWA install on phone, Home Assistant two-way integration for water. Single Docker image, bring-your-own Postgres.
+
+## Modules
+
+| Module | What it tracks | Cadence shape |
+|---|---|---|
+| **Water** | Daily ml against a goal | Continuous scalar, per-day total |
+| **Activity** | Active minutes against a goal, with optional exercise type tag | Continuous scalar, per-day total |
+| **Habits** | Discrete tap-to-check items with flexible cadence | `daily` / `weekly(N)` / `monthly(N)` / `every K days` |
+| **Weight** | Time-series weight entries + versioned target history | Append-only log, sparkline + delta |
+
+Each module has its own page, settings sub-page (goal + presets), and dashboard card. Day-navigation arrows + horizontal swipe move the dashboard between days (never future).
 
 ## Stack
 
-- **Backend**: FastAPI (Python 3.12), SQLAlchemy 2 async, Alembic, Postgres 16
-- **Frontend**: Next.js 15 App Router (TypeScript), TanStack Query, PWA with offline water queue
-- **Auth**: Argon2 password hashing, JWT access + opaque refresh, long-lived HA tokens
-- **Integration**: REST API + outbound webhooks, with pluggable provider/integration registries
-- **Infra**: Docker Compose, Caddy (LAN HTTPS via internal CA)
+- **Backend**: FastAPI (Python 3.12), SQLAlchemy 2 async, Alembic, Postgres 16+
+- **Frontend**: Next.js 15 App Router (TypeScript), TanStack Query, statically exported into the unified image
+- **Auth**: Argon2 password hashing, JWT access + opaque refresh, long-lived HA tokens with scope gating
+- **Icons**: Material Design Icons (~7,000), searchable picker
+- **Deploy**: Single unified Docker image at `ghcr.io/connorbs/wellnessquest`, FastAPI serves both the API and the static PWA bundle
 
 ## Quickstart
 
-**Unraid (production target)**: see [`docs/unraid.md`](docs/unraid.md). Compose Manager + GHCR pull, no reverse proxy required.
+**Unraid (production target)**: see [`docs/unraid.md`](docs/unraid.md). Single template, single container, BYO Postgres.
 
 **Local dev (laptop, builds from source)**:
 
 ```bash
 cp .env.example .env
-# edit secrets (POSTGRES_PASSWORD, JWT_SECRET, FERNET_KEY, ADMIN_PASSWORD, PARTNER_PASSWORD)
+# generate JWT_SECRET, FERNET_KEY, POSTGRES_PASSWORD, ADMIN_PASSWORD, PARTNER_PASSWORD
 make dev          # build + run the dev stack with hot reload
 make seed         # create admin@local + partner@local
 ```
 
-Frontend: <http://localhost:3000>. Backend docs: <http://localhost:8000/docs>.
+Frontend: <http://localhost:3000>. Backend docs (Swagger): <http://localhost:8000/docs>.
 
 ## Docs
 
-- `docs/unraid.md` — Unraid + GHCR first-run guide
-- `docs/architecture.md` — services, modules, conventions
-- `docs/api.md` — REST surface
-- `docs/home-assistant.md` — HA snippets, token issuance, webhooks
-- `docs/providers.md` — adding a provider or integration
-- `docs/runbook.md` — backup/restore, upgrades, pinning
-- `docs/agent-pipeline.md` — planned M2 multi-agent workflow
+- [`docs/unraid.md`](docs/unraid.md) — Unraid + GHCR first-run guide (deployment target)
+- [`docs/architecture.md`](docs/architecture.md) — service shape, module pattern, table inventory
+- [`docs/api.md`](docs/api.md) — REST surface across all modules
+- [`docs/home-assistant.md`](docs/home-assistant.md) — HA snippets, token issuance, webhooks
+- [`docs/providers.md`](docs/providers.md) — adding a provider or integration
+- [`docs/runbook.md`](docs/runbook.md) — local-dev ops, backups, troubleshooting
+- [`docs/agent-pipeline.md`](docs/agent-pipeline.md) — multi-agent workflow plan
 
 ## License
 

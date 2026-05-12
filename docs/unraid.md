@@ -131,6 +131,22 @@ Migrations run on backend startup, so there's nothing extra to do unless a relea
 
 **Pin to a specific build**: edit the container's **Repository** field from `:preview` to `:sha-XXXXXXX` (any tag from a green deploy run). Apply.
 
+## When a deploy fails
+
+The unified image is built and pushed by `.github/workflows/deploy.yml`. If the workflow fails, **GHCR keeps serving the last successful build** — so Force Update on Unraid will silently pull stale code. The repo is wired to surface failures two ways:
+
+1. **A GitHub Issue is opened on every failure** with the failing commit SHA, a link to the workflow run logs, and the commit message. You'll get a notification via your normal GitHub issue subscription.
+2. **The README has a deploy badge** at the top — green when the latest run succeeded, red otherwise.
+
+The most common silent-failure mode I've hit: Next.js's production build (`pnpm build`) enforces some lint rules as **errors** that `pnpm typecheck` doesn't catch — `react/no-unescaped-entities` is the classic. To reproduce locally before pushing UI changes:
+
+```bash
+cd frontend
+NEXT_OUTPUT_MODE=export pnpm build
+```
+
+If that's clean, the GHA build will be clean too.
+
 ## Evolving the template
 
 `unraid/wellnessquest.xml` is the source of truth. When the slice gains a new env var:
