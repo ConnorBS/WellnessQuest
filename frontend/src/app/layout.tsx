@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   description: "Gamified personal wellness tracker.",
   manifest: "/manifest.webmanifest",
   applicationName: "WellnessQuest",
+  icons: {
+    icon: [{ url: "/icons/wq.svg", type: "image/svg+xml" }],
+    shortcut: "/icons/wq.svg",
+    apple: "/icons/wq.svg",
+  },
 };
 
 export const viewport: Viewport = {
