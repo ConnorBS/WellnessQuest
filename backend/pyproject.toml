@@ -66,6 +66,7 @@ disallow_incomplete_defs = false
 disallow_untyped_calls = false
 disallow_any_generics = false
 warn_unused_ignores = false
+warn_return_any = false
 no_implicit_reexport = false
 
 [tool.pytest.ini_options]

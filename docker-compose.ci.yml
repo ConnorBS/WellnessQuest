@@ -3,6 +3,18 @@ services:
     volumes: !reset []
     tmpfs:
       - /var/lib/postgresql/data
+    # The base healthcheck uses the unix socket, which becomes "ready" briefly
+    # while initdb runs CREATE DATABASE before postgres shuts down + restarts as
+    # PID 1. The backend then dials in during that gap and gets ECONNREFUSED.
+    # Force the check to use the TCP port the backend actually dials, and add a
+    # start_period so initdb's transient socket ready state never marks the
+    # service healthy.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U ${POSTGRES_USER:-wq} -d ${POSTGRES_DB:-wellnessquest}"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 15s
 
   backend:
     image: wq-backend:ci
