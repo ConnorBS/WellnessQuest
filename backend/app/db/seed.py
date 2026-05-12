@@ -11,8 +11,15 @@ from app.config import settings
 from app.db.session import async_session
 from app.models.goal import Goal
 from app.models.user import User
+from app.models.water_preset import WaterPreset
 from app.services.goal_service import DEFAULT_WATER_ML_PER_DAY
 from app.telemetry.logger import configure_logging, get_logger
+
+DEFAULT_WATER_PRESETS: tuple[tuple[str, int, str, str, int], ...] = (
+    ("Small cup", 125, "builtin", "glass-small", 0),
+    ("Tall cup", 250, "builtin", "glass-tall", 1),
+    ("Bottle", 500, "builtin", "water-bottle", 2),
+)
 
 log = get_logger(__name__)
 
@@ -62,6 +69,26 @@ async def _ensure_water_goal(db, user: User) -> None:
         log.info("seed_water_goal_created", user=user.email)
 
 
+async def _ensure_water_presets(db, user: User) -> None:
+    existing = (
+        await db.execute(select(WaterPreset).where(WaterPreset.user_id == user.id).limit(1))
+    ).scalar_one_or_none()
+    if existing is not None:
+        return
+    for label, ml, kind, key, sort in DEFAULT_WATER_PRESETS:
+        db.add(
+            WaterPreset(
+                user_id=user.id,
+                label=label,
+                volume_ml=ml,
+                icon_kind=kind,
+                icon_key=key,
+                sort_order=sort,
+            )
+        )
+    log.info("seed_water_presets_created", user=user.email, count=len(DEFAULT_WATER_PRESETS))
+
+
 async def run() -> None:
     configure_logging()
     async with async_session() as db:
@@ -81,8 +108,10 @@ async def run() -> None:
         )
         if admin is not None:
             await _ensure_water_goal(db, admin)
+            await _ensure_water_presets(db, admin)
         if partner is not None:
             await _ensure_water_goal(db, partner)
+            await _ensure_water_presets(db, partner)
         await db.commit()
         log.info("seed_done")
 

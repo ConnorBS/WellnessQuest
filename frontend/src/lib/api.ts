@@ -43,7 +43,9 @@ async function refreshTokens(): Promise<boolean> {
 
 async function rawFetch(path: string, opts: FetchOpts = {}): Promise<Response> {
   const headers = new Headers(opts.headers ?? {});
-  headers.set("Content-Type", "application/json");
+  if (!(opts.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
   if (!opts.skipAuth) {
     const access = getAccessToken();
     if (access) headers.set("Authorization", `Bearer ${access}`);
@@ -82,6 +84,24 @@ export async function apiPost<T>(
   body: unknown,
 ): Promise<T> {
   return apiFetch(path, schema, { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function apiPatch<T>(
+  path: string,
+  schema: ZodSchema<T>,
+  body: unknown,
+): Promise<T> {
+  return apiFetch(path, schema, { method: "PATCH", body: JSON.stringify(body) });
+}
+
+export async function apiUpload<T>(
+  path: string,
+  schema: ZodSchema<T>,
+  file: File,
+): Promise<T> {
+  const fd = new FormData();
+  fd.append("file", file);
+  return apiFetch(path, schema, { method: "POST", body: fd });
 }
 
 export async function apiDelete(path: string): Promise<void> {

@@ -6,11 +6,33 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.deps import current_user, get_db
 from app.models.user import User
 from app.schemas.water import WaterAddIn, WaterAddOut, WaterEntryOut, WaterTodayOut
+from app.schemas.water_preset import WaterGoalOut, WaterGoalUpdate
 from app.services import goal_service, water_service
 from app.services.time_utils import day_for_user
 from app.telemetry.recorder import audit
 
 router = APIRouter(prefix="/water", tags=["water"])
+
+
+@router.patch("/goal", response_model=WaterGoalOut)
+async def update_water_goal(
+    payload: WaterGoalUpdate,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> WaterGoalOut:
+    goal = await goal_service.get_or_create_default_water(db, user_id=user.id)
+    goal.target = payload.target_ml
+    await db.flush()
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="water.goal.update",
+        user_id=user.id,
+        target_type="goal",
+        target_id=str(goal.id),
+        meta={"target_ml": payload.target_ml},
+    )
+    return WaterGoalOut(target_ml=int(goal.target))
 
 
 @router.get("/today", response_model=WaterTodayOut)

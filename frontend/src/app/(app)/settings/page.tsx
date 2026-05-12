@@ -27,7 +27,8 @@ export default function SettingsPage() {
           <p style={{ color: "#94a3b8" }}>Loading...</p>
         )}
       </section>
-      <nav style={{ display: "flex", gap: 12 }}>
+      <nav style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <Link href="/settings/water">Water goal &amp; presets</Link>
         <Link href="/settings/tokens">Home Assistant tokens</Link>
         <Link href="/settings/integrations">Integrations</Link>
       </nav>

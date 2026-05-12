@@ -68,6 +68,7 @@ Plus pick passwords for the two seeded users (`ADMIN_PASSWORD`, `PARTNER_PASSWOR
    - **FERNET_KEY** — paste the generated value.
    - **ADMIN_PASSWORD** — your chosen admin password.
    - **PARTNER_PASSWORD** — your wife's chosen password.
+   - **App data** — host path for persistent data (uploaded preset icons today). Default `/mnt/user/appdata/wellnessquest/data` is usually right.
    - **CORS_ORIGINS**, **TZ** — defaults are fine if your LAN matches the defaults.
    - **App port** — defaults to 8000; change if it conflicts with another service.
 4. **Apply**. The image pulls from GHCR (~30 s), then the container runs `alembic upgrade head` and starts uvicorn. Watch the log until you see `Uvicorn running on 0.0.0.0:8000`. The healthcheck flips the badge to `healthy` after ~30 s.

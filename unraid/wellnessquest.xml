@@ -38,6 +38,8 @@ First-time secret generation:&#xD;
 
   <Config Name="App port" Target="8000" Default="8000" Mode="tcp" Description="Host port that maps to the unified container. Browse to http://&lt;unraid-ip&gt;:&lt;this-port&gt;/ to reach the PWA and /api/v1/* for the API." Type="Port" Display="always" Required="true" Mask="false">8000</Config>
 
+  <Config Name="App data" Target="/app/data" Default="/mnt/user/appdata/wellnessquest/data" Mode="rw" Description="Persistent app data — currently holds user-uploaded preset icons under /uploads. Map to a host path so icons survive container recreation." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/wellnessquest/data</Config>
+
   <Config Name="DATABASE_URL" Target="DATABASE_URL" Default="postgresql+asyncpg://wq:CHANGE_ME@192.168.1.10:5432/wellnessquest" Mode="" Description="SQLAlchemy async DSN to your Postgres 16. Format: postgresql+asyncpg://USER:PASSWORD@HOST:PORT/DBNAME. HOST can be an Unraid container name (only if you've placed both this container and your Postgres on the same custom docker network), an IP, or a hostname. The user must already exist and have rights to CREATE on DBNAME — Alembic builds the schema on startup. Example: postgresql+asyncpg://wq:hunter2@192.168.1.10:5432/wellnessquest" Type="Variable" Display="always" Required="true" Mask="true">postgresql+asyncpg://wq:CHANGE_ME@192.168.1.10:5432/wellnessquest</Config>
 
   <Config Name="JWT_SECRET" Target="JWT_SECRET" Default="" Mode="" Description="32+ byte random string used to sign access tokens. Generate with: python3 -c 'import secrets; print(secrets.token_urlsafe(32))'" Type="Variable" Display="always" Required="true" Mask="true"></Config>

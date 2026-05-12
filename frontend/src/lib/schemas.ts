@@ -50,3 +50,30 @@ export const WaterAddOutSchema = z.object({
   goal_met: z.boolean(),
 });
 export type WaterAddOut = z.infer<typeof WaterAddOutSchema>;
+
+export const IconKindSchema = z.enum(["builtin", "upload", "none"]);
+export type IconKind = z.infer<typeof IconKindSchema>;
+
+export const WaterPresetSchema = z.object({
+  id: z.string().uuid(),
+  label: z.string(),
+  volume_ml: z.number().int().positive(),
+  icon_kind: IconKindSchema,
+  icon_key: z.string().nullable(),
+  sort_order: z.number().int(),
+});
+export type WaterPreset = z.infer<typeof WaterPresetSchema>;
+
+export const WaterPresetListSchema = z.array(WaterPresetSchema);
+
+export const WaterGoalOutSchema = z.object({ target_ml: z.number().int().positive() });
+export type WaterGoalOut = z.infer<typeof WaterGoalOutSchema>;
+
+export const UploadOutSchema = z.object({
+  id: z.string().uuid(),
+  filename: z.string(),
+  content_type: z.string(),
+  size_bytes: z.number().int().nonnegative(),
+  url: z.string(),
+});
+export type UploadOut = z.infer<typeof UploadOutSchema>;

@@ -7,8 +7,10 @@ from app.api.v1 import (
     ha,
     integrations,
     telemetry,
+    uploads,
     users,
     water,
+    water_presets,
     webhooks,
 )
 
@@ -16,6 +18,8 @@ api_v1 = APIRouter(prefix="/api/v1")
 api_v1.include_router(auth.router)
 api_v1.include_router(users.router)
 api_v1.include_router(water.router)
+api_v1.include_router(water_presets.router)
+api_v1.include_router(uploads.router)
 api_v1.include_router(api_tokens.router)
 api_v1.include_router(integrations.router)
 api_v1.include_router(webhooks.router)

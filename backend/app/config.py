@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     tz: str = Field(default="UTC", alias="TZ")
 
+    uploads_dir: str = Field(default="/app/data/uploads", alias="WQ_UPLOADS_DIR")
+    upload_max_bytes: int = Field(default=5 * 1024 * 1024, alias="WQ_UPLOAD_MAX_BYTES")
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

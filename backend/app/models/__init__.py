@@ -8,8 +8,10 @@ from app.models.integration import Integration
 from app.models.invite import Invite
 from app.models.session import Session
 from app.models.streak import Streak
+from app.models.upload_file import UploadFile
 from app.models.user import User
 from app.models.water_entry import WaterEntry
+from app.models.water_preset import WaterPreset
 from app.models.webhook import WebhookDelivery, WebhookSubscription
 from app.models.xp_event import XpEvent
 
@@ -22,8 +24,10 @@ __all__ = [
     "Invite",
     "Session",
     "Streak",
+    "UploadFile",
     "User",
     "WaterEntry",
+    "WaterPreset",
     "WebhookDelivery",
     "WebhookSubscription",
     "XpEvent",

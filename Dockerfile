@@ -43,7 +43,10 @@ RUN pip install --upgrade pip && pip install .
 FROM base AS prod
 COPY backend/ .
 COPY --from=frontend-builder /build/out /app/static
-ENV WQ_STATIC_DIR=/app/static
+RUN mkdir -p /app/data/uploads && chmod 755 /app/data /app/data/uploads
+ENV WQ_STATIC_DIR=/app/static \
+    WQ_UPLOADS_DIR=/app/data/uploads
+VOLUME ["/app/data"]
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD curl -fsS http://localhost:8000/api/v1/healthz || exit 1

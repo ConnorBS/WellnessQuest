@@ -1,10 +1,14 @@
 "use client";
 
+import Link from "next/link";
+
+import { useWaterPresets } from "@/hooks/useWaterPresets";
 import { useWaterToday } from "@/hooks/useWaterToday";
 import { QuickAddWaterButton } from "@/components/QuickAddWaterButton";
 
 export function WaterCard() {
   const { data, isLoading } = useWaterToday();
+  const presets = useWaterPresets();
   const total = data?.total_ml ?? 0;
   const goal = data?.goal_ml ?? 2000;
   const pct = goal ? Math.min(100, Math.round((total / goal) * 100)) : 0;
@@ -24,11 +28,20 @@ export function WaterCard() {
           data-testid="water-progress"
         />
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <QuickAddWaterButton ml={250} />
-        <QuickAddWaterButton ml={500} />
-        <QuickAddWaterButton ml={750} />
-      </div>
+      {presets.data && presets.data.length > 0 ? (
+        <div
+          className="grid gap-2"
+          style={{ gridTemplateColumns: `repeat(${Math.min(presets.data.length, 4)}, minmax(0, 1fr))` }}
+        >
+          {presets.data.map((p) => (
+            <QuickAddWaterButton key={p.id} preset={p} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-slate-400">
+          No quick-add buttons yet — <Link href="/settings/water" style={{ color: "#10b981" }}>add some in settings</Link>.
+        </p>
+      )}
       {isLoading && <p className="mt-3 text-sm text-slate-400">Loading...</p>}
     </section>
   );
