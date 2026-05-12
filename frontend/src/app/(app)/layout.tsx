@@ -19,17 +19,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px" }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 12, borderBottom: "1px solid #1e293b" }}>
-        <Link href="/dashboard" style={{ fontWeight: 600 }}>
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "12px" }}>
+      <header
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          paddingBottom: 12,
+          borderBottom: "1px solid #1e293b",
+        }}
+      >
+        <Link href="/dashboard" style={{ fontWeight: 600, fontSize: 16 }}>
           WellnessQuest
         </Link>
-        <nav style={{ display: "flex", gap: 16, fontSize: 14 }}>
+        <nav
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 14,
+            fontSize: 14,
+            color: "#cbd5e1",
+          }}
+        >
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/water">Water</Link>
           <Link href="/activity">Activity</Link>
           <Link href="/settings">Settings</Link>
-          <button onClick={onLogout} style={{ background: "transparent", color: "#94a3b8", border: 0 }}>
+          <button onClick={onLogout} style={{ color: "#94a3b8" }}>
             Sign out
           </button>
         </nav>

@@ -22,18 +22,20 @@ export function QuickAddActivityButton({ preset, minutes, label }: Props) {
       type="button"
       onClick={() => add.mutate({ minutes: duration, client_id: uuidv4() })}
       disabled={add.isPending || !duration}
-      className="flex flex-col items-center gap-1 rounded-md border border-slate-700 px-3 py-3 hover:bg-slate-800 disabled:opacity-50"
+      className="wq-tap flex flex-col items-center justify-center gap-1 rounded-md border border-slate-700 px-2 py-3 text-slate-200 hover:bg-slate-800 active:bg-slate-800 disabled:opacity-50"
       data-testid={`quick-add-activity-${duration}`}
     >
       {preset && (
-        <span style={{ color: "#cbd5e1" }}>
-          <PresetIcon preset={preset} size={32} />
+        <span style={{ color: "#cbd5e1", lineHeight: 0 }}>
+          <PresetIcon preset={preset} size={28} />
         </span>
       )}
       {displayLabel && (
-        <span style={{ fontSize: 12, color: "#cbd5e1" }}>{displayLabel}</span>
+        <span style={{ fontSize: 12, color: "#cbd5e1", textAlign: "center", lineHeight: 1.15 }}>
+          {displayLabel}
+        </span>
       )}
-      <span style={{ fontSize: 14, fontWeight: 500 }}>+{duration} min</span>
+      <span style={{ fontSize: 13, fontWeight: 600 }}>+{duration} min</span>
     </button>
   );
 }
