@@ -119,3 +119,42 @@ export const ActivityPresetListSchema = z.array(ActivityPresetSchema);
 
 export const ActivityGoalOutSchema = z.object({ target_minutes: z.number().int().positive() });
 export type ActivityGoalOut = z.infer<typeof ActivityGoalOutSchema>;
+
+export const CadenceKindSchema = z.enum(["daily", "weekly", "interval"]);
+export type CadenceKind = z.infer<typeof CadenceKindSchema>;
+
+export const HabitStatusKindSchema = z.enum(["done", "ok", "due_today", "overdue"]);
+export type HabitStatusKind = z.infer<typeof HabitStatusKindSchema>;
+
+export const HabitSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  icon_kind: IconKindSchema,
+  icon_key: z.string().nullable(),
+  cadence_kind: CadenceKindSchema,
+  weekly_target: z.number().int().nullable(),
+  interval_days: z.number().int().nullable(),
+  sort_order: z.number().int(),
+});
+export type Habit = z.infer<typeof HabitSchema>;
+
+export const HabitStatusSchema = z.object({
+  status: HabitStatusKindSchema,
+  done_today: z.boolean(),
+  last_checked_on: z.string().nullable(),
+  period_count: z.number().int().nullable().optional(),
+  period_target: z.number().int().nullable().optional(),
+  period_ends_on: z.string().nullable().optional(),
+  days_since_last: z.number().int().nullable().optional(),
+  days_until_due: z.number().int().nullable().optional(),
+  streak: z.number().int(),
+});
+export type HabitStatus = z.infer<typeof HabitStatusSchema>;
+
+export const HabitWithStatusSchema = z.object({
+  habit: HabitSchema,
+  status: HabitStatusSchema,
+});
+export type HabitWithStatus = z.infer<typeof HabitWithStatusSchema>;
+
+export const HabitListSchema = z.array(HabitWithStatusSchema);

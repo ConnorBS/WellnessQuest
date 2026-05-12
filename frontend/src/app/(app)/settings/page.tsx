@@ -30,6 +30,7 @@ export default function SettingsPage() {
       <nav style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <Link href="/settings/water">Water goal &amp; presets</Link>
         <Link href="/settings/activity">Activity goal &amp; presets</Link>
+        <Link href="/settings/habits">Habits</Link>
         <Link href="/settings/tokens">Home Assistant tokens</Link>
         <Link href="/settings/integrations">Integrations</Link>
       </nav>

@@ -6,6 +6,8 @@ from app.models.api_token import ApiToken
 from app.models.audit_log import AuditLog
 from app.models.error_log import ErrorLog
 from app.models.goal import Goal
+from app.models.habit import Habit
+from app.models.habit_checkin import HabitCheckin
 from app.models.integration import Integration
 from app.models.invite import Invite
 from app.models.session import Session
@@ -24,6 +26,8 @@ __all__ = [
     "AuditLog",
     "ErrorLog",
     "Goal",
+    "Habit",
+    "HabitCheckin",
     "Integration",
     "Invite",
     "Session",

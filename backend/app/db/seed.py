@@ -11,6 +11,7 @@ from app.config import settings
 from app.db.session import async_session
 from app.models.activity_preset import ActivityPreset
 from app.models.goal import Goal
+from app.models.habit import Habit
 from app.models.user import User
 from app.models.water_preset import WaterPreset
 from app.services.goal_service import DEFAULT_ACTIVE_MINUTES_PER_DAY, DEFAULT_WATER_ML_PER_DAY
@@ -26,6 +27,13 @@ DEFAULT_ACTIVITY_PRESETS: tuple[tuple[str, int, str, str, int], ...] = (
     ("Stretch", 5, "builtin", "stretch", 0),
     ("Walk", 15, "builtin", "walk", 1),
     ("Cardio", 30, "builtin", "cardio", 2),
+)
+
+# (name, icon_key, cadence_kind, weekly_target, interval_days, sort_order)
+DEFAULT_HABITS: tuple[tuple[str, str, str, int | None, int | None, int], ...] = (
+    ("Read 10 minutes", "droplet", "daily", None, None, 0),
+    ("Workout", "dumbbell", "weekly", 3, None, 1),
+    ("Take vitamins", "droplet", "interval", None, 2, 2),
 )
 
 log = get_logger(__name__)
@@ -132,6 +140,23 @@ async def _seed_default_activity_presets(db, user: User) -> None:
     log.info("seed_activity_presets_created", user=user.email, count=len(DEFAULT_ACTIVITY_PRESETS))
 
 
+async def _seed_default_habits(db, user: User) -> None:
+    for name, icon_key, cadence, weekly_target, interval_days, sort in DEFAULT_HABITS:
+        db.add(
+            Habit(
+                user_id=user.id,
+                name=name,
+                icon_kind="builtin",
+                icon_key=icon_key,
+                cadence_kind=cadence,
+                weekly_target=weekly_target,
+                interval_days=interval_days,
+                sort_order=sort,
+            )
+        )
+    log.info("seed_habits_created", user=user.email, count=len(DEFAULT_HABITS))
+
+
 async def run() -> None:
     configure_logging()
     async with async_session() as db:
@@ -155,12 +180,14 @@ async def run() -> None:
             if admin_created:
                 await _seed_default_water_presets(db, admin)
                 await _seed_default_activity_presets(db, admin)
+                await _seed_default_habits(db, admin)
         if partner is not None:
             await _ensure_water_goal(db, partner)
             await _ensure_activity_goal(db, partner)
             if partner_created:
                 await _seed_default_water_presets(db, partner)
                 await _seed_default_activity_presets(db, partner)
+                await _seed_default_habits(db, partner)
         await db.commit()
         log.info("seed_done")
 

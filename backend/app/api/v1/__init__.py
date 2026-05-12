@@ -7,6 +7,7 @@ from app.api.v1 import (
     api_tokens,
     auth,
     ha,
+    habits,
     integrations,
     telemetry,
     uploads,
@@ -23,6 +24,7 @@ api_v1.include_router(water.router)
 api_v1.include_router(water_presets.router)
 api_v1.include_router(activity.router)
 api_v1.include_router(activity_presets.router)
+api_v1.include_router(habits.router)
 api_v1.include_router(uploads.router)
 api_v1.include_router(api_tokens.router)
 api_v1.include_router(integrations.router)
