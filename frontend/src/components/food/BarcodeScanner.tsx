@@ -30,8 +30,22 @@ interface Props {
 }
 
 export function BarcodeScanner({ onDetected, onClose }: Props) {
-  const supported = typeof window !== "undefined" && "BarcodeDetector" in window;
-  const [mode, setMode] = useState<"camera" | "manual">(supported ? "camera" : "manual");
+  // Camera scanning needs two things from the browser:
+  //   1. A secure context (HTTPS, localhost, or 127.0.0.1). Over plain HTTP on
+  //      a LAN IP, the browser silently strips MediaDevices and BarcodeDetector.
+  //   2. The BarcodeDetector API itself, which Chromium-based browsers (Chrome
+  //      Android, Samsung Internet, Edge) expose only inside a secure context.
+  // If either is missing, fall back to typed entry and explain *why* — pointing
+  // the finger at HTTPS first since that's the most common cause and the only
+  // one the user can actually fix.
+  const isSecure =
+    typeof window !== "undefined" && window.isSecureContext === true;
+  const hasApi =
+    typeof window !== "undefined" && "BarcodeDetector" in window;
+  const cameraAvailable = isSecure && hasApi;
+  const [mode, setMode] = useState<"camera" | "manual">(
+    cameraAvailable ? "camera" : "manual",
+  );
   const [typed, setTyped] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -99,7 +113,7 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
           </button>
         </header>
 
-        {supported && (
+        {cameraAvailable && (
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
             <button
               type="button"
@@ -118,14 +132,47 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
           </div>
         )}
 
-        {mode === "camera" && supported ? (
+        {mode === "camera" && cameraAvailable ? (
           <CameraScanner onDetected={onDetected} onError={setError} />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {!supported && (
-              <p style={{ fontSize: 12, color: "#94a3b8" }}>
-                Your browser doesn&apos;t support live barcode scanning. Type it from the package.
-              </p>
+            {!cameraAvailable && (
+              <div
+                style={{
+                  padding: 10,
+                  border: "1px solid #1e293b",
+                  borderRadius: 6,
+                  background: "#0b1220",
+                  fontSize: 12,
+                  color: "#cbd5e1",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                }}
+              >
+                {!isSecure ? (
+                  <>
+                    <strong style={{ color: "#fcd34d" }}>HTTPS required for live scan.</strong>
+                    <span style={{ color: "#94a3b8" }}>
+                      Browsers only expose the camera over HTTPS (or
+                      <code style={{ margin: "0 4px" }}>localhost</code>). You&apos;re on plain
+                      HTTP, so live scanning is blocked at the browser layer regardless of
+                      device. Put the app behind Nginx Proxy Manager / Tailscale HTTPS / SWAG
+                      and open it over <code>https://</code> to enable the camera.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <strong style={{ color: "#fcd34d" }}>
+                      This browser doesn&apos;t expose BarcodeDetector.
+                    </strong>
+                    <span style={{ color: "#94a3b8" }}>
+                      Chrome / Edge / Samsung Internet on Android support it. Firefox and
+                      Safari don&apos;t yet. Type the barcode from the package below.
+                    </span>
+                  </>
+                )}
+              </div>
             )}
             <input
               type="text"
