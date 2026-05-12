@@ -15,7 +15,7 @@ interface MePatch {
 export function useUpdateMe() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: MePatch) => apiPatch("/users/me", MeSchema, patch),
+    mutationFn: (patch: MePatch) => apiPatch("/me", MeSchema, patch),
     onSuccess: (data) => {
       qc.setQueryData(["me"], data);
       qc.invalidateQueries({ queryKey: ["weight"] });
