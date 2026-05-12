@@ -262,6 +262,9 @@ export type FoodPreset = z.infer<typeof FoodPresetSchema>;
 
 export const FoodPresetListSchema = z.array(FoodPresetSchema);
 
+export const FoodUnitSchema = z.enum(["g", "ml"]);
+export type FoodUnit = z.infer<typeof FoodUnitSchema>;
+
 export const FoodSearchHitSchema = z.object({
   provider: z.string(),
   provider_id: z.string(),
@@ -269,10 +272,15 @@ export const FoodSearchHitSchema = z.object({
   brand: z.string().nullable().optional(),
   serving_g: z.number().nullable().optional(),
   serving_label: z.string().nullable().optional(),
+  unit: FoodUnitSchema.nullable().optional(),
   kcal_per_100g: z.number().nullable().optional(),
   protein_per_100g: z.number().nullable().optional(),
   carbs_per_100g: z.number().nullable().optional(),
   fat_per_100g: z.number().nullable().optional(),
+  kcal_per_100ml: z.number().nullable().optional(),
+  protein_per_100ml: z.number().nullable().optional(),
+  carbs_per_100ml: z.number().nullable().optional(),
+  fat_per_100ml: z.number().nullable().optional(),
 });
 export type FoodSearchHit = z.infer<typeof FoodSearchHitSchema>;
 

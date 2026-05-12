@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 MealType = Literal["breakfast", "lunch", "dinner", "snack"]
 IconKind = Literal["builtin", "upload", "none"]
+FoodUnit = Literal["g", "ml"]
 
 
 class FoodAddIn(BaseModel):
@@ -112,10 +113,17 @@ class FoodSearchHit(BaseModel):
     brand: str | None = None
     serving_g: float | None = None
     serving_label: str | None = None
+    # "g" or "ml" if known. The frontend uses this to pick the unit picker
+    # vocabulary (mass vs volume) and the matching per-100 nutriments.
+    unit: Literal["g", "ml"] | None = None
     kcal_per_100g: float | None = None
     protein_per_100g: float | None = None
     carbs_per_100g: float | None = None
     fat_per_100g: float | None = None
+    kcal_per_100ml: float | None = None
+    protein_per_100ml: float | None = None
+    carbs_per_100ml: float | None = None
+    fat_per_100ml: float | None = None
 
 
 class FoodSearchOut(BaseModel):

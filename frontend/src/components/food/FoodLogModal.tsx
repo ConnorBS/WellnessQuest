@@ -7,10 +7,20 @@ import { useFoodBarcode } from "@/hooks/useFoodBarcode";
 import { useCreateFoodPreset } from "@/hooks/useFoodPresets";
 import { useFoodSearch } from "@/hooks/useFoodSearch";
 import { ApiError } from "@/lib/api";
-import type { FoodSearchHit, MealType } from "@/lib/schemas";
+import type { FoodSearchHit, FoodUnit, MealType } from "@/lib/schemas";
+import {
+  PORTION_UNIT_LABELS,
+  type PortionUnit,
+  portionUnitsFor,
+  toNative,
+} from "@/lib/units";
 import { uuidv4 } from "@/lib/uuid";
 
 import { BarcodeScanner } from "@/components/food/BarcodeScanner";
+
+// What unit set to show in the picker when OFF couldn't tell us the product's
+// native unit. We default to solid (g/oz) — most packaged foods are mass-labelled.
+const DEFAULT_NATIVE_UNIT: FoodUnit = "g";
 
 function searchErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
@@ -48,7 +58,8 @@ export function FoodLogModal({ onClose }: Props) {
   const [mode, setMode] = useState<Mode>("search");
   const [meal, setMeal] = useState<MealType>(inferDefaultMeal());
   const [selected, setSelected] = useState<FoodSearchHit | null>(null);
-  const [grams, setGrams] = useState<number>(100);
+  const [amount, setAmount] = useState<number>(100);
+  const [amountUnit, setAmountUnit] = useState<PortionUnit>("g");
   const [manualName, setManualName] = useState("");
   const [manualKcal, setManualKcal] = useState<number | "">("");
   const [manualProtein, setManualProtein] = useState<number | "">("");
@@ -84,14 +95,15 @@ export function FoodLogModal({ onClose }: Props) {
 
   function selectHit(hit: FoodSearchHit) {
     setSelected(hit);
-    // Default the portion to the product's serving size when OFF gives us one;
-    // fall back to 100 g (which is what the per-100g nutriments are normalised
-    // against). Without this, "1 cup of milk" defaults to 100 g and badly
-    // underestimates the entry.
+    // Seed the input in the product's native unit at its serving size, falling
+    // back to 100 (which is what the per-100 nutriments are normalised against).
+    // Liquids get mL/cup-style units; solids get g/oz.
+    const native: FoodUnit = hit.unit ?? DEFAULT_NATIVE_UNIT;
+    setAmountUnit(native);
     if (hit.serving_g && hit.serving_g > 0) {
-      setGrams(Math.round(hit.serving_g));
+      setAmount(Math.round(hit.serving_g));
     } else {
-      setGrams(100);
+      setAmount(100);
     }
   }
 
@@ -105,19 +117,41 @@ export function FoodLogModal({ onClose }: Props) {
 
   const computed = useMemo(() => {
     if (!selected) return null;
-    const factor = grams / 100;
+    const native: FoodUnit = selected.unit ?? DEFAULT_NATIVE_UNIT;
+    // Convert the user-entered amount to the product's native unit (g for solids,
+    // mL for liquids). Returns null when the user picked a unit that can't be
+    // converted without density (e.g. cup of cereal) — we treat the value as
+    // already-in-native-units in that case, so the math still produces a number.
+    const inNative = toNative(amount, amountUnit, native) ?? amount;
+    const factor = inNative / 100;
+    // Liquids prefer per-100ml nutriments when OFF exposes them; solids use
+    // per-100g. Falling back across mass<->volume is fine if the other set is
+    // missing — water-density approximation is good enough for v1.
+    const kcalPer100 =
+      native === "ml"
+        ? selected.kcal_per_100ml ?? selected.kcal_per_100g
+        : selected.kcal_per_100g ?? selected.kcal_per_100ml;
+    const pPer100 =
+      native === "ml"
+        ? selected.protein_per_100ml ?? selected.protein_per_100g
+        : selected.protein_per_100g ?? selected.protein_per_100ml;
+    const cPer100 =
+      native === "ml"
+        ? selected.carbs_per_100ml ?? selected.carbs_per_100g
+        : selected.carbs_per_100g ?? selected.carbs_per_100ml;
+    const fPer100 =
+      native === "ml"
+        ? selected.fat_per_100ml ?? selected.fat_per_100g
+        : selected.fat_per_100g ?? selected.fat_per_100ml;
     const scale = (v: number | null | undefined) =>
       v == null ? null : Math.round(v * factor * 10) / 10;
-    const kcal = selected.kcal_per_100g != null
-      ? Math.round(selected.kcal_per_100g * factor)
-      : null;
     return {
-      kcal,
-      protein_g: scale(selected.protein_per_100g),
-      carbs_g: scale(selected.carbs_per_100g),
-      fat_g: scale(selected.fat_per_100g),
+      kcal: kcalPer100 != null ? Math.round(kcalPer100 * factor) : null,
+      protein_g: scale(pPer100),
+      carbs_g: scale(cPer100),
+      fat_g: scale(fPer100),
     };
-  }, [selected, grams]);
+  }, [selected, amount, amountUnit]);
 
   function logSelected() {
     if (!selected || computed?.kcal == null) return;
@@ -409,40 +443,85 @@ export function FoodLogModal({ onClose }: Props) {
               <p style={{ fontSize: 13, color: "#94a3b8" }}>No matches.</p>
             ) : null}
 
-            {selected ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <label>
-                  <span
-                    style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}
-                  >
-                    Grams eaten
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={5000}
-                    value={grams}
-                    onChange={(e) => setGrams(Math.max(1, Number(e.target.value) || 0))}
-                    style={inputStyle}
-                  />
-                </label>
-                {selected.serving_g ? (
-                  <button
-                    type="button"
-                    onClick={() => setGrams(Math.round(selected.serving_g ?? grams))}
-                    style={{
-                      alignSelf: "start",
-                      fontSize: 12,
-                      color: "#10b981",
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    Use 1 serving ({selected.serving_label ?? `${selected.serving_g} g`})
-                  </button>
-                ) : null}
+            {selected
+              ? (() => {
+                  const native: FoodUnit = selected.unit ?? DEFAULT_NATIVE_UNIT;
+                  const unitChoices = portionUnitsFor(native);
+                  const nativeLabel = PORTION_UNIT_LABELS[native];
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <label>
+                        <span
+                          style={{
+                            display: "block",
+                            fontSize: 12,
+                            color: "#94a3b8",
+                            marginBottom: 4,
+                          }}
+                        >
+                          Amount eaten
+                        </span>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            type="number"
+                            min={0.1}
+                            step={amountUnit === "g" || amountUnit === "ml" ? 1 : 0.25}
+                            max={amountUnit === "g" || amountUnit === "ml" ? 5000 : 50}
+                            value={amount}
+                            onChange={(e) =>
+                              setAmount(Math.max(0, Number(e.target.value) || 0))
+                            }
+                            style={{ ...inputStyle, flex: 1 }}
+                          />
+                          <select
+                            value={amountUnit}
+                            onChange={(e) => {
+                              const next = e.target.value as PortionUnit;
+                              setAmountUnit(next);
+                            }}
+                            style={{ ...inputStyle, width: 100 }}
+                          >
+                            {unitChoices.map((u) => (
+                              <option key={u} value={u}>
+                                {PORTION_UNIT_LABELS[u]}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: "#64748b",
+                            display: "block",
+                            marginTop: 4,
+                          }}
+                        >
+                          Nutrition data is per 100 {nativeLabel} for this product.
+                        </span>
+                      </label>
+                      {selected.serving_g ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAmountUnit(native);
+                            setAmount(Math.round(selected.serving_g ?? amount));
+                          }}
+                          style={{
+                            alignSelf: "start",
+                            fontSize: 12,
+                            color: "#10b981",
+                            background: "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: 0,
+                          }}
+                        >
+                          Use 1 serving (
+                          {selected.serving_label ??
+                            `${selected.serving_g} ${nativeLabel}`}
+                          )
+                        </button>
+                      ) : null}
                 <div style={{ fontSize: 13, color: "#cbd5e1" }}>
                   {computed?.kcal != null
                     ? `${computed.kcal} kcal · P ${fmt(computed.protein_g)} · C ${fmt(
@@ -460,7 +539,9 @@ export function FoodLogModal({ onClose }: Props) {
                   {addFood.isPending ? "Logging…" : "Log it"}
                 </button>
               </div>
-            ) : null}
+                  );
+                })()
+              : null}
           </>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+import re
+from typing import Any, Literal
 
 import httpx
 from pydantic import BaseModel
@@ -21,7 +22,12 @@ class OpenFoodFactsConfig(BaseModel):
 
 
 # Each product detail we care about, regardless of which OFF endpoint we hit.
-_FIELDS = "code,product_name,generic_name,brands,serving_size,serving_quantity,nutriments"
+_FIELDS = (
+    "code,product_name,generic_name,brands,"
+    "serving_size,serving_quantity,serving_quantity_unit,"
+    "product_quantity_unit,quantity,"
+    "nutriments"
+)
 
 
 @food_providers.register
@@ -119,6 +125,9 @@ class OpenFoodFactsProvider(FoodProvider):
                 return None
 
         serving_size = p.get("serving_size")
+        kcal_g = _opt_f("energy-kcal_100g")
+        kcal_ml = _opt_f("energy-kcal_100ml")
+        unit = _detect_unit(p, has_ml_nutriments=kcal_ml is not None)
         return FoodItem(
             source="openfoodfacts",
             source_id=str(p.get("code", "")),
@@ -130,11 +139,47 @@ class OpenFoodFactsProvider(FoodProvider):
                 if isinstance(serving_size, str) and serving_size.strip()
                 else None
             ),
-            kcal_per_100g=_opt_f("energy-kcal_100g"),
-            protein_g=_opt_f("proteins_100g"),
-            carbs_g=_opt_f("carbohydrates_100g"),
-            fat_g=_opt_f("fat_100g"),
+            unit=unit,
+            kcal_per_100g=kcal_g,
+            protein_per_100g=_opt_f("proteins_100g"),
+            carbs_per_100g=_opt_f("carbohydrates_100g"),
+            fat_per_100g=_opt_f("fat_100g"),
+            kcal_per_100ml=kcal_ml,
+            protein_per_100ml=_opt_f("proteins_100ml"),
+            carbs_per_100ml=_opt_f("carbohydrates_100ml"),
+            fat_per_100ml=_opt_f("fat_100ml"),
         )
+
+
+def _detect_unit(
+    p: dict[str, Any], *, has_ml_nutriments: bool
+) -> Literal["g", "ml"] | None:
+    """Decide the product's natural measurement unit.
+
+    Priority:
+      1. serving_quantity_unit ("g" / "ml") — explicit from OFF
+      2. product_quantity_unit — package-level unit, also explicit
+      3. per-100ml nutriments present — strong signal it's a liquid
+      4. "ml" / "L" appearing in the serving_size label
+    Returns None when we genuinely can't tell, so the frontend can fall back
+    to a safe default rather than guess wrong.
+    """
+    for key in ("serving_quantity_unit", "product_quantity_unit"):
+        raw = p.get(key)
+        if isinstance(raw, str):
+            lowered = raw.strip().lower()
+            if lowered in ("g", "kg"):
+                return "g"
+            if lowered in ("ml", "l", "cl"):
+                return "ml"
+    if has_ml_nutriments:
+        return "ml"
+    label = p.get("serving_size")
+    if isinstance(label, str) and re.search(r"\b(ml|cl|l)\b", label.lower()):
+        return "ml"
+    if isinstance(label, str) and re.search(r"\b(g|kg|oz|lb)\b", label.lower()):
+        return "g"
+    return None
 
 
 async def _get_json_with_retry(
