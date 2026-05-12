@@ -1,6 +1,6 @@
 "use client";
 
-import { BuiltinIcon } from "@/lib/builtin-icons";
+import { MdiIcon } from "@/components/icons/MdiIcon";
 import type { IconKind } from "@/lib/schemas";
 
 interface IconCarrier {
@@ -21,7 +21,7 @@ export function PresetIcon({ preset, size = 28 }: { preset: IconCarrier; size?: 
     );
   }
   if (preset.icon_kind === "builtin" && preset.icon_key) {
-    return <BuiltinIcon name={preset.icon_key} size={size} />;
+    return <MdiIcon name={preset.icon_key} size={size} />;
   }
-  return <BuiltinIcon name="droplet" size={size} />;
+  return <MdiIcon name="circle-outline" size={size} />;
 }

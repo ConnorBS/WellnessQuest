@@ -2,11 +2,10 @@
 
 import { FormEvent, useState } from "react";
 
-import { useUploadIcon } from "@/hooks/useUploadIcon";
-import { BUILTIN_ICONS, BuiltinIcon } from "@/lib/builtin-icons";
-import type { CadenceKind, Habit, IconKind } from "@/lib/schemas";
-
+import { IconPicker } from "@/components/icons/IconPicker";
 import { PresetIcon } from "@/components/presets/PresetIcon";
+import { useUploadIcon } from "@/hooks/useUploadIcon";
+import type { CadenceKind, Habit, IconKind } from "@/lib/schemas";
 
 interface Props {
   initial?: Habit;
@@ -43,7 +42,7 @@ export function HabitForm({ initial, onSubmit, onCancel, busy }: Props) {
   const [weeklyTarget, setWeeklyTarget] = useState<number>(initial?.weekly_target ?? 3);
   const [intervalDays, setIntervalDays] = useState<number>(initial?.interval_days ?? 2);
   const [iconKind, setIconKind] = useState<IconKind>(initial?.icon_kind ?? "builtin");
-  const [iconKey, setIconKey] = useState<string | null>(initial?.icon_key ?? "droplet");
+  const [iconKey, setIconKey] = useState<string | null>(initial?.icon_key ?? "check-circle");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const upload = useUploadIcon();
 
@@ -149,43 +148,16 @@ export function HabitForm({ initial, onSubmit, onCancel, busy }: Props) {
                 checked={iconKind === k}
                 onChange={() => {
                   setIconKind(k);
-                  if (k === "builtin" && !iconKey) setIconKey("droplet");
+                  if (k === "builtin" && !iconKey) setIconKey("check-circle");
                   if (k === "none") setIconKey(null);
                 }}
               />
-              {k === "builtin" ? "Pick from set" : k === "upload" ? "Upload" : "None"}
+              {k === "builtin" ? "Pick from MDI" : k === "upload" ? "Upload" : "None"}
             </label>
           ))}
         </div>
 
-        {iconKind === "builtin" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
-            {BUILTIN_ICONS.map((icon) => {
-              const selected = iconKey === icon.key;
-              return (
-                <button
-                  key={icon.key}
-                  type="button"
-                  onClick={() => setIconKey(icon.key)}
-                  title={icon.label}
-                  style={{
-                    aspectRatio: "1",
-                    padding: 6,
-                    background: selected ? "#1e293b" : "transparent",
-                    border: selected ? "2px solid #10b981" : "1px solid #334155",
-                    borderRadius: 6,
-                    color: "inherit",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <BuiltinIcon name={icon.key} size={28} />
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {iconKind === "builtin" && <IconPicker value={iconKey} onChange={setIconKey} />}
 
         {iconKind === "upload" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
