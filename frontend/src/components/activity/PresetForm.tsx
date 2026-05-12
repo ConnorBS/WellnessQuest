@@ -44,6 +44,7 @@ const secondaryButtonStyle: React.CSSProperties = {
 export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
   const [label, setLabel] = useState(initial?.label ?? "");
   const [minutes, setMinutes] = useState<number>(initial?.minutes ?? 30);
+  const [exerciseType, setExerciseType] = useState<string>(initial?.exercise_type ?? "");
   const [iconKind, setIconKind] = useState<IconKind>(initial?.icon_kind ?? "builtin");
   const [iconKey, setIconKey] = useState<string | null>(initial?.icon_key ?? "walk");
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -62,9 +63,11 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    const trimmedType = exerciseType.trim();
     onSubmit({
       label: label.trim(),
       minutes: Math.max(1, Math.min(1440, Math.round(minutes))),
+      exercise_type: trimmedType ? trimmedType.slice(0, 60) : null,
       icon_kind: iconKind,
       icon_key: iconKind === "none" ? null : iconKey,
       sort_order: initial?.sort_order ?? 0,
@@ -95,6 +98,33 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
           onChange={(e) => setMinutes(Number(e.target.value) || 0)}
           style={inputStyle}
         />
+      </label>
+
+      <label>
+        Exercise type <span style={{ color: "#64748b", fontWeight: "normal", fontSize: 12 }}>(optional)</span>
+        <input
+          type="text"
+          maxLength={60}
+          value={exerciseType}
+          onChange={(e) => setExerciseType(e.target.value)}
+          placeholder="e.g. Running"
+          list="activity-type-suggestions"
+          style={inputStyle}
+        />
+        <datalist id="activity-type-suggestions">
+          <option value="Walking" />
+          <option value="Running" />
+          <option value="Cycling" />
+          <option value="Swimming" />
+          <option value="Hiking" />
+          <option value="Yoga" />
+          <option value="Pilates" />
+          <option value="Weights" />
+          <option value="Cardio" />
+          <option value="Stretching" />
+          <option value="HIIT" />
+          <option value="Sports" />
+        </datalist>
       </label>
 
       <div>

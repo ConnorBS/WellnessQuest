@@ -67,6 +67,7 @@ async def add(
     source: str,
     client_id: str | None,
     occurred_at: datetime | None,
+    exercise_type: str | None = None,
 ) -> ActivityAddResult:
     today = day_for_user(user.timezone)
     before_total = await total_today(db, user=user)
@@ -78,6 +79,7 @@ async def add(
         user_id=user.id,
         minutes=minutes,
         source=source,
+        exercise_type=(exercise_type.strip() or None) if exercise_type else None,
         occurred_at=occurred_at or utcnow(),
         client_id=client_id,
     )

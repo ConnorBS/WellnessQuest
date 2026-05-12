@@ -21,6 +21,7 @@ def _to_out(p: ActivityPreset) -> ActivityPresetOut:
         id=p.id,
         label=p.label,
         minutes=p.minutes,
+        exercise_type=p.exercise_type,
         icon_kind=p.icon_kind,  # type: ignore[arg-type]
         icon_key=p.icon_key,
         sort_order=p.sort_order,
@@ -64,6 +65,7 @@ async def create_preset(
         user_id=user.id,
         label=payload.label,
         minutes=payload.minutes,
+        exercise_type=(payload.exercise_type.strip() or None) if payload.exercise_type else None,
         icon_kind=payload.icon_kind,
         icon_key=payload.icon_key,
         sort_order=payload.sort_order,
@@ -92,6 +94,9 @@ async def update_preset(
     preset = await _get_owned(db, user=user, preset_id=preset_id)
     preset.label = payload.label
     preset.minutes = payload.minutes
+    preset.exercise_type = (
+        payload.exercise_type.strip() if payload.exercise_type and payload.exercise_type.strip() else None
+    )
     preset.icon_kind = payload.icon_kind
     preset.icon_key = payload.icon_key
     preset.sort_order = payload.sort_order

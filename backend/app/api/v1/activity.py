@@ -61,6 +61,7 @@ async def activity_today(
                 source=e.source,
                 occurred_at=e.occurred_at,
                 client_id=e.client_id,
+                exercise_type=e.exercise_type,
             )
             for e in entries
         ],
@@ -80,6 +81,7 @@ async def add_activity(
         source="pwa",
         client_id=payload.client_id,
         occurred_at=payload.occurred_at,
+        exercise_type=payload.exercise_type,
     )
     await audit(
         db,
@@ -88,7 +90,12 @@ async def add_activity(
         user_id=user.id,
         target_type="activity_entry",
         target_id=str(result.entry.id),
-        meta={"minutes": payload.minutes, "source": "pwa", "client_id": payload.client_id},
+        meta={
+            "minutes": payload.minutes,
+            "source": "pwa",
+            "client_id": payload.client_id,
+            "exercise_type": payload.exercise_type,
+        },
     )
     return ActivityAddOut(
         entry=ActivityEntryOut(
@@ -97,6 +104,7 @@ async def add_activity(
             source=result.entry.source,
             occurred_at=result.entry.occurred_at,
             client_id=result.entry.client_id,
+            exercise_type=result.entry.exercise_type,
         ),
         total_minutes=result.total_minutes,
         goal_minutes=result.goal_minutes,

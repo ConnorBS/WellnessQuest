@@ -20,7 +20,13 @@ export function QuickAddActivityButton({ preset, minutes, label }: Props) {
   return (
     <button
       type="button"
-      onClick={() => add.mutate({ minutes: duration, client_id: uuidv4() })}
+      onClick={() =>
+        add.mutate({
+          minutes: duration,
+          client_id: uuidv4(),
+          exercise_type: preset?.exercise_type ?? null,
+        })
+      }
       disabled={add.isPending || !duration}
       className="wq-tap flex flex-col items-center justify-center gap-1 rounded-md border border-slate-700 px-2 py-3 text-slate-200 hover:bg-slate-800 active:bg-slate-800 disabled:opacity-50"
       data-testid={`quick-add-activity-${duration}`}

@@ -34,6 +34,7 @@ class ActivityPreset(Base):
     )
     label: Mapped[str] = mapped_column(String(60), nullable=False)
     minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    exercise_type: Mapped[str | None] = mapped_column(String(60), nullable=True)
     icon_kind: Mapped[str] = mapped_column(String(10), nullable=False, default="none")
     icon_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

@@ -36,6 +36,7 @@ class ActivityEntry(Base):
     )
     minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     source: Mapped[str] = mapped_column(String(20), nullable=False)  # 'pwa' | 'ha' | 'manual'
+    exercise_type: Mapped[str | None] = mapped_column(String(60), nullable=True)
     occurred_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

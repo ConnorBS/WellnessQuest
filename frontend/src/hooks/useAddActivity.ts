@@ -6,7 +6,7 @@ import { apiPost } from "@/lib/api";
 import { useViewedDay } from "@/lib/day-context";
 import { ActivityAddOut, ActivityAddOutSchema, ActivityToday } from "@/lib/schemas";
 
-type AddArgs = { minutes: number; client_id: string };
+type AddArgs = { minutes: number; client_id: string; exercise_type?: string | null };
 
 function occurredAtFor(viewedDay: string, isToday: boolean): string {
   if (isToday) return new Date().toISOString();
@@ -20,7 +20,9 @@ export function useAddActivity() {
   return useMutation<ActivityAddOut, Error, AddArgs>({
     mutationFn: (args) =>
       apiPost("/activity", ActivityAddOutSchema, {
-        ...args,
+        minutes: args.minutes,
+        client_id: args.client_id,
+        exercise_type: args.exercise_type ?? null,
         occurred_at: occurredAtFor(viewedDay, isToday),
       }),
     onMutate: async (args) => {
@@ -42,6 +44,7 @@ export function useAddActivity() {
               source: "pwa",
               occurred_at: occurredAtFor(viewedDay, isToday),
               client_id: args.client_id,
+              exercise_type: args.exercise_type ?? null,
             },
             ...previous.entries,
           ],

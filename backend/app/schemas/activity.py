@@ -9,6 +9,7 @@ class ActivityAddIn(BaseModel):
     minutes: int = Field(..., gt=0, le=1440)
     client_id: str | None = Field(default=None, max_length=120)
     occurred_at: datetime | None = None
+    exercise_type: str | None = Field(default=None, max_length=60)
 
 
 class ActivityEntryOut(BaseModel):
@@ -17,6 +18,7 @@ class ActivityEntryOut(BaseModel):
     source: str
     occurred_at: datetime
     client_id: str | None = None
+    exercise_type: str | None = None
 
 
 class ActivityTodayOut(BaseModel):

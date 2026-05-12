@@ -23,10 +23,11 @@ DEFAULT_WATER_PRESETS: tuple[tuple[str, int, str, str, int], ...] = (
     ("Bottle", 500, "builtin", "water-bottle", 2),
 )
 
-DEFAULT_ACTIVITY_PRESETS: tuple[tuple[str, int, str, str, int], ...] = (
-    ("Stretch", 5, "builtin", "stretch", 0),
-    ("Walk", 15, "builtin", "walk", 1),
-    ("Cardio", 30, "builtin", "cardio", 2),
+# (label, minutes, icon_kind, icon_key, sort_order, exercise_type)
+DEFAULT_ACTIVITY_PRESETS: tuple[tuple[str, int, str, str, int, str | None], ...] = (
+    ("Stretch", 5, "builtin", "stretch", 0, "Stretching"),
+    ("Walk", 15, "builtin", "walk", 1, "Walking"),
+    ("Cardio", 30, "builtin", "cardio", 2, "Cardio"),
 )
 
 # (name, icon_key, cadence_kind, weekly_target, interval_days, sort_order)
@@ -126,12 +127,13 @@ async def _seed_default_water_presets(db, user: User) -> None:
 
 
 async def _seed_default_activity_presets(db, user: User) -> None:
-    for label, minutes, kind, key, sort in DEFAULT_ACTIVITY_PRESETS:
+    for label, minutes, kind, key, sort, exercise_type in DEFAULT_ACTIVITY_PRESETS:
         db.add(
             ActivityPreset(
                 user_id=user.id,
                 label=label,
                 minutes=minutes,
+                exercise_type=exercise_type,
                 icon_kind=kind,
                 icon_key=key,
                 sort_order=sort,

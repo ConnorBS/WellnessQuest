@@ -87,6 +87,7 @@ export const ActivityEntrySchema = z.object({
   source: z.string(),
   occurred_at: z.string(),
   client_id: z.string().nullable().optional(),
+  exercise_type: z.string().nullable().optional(),
 });
 export type ActivityEntry = z.infer<typeof ActivityEntrySchema>;
 
@@ -112,6 +113,7 @@ export const ActivityPresetSchema = z.object({
   id: z.string().uuid(),
   label: z.string(),
   minutes: z.number().int().positive(),
+  exercise_type: z.string().nullable().optional(),
   icon_kind: IconKindSchema,
   icon_key: z.string().nullable(),
   sort_order: z.number().int(),
