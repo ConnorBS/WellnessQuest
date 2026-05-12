@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { apiDelete, apiFetch, apiPatch, apiPost } from "@/lib/api";
+import { apiDelete, apiFetch, apiPatch, apiPost, apiPostVoid } from "@/lib/api";
 import {
   type Habit,
   HabitListSchema,
@@ -49,6 +49,14 @@ export function useToggleHabit() {
   return useMutation({
     mutationFn: (id: string) =>
       apiPost(`/habits/${id}/checkins/toggle`, HabitWithStatusSchema, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["habits"] }),
+  });
+}
+
+export function useReorderHabits() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => apiPostVoid("/habits/reorder", { ids }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["habits"] }),
   });
 }

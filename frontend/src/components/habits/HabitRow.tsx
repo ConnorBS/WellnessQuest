@@ -13,6 +13,20 @@ const STATUS_PILL: Record<string, Pill> = {
   overdue: { bg: "rgba(248, 113, 113, 0.15)", fg: "#fca5a5", label: "Overdue" },
 };
 
+function dueLabel(daysUntilDue: number | null | undefined): string {
+  if (daysUntilDue == null) return "Due today";
+  if (daysUntilDue > 1) return `Due in ${daysUntilDue}d`;
+  if (daysUntilDue === 1) return "Due tomorrow";
+  if (daysUntilDue === 0) return "Due today";
+  return `Overdue ${-daysUntilDue}d`;
+}
+
+function formatMonthEnd(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 function subline(h: HabitWithStatus): string {
   const { habit, status } = h;
   if (habit.cadence_kind === "daily") {
@@ -23,20 +37,21 @@ function subline(h: HabitWithStatus): string {
     const t = status.period_target ?? habit.weekly_target ?? 1;
     return `${c}/${t} this week · ends Sun`;
   }
+  if (habit.cadence_kind === "monthly") {
+    const c = status.period_count ?? 0;
+    const t = status.period_target ?? habit.monthly_target ?? 1;
+    return `${c}/${t} this month · ends ${formatMonthEnd(status.period_ends_on)}`;
+  }
   // interval
   const every = habit.interval_days ?? 0;
   const dsl = status.days_since_last;
-  if (dsl == null) return `Every ${every}d · never done`;
-  const dud = status.days_until_due ?? 0;
-  const due =
-    dud > 1
-      ? `Due in ${dud}d`
-      : dud === 1
-        ? "Due tomorrow"
-        : dud === 0
-          ? "Due today"
-          : `Overdue ${-dud}d`;
-  return `Every ${every}d · last ${dsl}d ago · ${due}`;
+  const dud = status.days_until_due;
+  if (dsl == null) {
+    // No checkins yet — anchored to creation. Backend has computed the grace
+    // period so we just report when it's first due.
+    return `Every ${every}d · first ${dueLabel(dud).toLowerCase()}`;
+  }
+  return `Every ${every}d · last ${dsl}d ago · ${dueLabel(dud)}`;
 }
 
 export function HabitRow({ item }: { item: HabitWithStatus }) {

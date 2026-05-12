@@ -40,6 +40,7 @@ export function HabitForm({ initial, onSubmit, onCancel, busy }: Props) {
   const [name, setName] = useState(initial?.name ?? "");
   const [cadenceKind, setCadenceKind] = useState<CadenceKind>(initial?.cadence_kind ?? "daily");
   const [weeklyTarget, setWeeklyTarget] = useState<number>(initial?.weekly_target ?? 3);
+  const [monthlyTarget, setMonthlyTarget] = useState<number>(initial?.monthly_target ?? 1);
   const [intervalDays, setIntervalDays] = useState<number>(initial?.interval_days ?? 2);
   const [iconKind, setIconKind] = useState<IconKind>(initial?.icon_kind ?? "builtin");
   const [iconKey, setIconKey] = useState<string | null>(initial?.icon_key ?? "check-circle");
@@ -65,6 +66,7 @@ export function HabitForm({ initial, onSubmit, onCancel, busy }: Props) {
       icon_key: iconKind === "none" ? null : iconKey,
       cadence_kind: cadenceKind,
       weekly_target: cadenceKind === "weekly" ? Math.max(1, Math.min(7, weeklyTarget)) : null,
+      monthly_target: cadenceKind === "monthly" ? Math.max(1, Math.min(31, monthlyTarget)) : null,
       interval_days: cadenceKind === "interval" ? Math.max(2, Math.min(365, intervalDays)) : null,
       sort_order: initial?.sort_order ?? 0,
     });
@@ -114,6 +116,25 @@ export function HabitForm({ initial, onSubmit, onCancel, busy }: Props) {
             style={{ width: 64 }}
           />
           times per week
+        </label>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+          <input
+            type="radio"
+            name="cadence"
+            checked={cadenceKind === "monthly"}
+            onChange={() => setCadenceKind("monthly")}
+          />
+          <input
+            type="number"
+            min={1}
+            max={31}
+            value={monthlyTarget}
+            onChange={(e) => setMonthlyTarget(Number(e.target.value) || 0)}
+            disabled={cadenceKind !== "monthly"}
+            style={{ width: 64 }}
+          />
+          times per month
         </label>
 
         <label style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

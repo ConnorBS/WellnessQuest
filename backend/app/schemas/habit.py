@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-CadenceKind = Literal["daily", "weekly", "interval"]
+CadenceKind = Literal["daily", "weekly", "monthly", "interval"]
 HabitStatus = Literal["done", "ok", "due_today", "overdue"]
 IconKind = Literal["builtin", "upload", "none"]
 
@@ -17,6 +17,7 @@ class HabitIn(BaseModel):
     icon_key: str | None = Field(default=None, max_length=64)
     cadence_kind: CadenceKind
     weekly_target: int | None = Field(default=None, ge=1, le=7)
+    monthly_target: int | None = Field(default=None, ge=1, le=31)
     interval_days: int | None = Field(default=None, ge=2, le=365)
     sort_order: int = 0
 
@@ -24,6 +25,8 @@ class HabitIn(BaseModel):
     def _check_cadence_fields(self) -> HabitIn:
         if self.cadence_kind == "weekly" and self.weekly_target is None:
             raise ValueError("weekly_target required for cadence_kind=weekly")
+        if self.cadence_kind == "monthly" and self.monthly_target is None:
+            raise ValueError("monthly_target required for cadence_kind=monthly")
         if self.cadence_kind == "interval" and self.interval_days is None:
             raise ValueError("interval_days required for cadence_kind=interval")
         return self
@@ -36,6 +39,7 @@ class HabitOut(BaseModel):
     icon_key: str | None
     cadence_kind: CadenceKind
     weekly_target: int | None
+    monthly_target: int | None
     interval_days: int | None
     sort_order: int
 

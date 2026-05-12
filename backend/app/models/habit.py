@@ -22,7 +22,7 @@ class Habit(Base):
     __tablename__ = "habits"
     __table_args__ = (
         CheckConstraint(
-            "cadence_kind IN ('daily','weekly','interval')",
+            "cadence_kind IN ('daily','weekly','monthly','interval')",
             name="ck_habits_cadence_kind",
         ),
         CheckConstraint(
@@ -32,6 +32,10 @@ class Habit(Base):
         CheckConstraint(
             "(cadence_kind <> 'weekly') OR (weekly_target BETWEEN 1 AND 7)",
             name="ck_habits_weekly_target_range",
+        ),
+        CheckConstraint(
+            "(cadence_kind <> 'monthly') OR (monthly_target BETWEEN 1 AND 31)",
+            name="ck_habits_monthly_target_range",
         ),
         CheckConstraint(
             "(cadence_kind <> 'interval') OR (interval_days BETWEEN 2 AND 365)",
@@ -53,6 +57,7 @@ class Habit(Base):
     icon_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
     cadence_kind: Mapped[str] = mapped_column(String(10), nullable=False)
     weekly_target: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    monthly_target: Mapped[int | None] = mapped_column(Integer, nullable=True)
     interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     archived_at: Mapped[datetime | None] = mapped_column(

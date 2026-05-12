@@ -109,5 +109,22 @@ export async function apiDelete(path: string): Promise<void> {
   if (!resp.ok && resp.status !== 204) throw new ApiError(resp.status, await resp.text());
 }
 
+export async function apiPostVoid(path: string, body: unknown): Promise<void> {
+  let resp = await rawFetch(path, { method: "POST", body: JSON.stringify(body) });
+  if (resp.status === 401) {
+    const refreshed = await refreshTokens();
+    if (refreshed) resp = await rawFetch(path, { method: "POST", body: JSON.stringify(body) });
+  }
+  if (!resp.ok && resp.status !== 204) {
+    let body: unknown = null;
+    try {
+      body = await resp.json();
+    } catch {
+      body = await resp.text();
+    }
+    throw new ApiError(resp.status, body);
+  }
+}
+
 export { API_BASE };
 export const _z = z;

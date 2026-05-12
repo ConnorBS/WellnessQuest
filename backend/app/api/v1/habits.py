@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import current_user, get_db
@@ -16,6 +17,10 @@ from app.telemetry.recorder import audit
 router = APIRouter(prefix="/habits", tags=["habits"])
 
 
+class HabitReorderIn(BaseModel):
+    ids: list[uuid.UUID]
+
+
 def _to_out(h: Habit) -> HabitOut:
     return HabitOut(
         id=h.id,
@@ -24,6 +29,7 @@ def _to_out(h: Habit) -> HabitOut:
         icon_key=h.icon_key,
         cadence_kind=h.cadence_kind,  # type: ignore[arg-type]
         weekly_target=h.weekly_target,
+        monthly_target=h.monthly_target,
         interval_days=h.interval_days,
         sort_order=h.sort_order,
     )
@@ -49,6 +55,7 @@ async def create_habit(
         icon_key=payload.icon_key,
         cadence_kind=payload.cadence_kind,
         weekly_target=payload.weekly_target if payload.cadence_kind == "weekly" else None,
+        monthly_target=payload.monthly_target if payload.cadence_kind == "monthly" else None,
         interval_days=payload.interval_days if payload.cadence_kind == "interval" else None,
         sort_order=payload.sort_order,
     )
@@ -81,6 +88,7 @@ async def update_habit(
     habit.icon_key = payload.icon_key
     habit.cadence_kind = payload.cadence_kind
     habit.weekly_target = payload.weekly_target if payload.cadence_kind == "weekly" else None
+    habit.monthly_target = payload.monthly_target if payload.cadence_kind == "monthly" else None
     habit.interval_days = payload.interval_days if payload.cadence_kind == "interval" else None
     habit.sort_order = payload.sort_order
     habit.updated_at = utcnow()
@@ -113,6 +121,23 @@ async def delete_habit(
         user_id=user.id,
         target_type="habit",
         target_id=str(habit.id),
+    )
+
+
+@router.post("/reorder", status_code=status.HTTP_204_NO_CONTENT)
+async def reorder_habits(
+    payload: HabitReorderIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    await habit_service.reorder(db, user=user, ordered_ids=payload.ids)
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="habit.reorder",
+        user_id=user.id,
+        target_type="habit",
+        meta={"count": len(payload.ids)},
     )
 
 

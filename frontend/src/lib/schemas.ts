@@ -120,7 +120,7 @@ export const ActivityPresetListSchema = z.array(ActivityPresetSchema);
 export const ActivityGoalOutSchema = z.object({ target_minutes: z.number().int().positive() });
 export type ActivityGoalOut = z.infer<typeof ActivityGoalOutSchema>;
 
-export const CadenceKindSchema = z.enum(["daily", "weekly", "interval"]);
+export const CadenceKindSchema = z.enum(["daily", "weekly", "monthly", "interval"]);
 export type CadenceKind = z.infer<typeof CadenceKindSchema>;
 
 export const HabitStatusKindSchema = z.enum(["done", "ok", "due_today", "overdue"]);
@@ -133,6 +133,7 @@ export const HabitSchema = z.object({
   icon_key: z.string().nullable(),
   cadence_kind: CadenceKindSchema,
   weekly_target: z.number().int().nullable(),
+  monthly_target: z.number().int().nullable(),
   interval_days: z.number().int().nullable(),
   sort_order: z.number().int(),
 });

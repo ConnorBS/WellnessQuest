@@ -1,23 +1,29 @@
 """Habit business logic: status calculation and check-in toggle.
 
-The status calc is the heart of this module. Three cadence kinds:
+The status calc is the heart of this module. Four cadence kinds:
 
 - **daily** — done iff a checkin exists for today (local tz).
 - **weekly(N)** — done-for-period iff >= N checkins this Mon-Sun (user tz).
   Status turns amber when the deficit equals remaining days in week, red on
   Sunday or when impossible.
+- **monthly(N)** — same as weekly but anchored to the calendar month
+  (1st-last) in the user's local tz.
 - **interval(K)** — last checkin must be within K-1 days. Amber on day K-1,
-  red on day K, red+overdue past K.
+  red on day K, red+overdue past K. For a brand-new habit with no checkins
+  yet, the interval anchors to habit.created_at so the user gets the full
+  grace period (an "every 30 days" habit isn't immediately "due today").
 
 Status is computed at request time, not stored.
 """
 
 from __future__ import annotations
 
+import calendar
 import uuid
 from collections import defaultdict
 from collections.abc import Sequence
 from datetime import date, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -38,6 +44,7 @@ def _to_habit_out(h: Habit) -> HabitOut:
         icon_key=h.icon_key,
         cadence_kind=h.cadence_kind,  # type: ignore[arg-type]
         weekly_target=h.weekly_target,
+        monthly_target=h.monthly_target,
         interval_days=h.interval_days,
         sort_order=h.sort_order,
     )
@@ -48,6 +55,18 @@ def _iso_week_bounds(today: date) -> tuple[date, date]:
     monday = today - timedelta(days=today.weekday())
     sunday = monday + timedelta(days=6)
     return monday, sunday
+
+
+def _month_bounds(today: date) -> tuple[date, date]:
+    """Returns (first, last) of the calendar month containing `today`."""
+    first = today.replace(day=1)
+    last_day = calendar.monthrange(today.year, today.month)[1]
+    last = today.replace(day=last_day)
+    return first, last
+
+
+def _habit_created_local_date(habit: Habit, tz: str) -> date:
+    return habit.created_at.astimezone(ZoneInfo(tz)).date()
 
 
 def _compute_weekly_streak(checkin_dates: Sequence[date], today: date, target: int) -> int:
@@ -76,6 +95,25 @@ def _compute_daily_streak(checkin_dates: set[date], today: date) -> int:
     return streak
 
 
+def _compute_monthly_streak(
+    checkin_dates: Sequence[date], today: date, target: int
+) -> int:
+    if not checkin_dates:
+        return 0
+    by_month: dict[tuple[int, int], int] = defaultdict(int)
+    for d in checkin_dates:
+        by_month[(d.year, d.month)] += 1
+    streak = 0
+    y, m = today.year, today.month
+    while by_month.get((y, m), 0) >= target:
+        streak += 1
+        m -= 1
+        if m == 0:
+            m = 12
+            y -= 1
+    return streak
+
+
 def _compute_interval_streak(
     checkin_dates: Sequence[date], today: date, every: int
 ) -> int:
@@ -97,7 +135,9 @@ def _compute_interval_streak(
     return streak
 
 
-def _status_for(habit: Habit, today: date, checkin_dates: set[date]) -> HabitStatusOut:
+def _status_for(
+    habit: Habit, today: date, checkin_dates: set[date], user_tz: str
+) -> HabitStatusOut:
     done_today = today in checkin_dates
     last_checked_on = max(checkin_dates) if checkin_dates else None
 
@@ -146,19 +186,48 @@ def _status_for(habit: Habit, today: date, checkin_dates: set[date]) -> HabitSta
             streak=_compute_weekly_streak(sorted(checkin_dates), today, target),
         )
 
-    # interval
-    every = habit.interval_days or 2
-    if last_checked_on is None:
+    if habit.cadence_kind == "monthly":
+        target = habit.monthly_target or 1
+        month_start, month_end = _month_bounds(today)
+        this_month = {d for d in checkin_dates if month_start <= d <= month_end}
+        count = len(this_month)
+        days_left_in_month = (month_end - today).days  # 0 on last day of month
+        needed = target - count
+
+        if count >= target:
+            status = "done"
+        elif needed > days_left_in_month + 1:
+            status = "overdue"
+        elif needed >= days_left_in_month + 1:
+            status = "due_today"
+        elif needed >= max(1, days_left_in_month):
+            status = "due_today" if days_left_in_month == 0 else "ok"
+        else:
+            status = "ok"
+
+        if done_today and count < target:
+            status = "ok"
+        if not done_today and days_left_in_month == 0 and count < target:
+            status = "due_today"
+
         return HabitStatusOut(
-            status="due_today",
-            done_today=False,
-            last_checked_on=None,
-            days_since_last=None,
-            days_until_due=0,
-            streak=0,
+            status=status,  # type: ignore[arg-type]
+            done_today=done_today,
+            last_checked_on=last_checked_on,
+            period_count=count,
+            period_target=target,
+            period_ends_on=month_end,
+            streak=_compute_monthly_streak(sorted(checkin_dates), today, target),
         )
-    days_since = (today - last_checked_on).days
-    days_until_due = every - days_since  # 0 means due today; negative = overdue
+
+    # interval — anchor to habit creation when there are no checkins yet so
+    # a fresh "every 30 days" habit gets its full grace period instead of
+    # being marked due-today on day zero.
+    every = habit.interval_days or 2
+    anchor = last_checked_on or _habit_created_local_date(habit, user_tz)
+    days_since_anchor = (today - anchor).days
+    days_until_due = every - days_since_anchor
+    days_since_last = (today - last_checked_on).days if last_checked_on is not None else None
     if done_today:
         status = "done"
     elif days_until_due <= -1:
@@ -173,7 +242,7 @@ def _status_for(habit: Habit, today: date, checkin_dates: set[date]) -> HabitSta
         status=status,  # type: ignore[arg-type]
         done_today=done_today,
         last_checked_on=last_checked_on,
-        days_since_last=days_since,
+        days_since_last=days_since_last,
         days_until_due=days_until_due,
         streak=_compute_interval_streak(sorted(checkin_dates), today, every),
     )
@@ -219,7 +288,7 @@ async def list_with_status(
     return [
         HabitWithStatusOut(
             habit=_to_habit_out(h),
-            status=_status_for(h, today, by_habit.get(h.id, set())),
+            status=_status_for(h, today, by_habit.get(h.id, set()), user.timezone),
         )
         for h in habits
     ]
@@ -270,8 +339,36 @@ async def toggle_checkin_today(
         .scalars()
         .all()
     )
-    status = _status_for(habit, today, dates)
+    status = _status_for(habit, today, dates, user.timezone)
     return now_done, HabitWithStatusOut(habit=_to_habit_out(habit), status=status)
+
+
+async def reorder(
+    db: AsyncSession, *, user: User, ordered_ids: list[uuid.UUID]
+) -> None:
+    """Set each habit's sort_order to its index in `ordered_ids`. Silently
+    ignores ids that don't belong to the caller or are unknown."""
+    if not ordered_ids:
+        return
+    rows = list(
+        (
+            await db.execute(
+                select(Habit).where(
+                    Habit.user_id == user.id,
+                    Habit.id.in_(ordered_ids),
+                    Habit.archived_at.is_(None),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    by_id = {r.id: r for r in rows}
+    for idx, hid in enumerate(ordered_ids):
+        row = by_id.get(hid)
+        if row is not None:
+            row.sort_order = idx
+    await db.flush()
 
 
 async def get_owned(
