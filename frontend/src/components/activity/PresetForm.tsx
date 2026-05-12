@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { IconPicker } from "@/components/icons/IconPicker";
 import { PresetIcon } from "@/components/presets/PresetIcon";
 import { useUploadIcon } from "@/hooks/useUploadIcon";
+import { ACTIVITY_TYPE_DATALIST_ID, ACTIVITY_TYPE_SUGGESTIONS } from "@/lib/activityTypes";
 import type { ActivityPreset, IconKind } from "@/lib/schemas";
 
 interface Props {
@@ -108,22 +109,13 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
           value={exerciseType}
           onChange={(e) => setExerciseType(e.target.value)}
           placeholder="e.g. Running"
-          list="activity-type-suggestions"
+          list={ACTIVITY_TYPE_DATALIST_ID}
           style={inputStyle}
         />
-        <datalist id="activity-type-suggestions">
-          <option value="Walking" />
-          <option value="Running" />
-          <option value="Cycling" />
-          <option value="Swimming" />
-          <option value="Hiking" />
-          <option value="Yoga" />
-          <option value="Pilates" />
-          <option value="Weights" />
-          <option value="Cardio" />
-          <option value="Stretching" />
-          <option value="HIIT" />
-          <option value="Sports" />
+        <datalist id={ACTIVITY_TYPE_DATALIST_ID}>
+          {ACTIVITY_TYPE_SUGGESTIONS.map((t) => (
+            <option key={t} value={t} />
+          ))}
         </datalist>
       </label>
 
