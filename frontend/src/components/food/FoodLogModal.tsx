@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useAddFood } from "@/hooks/useAddFood";
+import { useFoodBarcode } from "@/hooks/useFoodBarcode";
 import { useCreateFoodPreset } from "@/hooks/useFoodPresets";
 import { useFoodSearch } from "@/hooks/useFoodSearch";
 import { ApiError } from "@/lib/api";
 import type { FoodSearchHit, MealType } from "@/lib/schemas";
 import { uuidv4 } from "@/lib/uuid";
+
+import { BarcodeScanner } from "@/components/food/BarcodeScanner";
 
 function searchErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
@@ -53,12 +56,31 @@ export function FoodLogModal({ onClose }: Props) {
   const [manualFat, setManualFat] = useState<number | "">("");
   const [search, setSearch] = useState("");
   const [saveAsPreset, setSaveAsPreset] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const addFood = useAddFood();
   const createPreset = useCreateFoodPreset();
+  const barcodeLookup = useFoodBarcode();
   const { data, isLoading, isFetching, isError, error, refetch } = useFoodSearch(
     search,
     mode === "search",
   );
+
+  function onBarcodeDetected(code: string) {
+    setScannerOpen(false);
+    setScanError(null);
+    barcodeLookup.mutate(code, {
+      onSuccess: (hit) => {
+        // Drop into the same hit-selection flow as a text search result; this
+        // seeds the grams input from serving size and shows the macro preview.
+        selectHit(hit);
+      },
+      onError: (err) => {
+        const body = err instanceof ApiError ? (err.body as { detail?: string } | null) : null;
+        setScanError(body?.detail ?? `Lookup failed for barcode ${code}.`);
+      },
+    });
+  }
 
   function selectHit(hit: FoodSearchHit) {
     setSelected(hit);
@@ -265,17 +287,43 @@ export function FoodLogModal({ onClose }: Props) {
               <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
                 Search Open Food Facts
               </span>
-              <input
-                type="search"
-                placeholder="e.g. greek yogurt"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setSelected(null);
-                }}
-                style={inputStyle}
-              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="search"
+                  placeholder="e.g. greek yogurt"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setSelected(null);
+                  }}
+                  style={{ ...inputStyle, flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScanError(null);
+                    setScannerOpen(true);
+                  }}
+                  disabled={barcodeLookup.isPending}
+                  title="Scan a barcode"
+                  style={{
+                    padding: "0 12px",
+                    background: "transparent",
+                    color: "#10b981",
+                    border: "1px solid #1e293b",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    fontSize: 13,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {barcodeLookup.isPending ? "Looking up…" : "Scan"}
+                </button>
+              </div>
             </label>
+            {scanError && (
+              <p style={{ fontSize: 13, color: "#fca5a5", marginBottom: 8 }}>{scanError}</p>
+            )}
             {search.trim().length < 2 ? (
               <p style={{ fontSize: 12, color: "#64748b" }}>
                 Type at least 2 characters to search.
@@ -506,6 +554,12 @@ export function FoodLogModal({ onClose }: Props) {
           </div>
         )}
       </div>
+      {scannerOpen && (
+        <BarcodeScanner
+          onDetected={onBarcodeDetected}
+          onClose={() => setScannerOpen(false)}
+        />
+      )}
     </div>
   );
 }

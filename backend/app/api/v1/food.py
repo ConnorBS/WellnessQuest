@@ -235,3 +235,52 @@ async def food_search(
         for it in items
     ]
     return FoodSearchOut(query=q, hits=hits)
+
+
+@router.get("/barcode/{code}", response_model=FoodSearchHit)
+async def food_barcode(
+    code: str,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> FoodSearchHit:
+    """Look up one product by barcode. Returns the same shape as a search hit
+    so the frontend can route it through the existing select-and-log flow.
+    """
+    if not code.isdigit() or not (6 <= len(code) <= 14):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="bad_barcode"
+        )
+    provider_cls = food_providers.get("openfoodfacts")
+    provider = provider_cls({})
+    try:
+        item = await provider.by_barcode(code)
+    except httpx.HTTPError as exc:
+        await capture_error(
+            db,
+            source="food.barcode",
+            level="warning",
+            message=f"OFF barcode lookup failed: {type(exc).__name__}: {exc}",
+            context={"code": code},
+            user_id=user.id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Could not reach Open Food Facts ({type(exc).__name__})",
+        ) from exc
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No product with barcode {code} in Open Food Facts.",
+        )
+    return FoodSearchHit(
+        provider=item.source,
+        provider_id=item.source_id,
+        name=item.name,
+        brand=item.brand,
+        serving_g=item.serving_g,
+        serving_label=item.serving_label,
+        kcal_per_100g=item.kcal_per_100g,
+        protein_per_100g=item.protein_g,
+        carbs_per_100g=item.carbs_g,
+        fat_per_100g=item.fat_g,
+    )

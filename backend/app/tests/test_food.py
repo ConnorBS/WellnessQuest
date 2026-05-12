@@ -148,6 +148,16 @@ async def test_food_xp_cap(client, db, unique_email):
 
 
 @pytest.mark.asyncio
+async def test_food_barcode_rejects_garbage(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+    r = await client.get("/api/v1/food/barcode/not-a-number", headers=_auth(access))
+    assert r.status_code == 400
+    r = await client.get("/api/v1/food/barcode/123", headers=_auth(access))  # too short
+    assert r.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_food_presets_crud(client, db, unique_email):
     data = await _signup(client, db, unique_email)
     access = data["tokens"]["access_token"]
