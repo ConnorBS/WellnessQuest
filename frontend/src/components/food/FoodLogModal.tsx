@@ -60,6 +60,13 @@ export function FoodLogModal({ onClose }: Props) {
   const [selected, setSelected] = useState<FoodSearchHit | null>(null);
   const [amount, setAmount] = useState<number>(100);
   const [amountUnit, setAmountUnit] = useState<PortionUnit>("g");
+  // Fallback when the selected OFF hit has no per-100 nutriment data: let the
+  // user type the kcal/macros for the portion they actually ate, instead of
+  // silently disabling the Log button.
+  const [overrideKcal, setOverrideKcal] = useState<number | "">("");
+  const [overrideProtein, setOverrideProtein] = useState<number | "">("");
+  const [overrideCarbs, setOverrideCarbs] = useState<number | "">("");
+  const [overrideFat, setOverrideFat] = useState<number | "">("");
   const [manualName, setManualName] = useState("");
   const [manualKcal, setManualKcal] = useState<number | "">("");
   const [manualProtein, setManualProtein] = useState<number | "">("");
@@ -105,6 +112,12 @@ export function FoodLogModal({ onClose }: Props) {
     } else {
       setAmount(100);
     }
+    // Clear any previous manual overrides; the new product gets a fresh prompt
+    // if it also lacks nutriment data.
+    setOverrideKcal("");
+    setOverrideProtein("");
+    setOverrideCarbs("");
+    setOverrideFat("");
   }
 
   useEffect(() => {
@@ -146,6 +159,7 @@ export function FoodLogModal({ onClose }: Props) {
     const scale = (v: number | null | undefined) =>
       v == null ? null : Math.round(v * factor * 10) / 10;
     return {
+      hasNutritionData: kcalPer100 != null,
       kcal: kcalPer100 != null ? Math.round(kcalPer100 * factor) : null,
       protein_g: scale(pPer100),
       carbs_g: scale(cPer100),
@@ -153,16 +167,41 @@ export function FoodLogModal({ onClose }: Props) {
     };
   }, [selected, amount, amountUnit]);
 
+  // When OFF returned no per-100 nutriments, we fall back to whatever the user
+  // typed in the override fields. Leaving them blank is valid — it logs the
+  // entry with kcal=0 and null macros, so the user has a record of "I ate X"
+  // even when they don't know the numbers. Better than no entry at all.
+  const finalKcal: number = computed
+    ? computed.hasNutritionData
+      ? (computed.kcal ?? 0)
+      : overrideKcal === "" ? 0 : Number(overrideKcal)
+    : 0;
+  const finalProtein: number | null = computed
+    ? computed.hasNutritionData
+      ? computed.protein_g
+      : overrideProtein === "" ? null : Number(overrideProtein)
+    : null;
+  const finalCarbs: number | null = computed
+    ? computed.hasNutritionData
+      ? computed.carbs_g
+      : overrideCarbs === "" ? null : Number(overrideCarbs)
+    : null;
+  const finalFat: number | null = computed
+    ? computed.hasNutritionData
+      ? computed.fat_g
+      : overrideFat === "" ? null : Number(overrideFat)
+    : null;
+
   function logSelected() {
-    if (!selected || computed?.kcal == null) return;
+    if (!selected || finalKcal < 0) return;
     addFood.mutate(
       {
         name: selected.name,
         brand: selected.brand ?? null,
-        kcal: computed.kcal,
-        protein_g: computed.protein_g,
-        carbs_g: computed.carbs_g,
-        fat_g: computed.fat_g,
+        kcal: finalKcal,
+        protein_g: finalProtein,
+        carbs_g: finalCarbs,
+        fat_g: finalFat,
         meal_type: meal,
         provider: selected.provider,
         provider_id: selected.provider_id,
@@ -170,14 +209,14 @@ export function FoodLogModal({ onClose }: Props) {
       },
       {
         onSuccess: () => {
-          if (saveAsPreset && computed.kcal != null) {
+          if (saveAsPreset && finalKcal != null) {
             createPreset.mutate({
               label: selected.name,
               brand: selected.brand ?? null,
-              kcal: computed.kcal,
-              protein_g: computed.protein_g,
-              carbs_g: computed.carbs_g,
-              fat_g: computed.fat_g,
+              kcal: finalKcal,
+              protein_g: finalProtein,
+              carbs_g: finalCarbs,
+              fat_g: finalFat,
               meal_type: meal,
               provider: selected.provider,
               provider_id: selected.provider_id,
@@ -530,22 +569,144 @@ export function FoodLogModal({ onClose }: Props) {
                           )
                         </button>
                       ) : null}
-                <div style={{ fontSize: 13, color: "#cbd5e1" }}>
-                  {computed?.kcal != null
-                    ? `${computed.kcal} kcal · P ${fmt(computed.protein_g)} · C ${fmt(
-                        computed.carbs_g,
-                      )} · F ${fmt(computed.fat_g)}`
-                    : "No kcal data for this product."}
-                </div>
+                {computed?.hasNutritionData ? (
+                  <div style={{ fontSize: 13, color: "#cbd5e1" }}>
+                    {`${computed.kcal} kcal · P ${fmt(computed.protein_g)} · C ${fmt(
+                      computed.carbs_g,
+                    )} · F ${fmt(computed.fat_g)}`}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      padding: 10,
+                      background: "#0b1220",
+                      border: "1px solid #1e293b",
+                      borderRadius: 6,
+                    }}
+                  >
+                    <p style={{ fontSize: 12, color: "#fcd34d", margin: 0 }}>
+                      Open Food Facts doesn&apos;t have nutrition data for this product.
+                      Enter the values from the package below, or leave them blank to log
+                      the food without nutrition info.
+                    </p>
+                    <label>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: 12,
+                          color: "#94a3b8",
+                          marginBottom: 4,
+                        }}
+                      >
+                        Calories (kcal) for this portion
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={20000}
+                        value={overrideKcal}
+                        onChange={(e) =>
+                          setOverrideKcal(e.target.value === "" ? "" : Number(e.target.value))
+                        }
+                        style={inputStyle}
+                      />
+                    </label>
+                    <div
+                      style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}
+                    >
+                      <label>
+                        <span
+                          style={{
+                            display: "block",
+                            fontSize: 12,
+                            color: "#94a3b8",
+                            marginBottom: 4,
+                          }}
+                        >
+                          Protein (g)
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={overrideProtein}
+                          onChange={(e) =>
+                            setOverrideProtein(
+                              e.target.value === "" ? "" : Number(e.target.value),
+                            )
+                          }
+                          style={inputStyle}
+                        />
+                      </label>
+                      <label>
+                        <span
+                          style={{
+                            display: "block",
+                            fontSize: 12,
+                            color: "#94a3b8",
+                            marginBottom: 4,
+                          }}
+                        >
+                          Carbs (g)
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={overrideCarbs}
+                          onChange={(e) =>
+                            setOverrideCarbs(
+                              e.target.value === "" ? "" : Number(e.target.value),
+                            )
+                          }
+                          style={inputStyle}
+                        />
+                      </label>
+                      <label>
+                        <span
+                          style={{
+                            display: "block",
+                            fontSize: 12,
+                            color: "#94a3b8",
+                            marginBottom: 4,
+                          }}
+                        >
+                          Fat (g)
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={overrideFat}
+                          onChange={(e) =>
+                            setOverrideFat(
+                              e.target.value === "" ? "" : Number(e.target.value),
+                            )
+                          }
+                          style={inputStyle}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
                 <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
-                <button
-                  type="button"
-                  onClick={logSelected}
-                  disabled={addFood.isPending || computed?.kcal == null}
-                  style={primaryBtnStyle}
-                >
-                  {addFood.isPending ? "Logging…" : "Log it"}
-                </button>
+                {(() => {
+                  const disabled = addFood.isPending || finalKcal < 0;
+                  return (
+                    <button
+                      type="button"
+                      onClick={logSelected}
+                      disabled={disabled}
+                      style={primaryBtnStyleFor(disabled)}
+                    >
+                      {addFood.isPending
+                        ? "Logging…"
+                        : computed?.hasNutritionData || overrideKcal !== ""
+                          ? "Log it"
+                          : "Log without nutrition"}
+                    </button>
+                  );
+                })()}
               </div>
                   );
                 })()
@@ -630,16 +791,20 @@ export function FoodLogModal({ onClose }: Props) {
               </label>
             </div>
             <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
-            <button
-              type="button"
-              onClick={logManual}
-              disabled={
-                addFood.isPending || !manualName.trim() || manualKcal === "" || manualKcal < 0
-              }
-              style={primaryBtnStyle}
-            >
-              {addFood.isPending ? "Logging…" : "Log it"}
-            </button>
+            {(() => {
+              const manualDisabled =
+                addFood.isPending || !manualName.trim() || manualKcal === "" || manualKcal < 0;
+              return (
+                <button
+                  type="button"
+                  onClick={logManual}
+                  disabled={manualDisabled}
+                  style={primaryBtnStyleFor(manualDisabled)}
+                >
+                  {addFood.isPending ? "Logging…" : "Log it"}
+                </button>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -709,13 +874,16 @@ const inputStyle: React.CSSProperties = {
   fontSize: 14,
 };
 
-const primaryBtnStyle: React.CSSProperties = {
-  background: "#10b981",
-  color: "white",
-  border: "none",
-  borderRadius: 6,
-  padding: "10px 14px",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-};
+function primaryBtnStyleFor(disabled: boolean): React.CSSProperties {
+  return {
+    background: disabled ? "#1e293b" : "#10b981",
+    color: disabled ? "#64748b" : "white",
+    border: "none",
+    borderRadius: 6,
+    padding: "10px 14px",
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.7 : 1,
+  };
+}
