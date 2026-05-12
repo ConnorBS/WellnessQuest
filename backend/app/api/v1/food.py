@@ -183,9 +183,15 @@ async def food_search(
             context={"query": q, "url": str(exc.request.url)},
             user_id=user.id,
         )
+        # 5xx from OFF usually means a transient outage / rate limit on their
+        # side. Surface a hint that retrying in a few seconds will likely work.
+        if exc.response.status_code >= 500:
+            detail = "Open Food Facts is temporarily unavailable. Try again in a few seconds."
+        else:
+            detail = f"Open Food Facts returned {exc.response.status_code}"
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Open Food Facts returned {exc.response.status_code}",
+            detail=detail,
         ) from exc
     except httpx.HTTPError as exc:
         await capture_error(
