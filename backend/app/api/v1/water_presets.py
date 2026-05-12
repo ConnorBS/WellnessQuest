@@ -21,7 +21,7 @@ def _to_out(p: WaterPreset) -> WaterPresetOut:
         id=p.id,
         label=p.label,
         volume_ml=p.volume_ml,
-        icon_kind=p.icon_kind,  # type: ignore[arg-type]
+        icon_kind=p.icon_kind,
         icon_key=p.icon_key,
         sort_order=p.sort_order,
     )

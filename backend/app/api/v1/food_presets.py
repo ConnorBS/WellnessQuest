@@ -25,10 +25,10 @@ def _to_out(p: FoodPreset) -> FoodPresetOut:
         protein_g=p.protein_g,
         carbs_g=p.carbs_g,
         fat_g=p.fat_g,
-        meal_type=p.meal_type,  # type: ignore[arg-type]
+        meal_type=p.meal_type,
         provider=p.provider,
         provider_id=p.provider_id,
-        icon_kind=p.icon_kind,  # type: ignore[arg-type]
+        icon_kind=p.icon_kind,
         icon_key=p.icon_key,
         sort_order=p.sort_order,
     )

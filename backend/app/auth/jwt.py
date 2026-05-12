@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from jose import JWTError, jwt
@@ -14,7 +14,7 @@ class TokenError(Exception):
 
 
 def _now() -> datetime:
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 def make_access_token(user_id: uuid.UUID, role: str) -> tuple[str, datetime]:

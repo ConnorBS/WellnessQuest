@@ -81,12 +81,13 @@ async def add(
         occurred_at=occurred_at or utcnow(),
         client_id=client_id,
     )
-    db.add(entry)
     try:
-        await db.flush()
+        async with db.begin_nested():
+            db.add(entry)
+            await db.flush()
     except IntegrityError:
-        # client_id collision -> return the existing row (idempotent)
-        await db.rollback()
+        # client_id collision -> return the existing row (idempotent).
+        # The SAVEPOINT was rolled back automatically; the outer transaction is intact.
         return await _get_by_client_id(db, user=user, client_id=client_id, goal_ml=goal_ml)
 
     xp_delta = await xp_service.grant_for_water(db, user=user, ml=ml, ref_id=entry.id)

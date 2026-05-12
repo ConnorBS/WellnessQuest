@@ -40,7 +40,7 @@ def _entry_out(e: FoodEntry) -> FoodEntryOut:
         protein_g=e.protein_g,
         carbs_g=e.carbs_g,
         fat_g=e.fat_g,
-        meal_type=e.meal_type,  # type: ignore[arg-type]
+        meal_type=e.meal_type,
         source=e.source,
         provider=e.provider,
         provider_id=e.provider_id,

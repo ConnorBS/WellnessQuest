@@ -22,7 +22,7 @@ class OpenFoodFactsProvider(FoodProvider):
     async def search(self, query: str, limit: int = 20) -> list[FoodItem]:
         # action=process + search_simple=1 are required for the legacy cgi search to
         # actually execute the query rather than return the search form HTML.
-        params = {
+        params: dict[str, str | int] = {
             "action": "process",
             "search_simple": 1,
             "search_terms": query,

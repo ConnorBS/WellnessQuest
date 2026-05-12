@@ -65,7 +65,7 @@ async def get_upload_file(
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
     path = Path(row.storage_path)
-    if not path.is_file():
+    if not path.is_file():  # noqa: ASYNC240 - one stat call per request, cost is negligible
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="file_missing")
     return FileResponse(
         path,

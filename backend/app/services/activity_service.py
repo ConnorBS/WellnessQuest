@@ -83,11 +83,11 @@ async def add(
         occurred_at=occurred_at or utcnow(),
         client_id=client_id,
     )
-    db.add(entry)
     try:
-        await db.flush()
+        async with db.begin_nested():
+            db.add(entry)
+            await db.flush()
     except IntegrityError:
-        await db.rollback()
         return await _get_by_client_id(db, user=user, client_id=client_id, goal_minutes=goal_minutes)
 
     xp_delta = await xp_service.grant_for_activity(db, user=user, minutes=minutes, ref_id=entry.id)

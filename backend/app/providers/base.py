@@ -13,7 +13,7 @@ class ProviderInfo(BaseModel):
 T = TypeVar("T")
 
 
-class Registry(Generic[T]):
+class Registry(Generic[T]):  # noqa: UP046 - PEP-695 syntax breaks runtime kind-attr lookup
     """Decorator-populated map of kind -> class. Used by both providers and integrations."""
 
     def __init__(self) -> None:
@@ -39,6 +39,9 @@ class Registry(Generic[T]):
 
     def info(self) -> list[ProviderInfo]:
         return [
-            ProviderInfo(kind=getattr(c, "kind"), label=getattr(c, "label", getattr(c, "kind")))
+            ProviderInfo(
+                kind=getattr(c, "kind"),  # noqa: B009 - duck-typed; subclasses set this as ClassVar
+                label=getattr(c, "label", getattr(c, "kind")),  # noqa: B009
+            )
             for c in self._items.values()
         ]
