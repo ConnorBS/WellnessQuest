@@ -78,9 +78,14 @@ jobs:
         if: failure()
         run: docker compose -f docker-compose.yml -f docker-compose.ci.yml logs --no-color
 
-      - name: Post failure log as PR comment
-        if: ${{ failure() && github.event_name == 'pull_request' }}
+  post-failures:
+    runs-on: ubuntu-latest
+    needs: [playwright]
+    if: ${{ always() && github.event_name == 'pull_request' && contains(needs.*.result, 'failure') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Post logs for all failed jobs in this run
         uses: actions/github-script@v7
         with:
           script: |
-            await require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/post-ci-failure.js`)({ github, context, core, jobName: 'playwright' });
+            await require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/post-ci-failure.js`)({ github, context, core });
