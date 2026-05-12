@@ -19,16 +19,16 @@ dependencies = [
   "cryptography>=43.0",
   "email-validator>=2.2",
   "python-multipart>=0.0.20",
-  "pillow>=11.0",
+  "pillow>=11.0,<12",
 ]
 
 [project.optional-dependencies]
 dev = [
-  "pytest>=8.3",
-  "pytest-asyncio>=0.24",
-  "pytest-cov>=6.0",
-  "factory-boy>=3.3",
-  "ruff>=0.8",
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.24,<1",
+  "pytest-cov>=6.0,<7",
+  "factory-boy>=3.3,<4",
+  "ruff>=0.8,<0.16",
   "mypy>=1.13,<2",
   "types-python-jose>=3.3",
 ]

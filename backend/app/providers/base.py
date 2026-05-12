@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Generic, TypeVar
+
 from pydantic import BaseModel
 
 
@@ -8,7 +10,10 @@ class ProviderInfo(BaseModel):
     label: str
 
 
-class Registry[T]:
+T = TypeVar("T")
+
+
+class Registry(Generic[T]):  # noqa: UP046 - keeps mypy 1.x type inference (kind/label attr access on type[T])
     """Decorator-populated map of kind -> class. Used by both providers and integrations."""
 
     def __init__(self) -> None:
