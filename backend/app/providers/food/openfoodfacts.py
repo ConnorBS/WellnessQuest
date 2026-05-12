@@ -10,6 +10,10 @@ from app.providers.food.base import FoodItem, FoodProvider, food_providers
 
 class OpenFoodFactsConfig(BaseModel):
     base_url: str = "https://world.openfoodfacts.org"
+    # Search-a-licious is OFF's purpose-built full-text search service. The legacy
+    # /cgi/search.pl endpoint is deprecated and frequently returns empty results
+    # for free-text queries; product lookup by barcode still uses world.* though.
+    search_url: str = "https://search.openfoodfacts.org/search"
     user_agent: str = "WellnessQuest/0.1 (+https://github.com/connorbs/wellnessquest)"
 
 
@@ -20,14 +24,18 @@ class OpenFoodFactsProvider(FoodProvider):
     config_schema = OpenFoodFactsConfig
 
     async def search(self, query: str, limit: int = 20) -> list[FoodItem]:
-        params = {"search_terms": query, "json": 1, "page_size": min(limit, 50)}
+        params = {
+            "q": query,
+            "page_size": min(limit, 50),
+            "fields": "code,product_name,generic_name,brands,nutriments,serving_quantity",
+        }
         async with httpx.AsyncClient(
             headers={"User-Agent": self.config["user_agent"]}, timeout=8.0
         ) as client:
-            resp = await client.get(f"{self.config['base_url']}/cgi/search.pl", params=params)
+            resp = await client.get(self.config["search_url"], params=params)
             resp.raise_for_status()
             data = resp.json()
-        return [self._map(p) for p in data.get("products", []) if p.get("code")]
+        return [self._map(h) for h in data.get("hits", []) if h.get("code")]
 
     async def by_barcode(self, code: str) -> FoodItem | None:
         url = f"{self.config['base_url']}/api/v2/product/{code}.json"
@@ -53,14 +61,22 @@ class OpenFoodFactsProvider(FoodProvider):
             except (TypeError, ValueError):
                 return None
 
+        def _opt_top_f(key: str) -> float | None:
+            v = p.get(key)
+            try:
+                return float(v) if v is not None else None
+            except (TypeError, ValueError):
+                return None
+
         return FoodItem(
             source="openfoodfacts",
             source_id=str(p.get("code", "")),
             name=p.get("product_name") or p.get("generic_name") or "Unknown",
             brand=p.get("brands"),
-            serving_g=_opt_f("serving_quantity"),
+            serving_g=_opt_top_f("serving_quantity"),
             kcal_per_100g=_opt_f("energy-kcal_100g"),
             protein_g=_opt_f("proteins_100g"),
             carbs_g=_opt_f("carbohydrates_100g"),
             fat_g=_opt_f("fat_100g"),
         )
+

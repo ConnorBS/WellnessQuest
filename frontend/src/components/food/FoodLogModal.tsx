@@ -44,7 +44,10 @@ export function FoodLogModal({ onClose }: Props) {
   const [saveAsPreset, setSaveAsPreset] = useState(false);
   const addFood = useAddFood();
   const createPreset = useCreateFoodPreset();
-  const { data, isLoading, isFetching } = useFoodSearch(search, mode === "search");
+  const { data, isLoading, isFetching, isError, error, refetch } = useFoodSearch(
+    search,
+    mode === "search",
+  );
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -253,6 +256,25 @@ export function FoodLogModal({ onClose }: Props) {
               <p style={{ fontSize: 12, color: "#64748b" }}>
                 Type at least 2 characters to search.
               </p>
+            ) : isError ? (
+              <div style={{ fontSize: 13, color: "#fca5a5", display: "flex", gap: 8, alignItems: "center" }}>
+                <span>Search failed{error instanceof Error && error.message ? `: ${error.message}` : ""}.</span>
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  style={{
+                    background: "transparent",
+                    color: "#10b981",
+                    border: "1px solid #1e293b",
+                    borderRadius: 6,
+                    padding: "2px 8px",
+                    cursor: "pointer",
+                    fontSize: 12,
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
             ) : isLoading ? (
               <p style={{ fontSize: 13, color: "#94a3b8" }}>Searching…</p>
             ) : data && data.hits.length > 0 ? (
