@@ -26,12 +26,16 @@ If you want the two containers on a shared internal docker network so you can ad
 
 The `.github/workflows/deploy.yml` workflow builds and pushes `ghcr.io/connorbs/wellnessquest` on every push:
 
-| Branch | Tags published |
-|---|---|
-| `main` | `:latest`, `:stable`, `:sha-<7>` |
-| `claude/**` | `:preview`, `:sha-<7>` |
+| Source | Tags published | Who pins this |
+|---|---|---|
+| Git tag `vX.Y.Z` | `:vX.Y.Z`, `:X.Y.Z`, `:X.Y`, `:X`, `:stable`, `:latest`, `:sha-<7>` | Self-hosters (recommended) |
+| Git tag `vX.Y.Z-pre.N` | `:vX.Y.Z-pre.N`, `:X.Y.Z-pre.N`, `:sha-<7>` | RC / beta testers |
+| Branch `main` | `:edge`, `:sha-<7>` | Bleeding-edge testers |
+| Branch `claude/**` | `:preview`, `:sha-<7>` | Development only |
 
-Push the working branch, watch the **deploy** workflow under Actions until green (~3-5 min first time), then confirm the package exists at <https://github.com/ConnorBS?tab=packages> as `ghcr.io/connorbs/wellnessquest`.
+**Recommended pin for self-hosters:** `:stable` (auto-updates to the latest tagged release) or an exact `:vX.Y.Z` (never moves). `:edge` and `:preview` can include unreleased / unstable work.
+
+Push the working branch, watch the **deploy** workflow under Actions until green (~3-5 min first time), then confirm the package exists at <https://github.com/ConnorBS?tab=packages> as `ghcr.io/connorbs/wellnessquest`. See [`releasing.md`](releasing.md) for how to cut a versioned release.
 
 ### 3. Authenticate Unraid to GHCR
 
