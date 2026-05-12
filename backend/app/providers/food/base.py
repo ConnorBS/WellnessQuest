@@ -14,6 +14,7 @@ class FoodItem(BaseModel):
     name: str
     brand: str | None = None
     serving_g: float | None = None
+    serving_label: str | None = None
     kcal_per_100g: float | None = None
     protein_g: float | None = None
     carbs_g: float | None = None

@@ -111,6 +111,7 @@ class FoodSearchHit(BaseModel):
     name: str
     brand: str | None = None
     serving_g: float | None = None
+    serving_label: str | None = None
     kcal_per_100g: float | None = None
     protein_per_100g: float | None = None
     carbs_per_100g: float | None = None

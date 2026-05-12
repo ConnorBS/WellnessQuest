@@ -28,7 +28,10 @@ class OpenFoodFactsProvider(FoodProvider):
             "search_terms": query,
             "json": 1,
             "page_size": min(limit, 50),
-            "fields": "code,product_name,generic_name,brands,serving_quantity,nutriments",
+            "fields": (
+                "code,product_name,generic_name,brands,"
+                "serving_size,serving_quantity,nutriments"
+            ),
         }
         async with httpx.AsyncClient(
             headers={"User-Agent": self.config["user_agent"]}, timeout=8.0
@@ -69,12 +72,14 @@ class OpenFoodFactsProvider(FoodProvider):
             except (TypeError, ValueError):
                 return None
 
+        serving_size = p.get("serving_size")
         return FoodItem(
             source="openfoodfacts",
             source_id=str(p.get("code", "")),
             name=p.get("product_name") or p.get("generic_name") or "Unknown",
             brand=p.get("brands"),
             serving_g=_opt_top_f("serving_quantity"),
+            serving_label=serving_size.strip() if isinstance(serving_size, str) and serving_size.strip() else None,
             kcal_per_100g=_opt_f("energy-kcal_100g"),
             protein_g=_opt_f("proteins_100g"),
             carbs_g=_opt_f("carbohydrates_100g"),

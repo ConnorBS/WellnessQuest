@@ -268,6 +268,7 @@ export const FoodSearchHitSchema = z.object({
   name: z.string(),
   brand: z.string().nullable().optional(),
   serving_g: z.number().nullable().optional(),
+  serving_label: z.string().nullable().optional(),
   kcal_per_100g: z.number().nullable().optional(),
   protein_per_100g: z.number().nullable().optional(),
   carbs_per_100g: z.number().nullable().optional(),

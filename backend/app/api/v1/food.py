@@ -220,6 +220,7 @@ async def food_search(
             name=it.name,
             brand=it.brand,
             serving_g=it.serving_g,
+            serving_label=it.serving_label,
             kcal_per_100g=it.kcal_per_100g,
             protein_per_100g=it.protein_g,
             carbs_per_100g=it.carbs_g,

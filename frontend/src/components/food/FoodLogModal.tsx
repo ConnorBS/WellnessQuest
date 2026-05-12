@@ -60,6 +60,19 @@ export function FoodLogModal({ onClose }: Props) {
     mode === "search",
   );
 
+  function selectHit(hit: FoodSearchHit) {
+    setSelected(hit);
+    // Default the portion to the product's serving size when OFF gives us one;
+    // fall back to 100 g (which is what the per-100g nutriments are normalised
+    // against). Without this, "1 cup of milk" defaults to 100 g and badly
+    // underestimates the entry.
+    if (hit.serving_g && hit.serving_g > 0) {
+      setGrams(Math.round(hit.serving_g));
+    } else {
+      setGrams(100);
+    }
+  }
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -311,7 +324,7 @@ export function FoodLogModal({ onClose }: Props) {
                     <li key={`${h.provider}-${h.provider_id}`}>
                       <button
                         type="button"
-                        onClick={() => setSelected(h)}
+                        onClick={() => selectHit(h)}
                         style={{
                           width: "100%",
                           textAlign: "left",
@@ -333,6 +346,11 @@ export function FoodLogModal({ onClose }: Props) {
                           {h.kcal_per_100g != null
                             ? `${Math.round(h.kcal_per_100g)} kcal / 100 g`
                             : "no kcal data"}
+                          {h.serving_label
+                            ? ` · serving: ${h.serving_label}`
+                            : h.serving_g
+                              ? ` · serving: ${h.serving_g} g`
+                              : ""}
                         </div>
                       </button>
                     </li>
@@ -363,7 +381,7 @@ export function FoodLogModal({ onClose }: Props) {
                 {selected.serving_g ? (
                   <button
                     type="button"
-                    onClick={() => setGrams(selected.serving_g ?? grams)}
+                    onClick={() => setGrams(Math.round(selected.serving_g ?? grams))}
                     style={{
                       alignSelf: "start",
                       fontSize: 12,
@@ -374,7 +392,7 @@ export function FoodLogModal({ onClose }: Props) {
                       padding: 0,
                     }}
                   >
-                    Use serving ({selected.serving_g} g)
+                    Use 1 serving ({selected.serving_label ?? `${selected.serving_g} g`})
                   </button>
                 ) : null}
                 <div style={{ fontSize: 13, color: "#cbd5e1" }}>
