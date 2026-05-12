@@ -23,7 +23,10 @@ from app.schemas.food import (
 )
 from app.services import food_service, goal_service
 from app.services.time_utils import day_for_user
-from app.telemetry.recorder import audit
+from app.telemetry.logger import get_logger
+from app.telemetry.recorder import audit, capture_error
+
+log = get_logger(__name__)
 
 router = APIRouter(prefix="/food", tags=["food"])
 
@@ -164,16 +167,51 @@ async def food_search(
     q: str = Query(..., min_length=2, max_length=120),
     limit: int = Query(default=20, ge=1, le=50),
     user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> FoodSearchOut:
     """Search Open Food Facts. Authenticated to avoid being a public proxy."""
-    del user  # auth-only; we don't filter results per-user
     provider_cls = food_providers.get("openfoodfacts")
     provider = provider_cls({})
     try:
         items = await provider.search(q, limit=limit)
-    except httpx.HTTPError as exc:
+    except httpx.HTTPStatusError as exc:
+        await capture_error(
+            db,
+            source="food.search",
+            level="warning",
+            message=f"OFF returned {exc.response.status_code}",
+            context={"query": q, "url": str(exc.request.url)},
+            user_id=user.id,
+        )
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail="provider_unavailable"
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Open Food Facts returned {exc.response.status_code}",
+        ) from exc
+    except httpx.HTTPError as exc:
+        await capture_error(
+            db,
+            source="food.search",
+            level="warning",
+            message=f"OFF transport error: {type(exc).__name__}: {exc}",
+            context={"query": q},
+            user_id=user.id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Could not reach Open Food Facts ({type(exc).__name__})",
+        ) from exc
+    except Exception as exc:  # noqa: BLE001 - last-chance to surface a useful message
+        await capture_error(
+            db,
+            source="food.search",
+            level="error",
+            message=f"OFF unexpected error: {type(exc).__name__}: {exc}",
+            context={"query": q},
+            user_id=user.id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Food search failed ({type(exc).__name__})",
         ) from exc
     hits = [
         FoodSearchHit(

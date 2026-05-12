@@ -5,8 +5,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useAddFood } from "@/hooks/useAddFood";
 import { useCreateFoodPreset } from "@/hooks/useFoodPresets";
 import { useFoodSearch } from "@/hooks/useFoodSearch";
+import { ApiError } from "@/lib/api";
 import type { FoodSearchHit, MealType } from "@/lib/schemas";
 import { uuidv4 } from "@/lib/uuid";
+
+function searchErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    const body = err.body as { detail?: string } | null;
+    if (body && typeof body.detail === "string") return body.detail;
+    return `API error ${err.status}`;
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return "unknown error";
+}
 
 const MEAL_OPTIONS: { label: string; value: MealType }[] = [
   { label: "Breakfast", value: "breakfast" },
@@ -257,8 +268,8 @@ export function FoodLogModal({ onClose }: Props) {
                 Type at least 2 characters to search.
               </p>
             ) : isError ? (
-              <div style={{ fontSize: 13, color: "#fca5a5", display: "flex", gap: 8, alignItems: "center" }}>
-                <span>Search failed{error instanceof Error && error.message ? `: ${error.message}` : ""}.</span>
+              <div style={{ fontSize: 13, color: "#fca5a5", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <span>Search failed: {searchErrorMessage(error)}.</span>
                 <button
                   type="button"
                   onClick={() => refetch()}

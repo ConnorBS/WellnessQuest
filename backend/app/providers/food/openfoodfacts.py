@@ -10,10 +10,6 @@ from app.providers.food.base import FoodItem, FoodProvider, food_providers
 
 class OpenFoodFactsConfig(BaseModel):
     base_url: str = "https://world.openfoodfacts.org"
-    # Search-a-licious is OFF's purpose-built full-text search service. The legacy
-    # /cgi/search.pl endpoint is deprecated and frequently returns empty results
-    # for free-text queries; product lookup by barcode still uses world.* though.
-    search_url: str = "https://search.openfoodfacts.org/search"
     user_agent: str = "WellnessQuest/0.1 (+https://github.com/connorbs/wellnessquest)"
 
 
@@ -24,18 +20,23 @@ class OpenFoodFactsProvider(FoodProvider):
     config_schema = OpenFoodFactsConfig
 
     async def search(self, query: str, limit: int = 20) -> list[FoodItem]:
+        # action=process + search_simple=1 are required for the legacy cgi search to
+        # actually execute the query rather than return the search form HTML.
         params = {
-            "q": query,
+            "action": "process",
+            "search_simple": 1,
+            "search_terms": query,
+            "json": 1,
             "page_size": min(limit, 50),
-            "fields": "code,product_name,generic_name,brands,nutriments,serving_quantity",
+            "fields": "code,product_name,generic_name,brands,serving_quantity,nutriments",
         }
         async with httpx.AsyncClient(
             headers={"User-Agent": self.config["user_agent"]}, timeout=8.0
         ) as client:
-            resp = await client.get(self.config["search_url"], params=params)
+            resp = await client.get(f"{self.config['base_url']}/cgi/search.pl", params=params)
             resp.raise_for_status()
             data = resp.json()
-        return [self._map(h) for h in data.get("hits", []) if h.get("code")]
+        return [self._map(p) for p in data.get("products", []) if p.get("code")]
 
     async def by_barcode(self, code: str) -> FoodItem | None:
         url = f"{self.config['base_url']}/api/v2/product/{code}.json"
@@ -79,4 +80,5 @@ class OpenFoodFactsProvider(FoodProvider):
             carbs_g=_opt_f("carbohydrates_100g"),
             fat_g=_opt_f("fat_100g"),
         )
+
 
