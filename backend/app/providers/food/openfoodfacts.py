@@ -20,7 +20,11 @@ class OpenFoodFactsProvider(FoodProvider):
     config_schema = OpenFoodFactsConfig
 
     async def search(self, query: str, limit: int = 20) -> list[FoodItem]:
-        params = {"search_terms": query, "json": 1, "page_size": min(limit, 50)}
+        params: dict[str, str | int] = {
+            "search_terms": query,
+            "json": 1,
+            "page_size": min(limit, 50),
+        }
         async with httpx.AsyncClient(
             headers={"User-Agent": self.config["user_agent"]}, timeout=8.0
         ) as client:

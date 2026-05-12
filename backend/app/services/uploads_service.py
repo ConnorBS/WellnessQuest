@@ -46,7 +46,7 @@ def _process_image(raw: bytes) -> bytes:
     except (UnidentifiedImageError, OSError) as exc:
         raise UploadError("invalid_image") from exc
 
-    img = Image.open(io.BytesIO(raw))
+    img: Image.Image = Image.open(io.BytesIO(raw))
     img = ImageOps.exif_transpose(img) or img
     if img.mode not in ("RGB", "RGBA"):
         img = img.convert("RGBA" if "A" in img.getbands() else "RGB")

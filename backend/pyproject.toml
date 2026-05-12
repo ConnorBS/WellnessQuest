@@ -59,6 +59,15 @@ plugins = ["pydantic.mypy"]
 module = ["jose.*", "argon2.*", "factory.*", "slowapi.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["app.tests.*", "app.db.seed"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_any_generics = false
+warn_unused_ignores = false
+no_implicit_reexport = false
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["app/tests"]

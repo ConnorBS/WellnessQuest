@@ -26,9 +26,9 @@ def _to_out(h: Habit) -> HabitOut:
     return HabitOut(
         id=h.id,
         name=h.name,
-        icon_kind=h.icon_kind,  # type: ignore[arg-type]
+        icon_kind=h.icon_kind,
         icon_key=h.icon_key,
-        cadence_kind=h.cadence_kind,  # type: ignore[arg-type]
+        cadence_kind=h.cadence_kind,
         weekly_target=h.weekly_target,
         monthly_target=h.monthly_target,
         interval_days=h.interval_days,

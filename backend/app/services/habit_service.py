@@ -40,9 +40,9 @@ def _to_habit_out(h: Habit) -> HabitOut:
     return HabitOut(
         id=h.id,
         name=h.name,
-        icon_kind=h.icon_kind,  # type: ignore[arg-type]
+        icon_kind=h.icon_kind,
         icon_key=h.icon_key,
-        cadence_kind=h.cadence_kind,  # type: ignore[arg-type]
+        cadence_kind=h.cadence_kind,
         weekly_target=h.weekly_target,
         monthly_target=h.monthly_target,
         interval_days=h.interval_days,
@@ -177,7 +177,7 @@ def _status_for(
             status = "due_today"
 
         return HabitStatusOut(
-            status=status,  # type: ignore[arg-type]
+            status=status,
             done_today=done_today,
             last_checked_on=last_checked_on,
             period_count=count,
@@ -211,7 +211,7 @@ def _status_for(
             status = "due_today"
 
         return HabitStatusOut(
-            status=status,  # type: ignore[arg-type]
+            status=status,
             done_today=done_today,
             last_checked_on=last_checked_on,
             period_count=count,
@@ -239,7 +239,7 @@ def _status_for(
     else:
         status = "ok"
     return HabitStatusOut(
-        status=status,  # type: ignore[arg-type]
+        status=status,
         done_today=done_today,
         last_checked_on=last_checked_on,
         days_since_last=days_since_last,

@@ -38,7 +38,9 @@ class Registry(Generic[T]):  # noqa: UP046 - keeps mypy 1.x type inference (kind
         return list(self._items)
 
     def info(self) -> list[ProviderInfo]:
+        # `kind` is guaranteed by register() at construction time; mypy can't see
+        # that through `type[T]` without binding T to a Protocol.
         return [
-            ProviderInfo(kind=c.kind, label=getattr(c, "label", c.kind))
+            ProviderInfo(kind=c.kind, label=getattr(c, "label", c.kind))  # type: ignore[attr-defined]
             for c in self._items.values()
         ]
