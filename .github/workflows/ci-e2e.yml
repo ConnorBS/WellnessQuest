@@ -41,7 +41,7 @@ jobs:
         run: |
           curl -fsS -X POST http://localhost:8000/api/v1/setup/admin \
             -H "Content-Type: application/json" \
-            -d '{"email":"admin@local","password":"CiAdminPass123!","display_name":"Admin"}'
+            -d '{"email":"admin@example.com","password":"CiAdminPass123!","display_name":"Admin"}'
 
       - uses: pnpm/action-setup@v4
         with:
@@ -62,7 +62,7 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_API_BASE: http://localhost:8000/api/v1
-          ADMIN_EMAIL: admin@local
+          ADMIN_EMAIL: admin@example.com
           ADMIN_PASSWORD: CiAdminPass123!
         run: pnpm exec playwright test
 
