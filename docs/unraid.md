@@ -74,8 +74,9 @@ Plus pick passwords for the two seeded users (`ADMIN_PASSWORD`, `PARTNER_PASSWOR
    - **PARTNER_PASSWORD** — your wife's chosen password.
    - **App data** — host path for persistent data (uploaded preset icons today). Default `/mnt/user/appdata/wellnessquest/data` is usually right.
    - **CORS_ORIGINS**, **TZ** — defaults are fine if your LAN matches the defaults.
-   - **App port** — defaults to 8000; change if it conflicts with another service.
-4. **Apply**. The image pulls from GHCR (~30 s), then the container runs `alembic upgrade head` and starts uvicorn. Watch the log until you see `Uvicorn running on 0.0.0.0:8000`. The healthcheck flips the badge to `healthy` after ~30 s.
+   - **App port** (bridge networking) — host port unraid exposes; defaults to 8000. Only matters if the container is on a bridge network (then it maps `host:APP_PORT → container:8000`). Change if it conflicts with another service.
+   - **APP_PORT** env var (any networking, but especially macvlan / ipvlan) — sets the **internal** port uvicorn binds to inside the container. Defaults to 8000. If your container has its own LAN IP (macvlan), set this to **80** so the app is reachable at `http://<container-ip>/` with no port suffix, or **443** if you're terminating TLS inside the container (uncommon). Bridge users can usually leave it at 8000 and tune the host-side **App port** field instead.
+4. **Apply**. The image pulls from GHCR (~30 s), then the container runs `alembic upgrade head` and starts uvicorn. Watch the log until you see `Uvicorn running on 0.0.0.0:<APP_PORT>`. The healthcheck flips the badge to `healthy` after ~30 s.
 
 ## First users
 
