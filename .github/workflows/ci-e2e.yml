@@ -43,6 +43,27 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"email":"admin@example.com","password":"CiAdminPass123!","display_name":"Admin"}'
 
+      - name: Smoke-check backend after setup
+        run: |
+          set -x
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml ps
+          ACCESS=$(curl -fsS -X POST http://localhost:8000/api/v1/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"admin@example.com","password":"CiAdminPass123!"}' | python3 -c "import sys,json;print(json.load(sys.stdin)['access_token'])")
+          echo "--- /me ---"
+          curl -fsS http://localhost:8000/api/v1/me -H "Authorization: Bearer $ACCESS"
+          echo
+          echo "--- /water/today ---"
+          curl -fsS http://localhost:8000/api/v1/water/today -H "Authorization: Bearer $ACCESS"
+          echo
+          echo "--- /water/presets ---"
+          curl -fsS http://localhost:8000/api/v1/water/presets -H "Authorization: Bearer $ACCESS"
+          echo
+          echo "--- frontend / ---"
+          curl -fsS -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000/
+          echo "--- frontend /dashboard ---"
+          curl -fsS -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000/dashboard
+
       - uses: pnpm/action-setup@v4
         with:
           version: 9
@@ -64,7 +85,7 @@ jobs:
           PLAYWRIGHT_API_BASE: http://localhost:8000/api/v1
           ADMIN_EMAIL: admin@example.com
           ADMIN_PASSWORD: CiAdminPass123!
-        run: pnpm exec playwright test
+        run: pnpm exec playwright test --reporter=list,github
 
       - name: Upload report
         if: always()
@@ -76,4 +97,12 @@ jobs:
 
       - name: Stack logs on failure
         if: failure()
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml logs --no-color
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml logs --no-color
+          echo "---PLAYWRIGHT TRACE LISTING---"
+          find frontend/test-results -type f 2>/dev/null | head -30 || true
+          echo "---PLAYWRIGHT ERROR CONTEXTS---"
+          for f in $(find frontend/test-results -name "error-context.md" 2>/dev/null); do
+            echo "=== $f ==="
+            cat "$f"
+          done
