@@ -96,6 +96,7 @@ export const ActivityEntrySchema = z.object({
   occurred_at: z.string(),
   client_id: z.string().nullable().optional(),
   exercise_type: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
 });
 export type ActivityEntry = z.infer<typeof ActivityEntrySchema>;
 
@@ -118,7 +119,8 @@ export const ActivityAddOutSchema = z.object({
 export type ActivityAddOut = z.infer<typeof ActivityAddOutSchema>;
 
 export const ActivityRecentEntrySchema = z.object({
-  exercise_type: z.string(),
+  name: z.string().nullable().optional(),
+  exercise_type: z.string().nullable().optional(),
   minutes: z.number().int(),
   last_logged_at: z.string(),
 });

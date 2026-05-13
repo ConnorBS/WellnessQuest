@@ -5,9 +5,11 @@ import { useState } from "react";
 import { ActivityCard } from "@/components/ActivityCard";
 import { ActivityLogModal } from "@/components/activity/ActivityLogModal";
 import { useActivityToday } from "@/hooks/useActivityToday";
+import { useDeleteActivity } from "@/hooks/useAddActivity";
 
 export default function ActivityPage() {
   const { data } = useActivityToday();
+  const del = useDeleteActivity();
   const [showLog, setShowLog] = useState(false);
   return (
     <>
@@ -51,16 +53,41 @@ export default function ActivityPage() {
                 key={`${e.id}-${e.client_id ?? ""}`}
                 style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 14 }}
               >
-                <span style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
+                <span style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0, flexWrap: "wrap" }}>
                   <span>+{e.minutes} min</span>
+                  {e.name && (
+                    <span style={{ color: "#e2e8f0", fontSize: 13 }}>{e.name}</span>
+                  )}
                   {e.exercise_type && (
                     <span style={{ color: "#7dd3fc", fontSize: 12, whiteSpace: "nowrap" }}>
                       {e.exercise_type}
                     </span>
                   )}
                 </span>
-                <span style={{ color: "#94a3b8", whiteSpace: "nowrap" }}>
-                  {new Date(e.occurred_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {e.source}
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: "#94a3b8", whiteSpace: "nowrap" }}>
+                    {new Date(e.occurred_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {e.source}
+                  </span>
+                  {e.id > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => del.mutate(e.id)}
+                      disabled={del.isPending}
+                      title="Delete entry"
+                      aria-label="Delete entry"
+                      style={{
+                        color: "#94a3b8",
+                        background: "transparent",
+                        border: "none",
+                        cursor: del.isPending ? "not-allowed" : "pointer",
+                        padding: 4,
+                        fontSize: 16,
+                        lineHeight: 1,
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null}
                 </span>
               </li>
             ))}

@@ -5,9 +5,11 @@ import { useState } from "react";
 import { WaterCard } from "@/components/WaterCard";
 import { WaterLogModal } from "@/components/water/WaterLogModal";
 import { useWaterToday } from "@/hooks/useWaterToday";
+import { useDeleteWater } from "@/hooks/useAddWater";
 
 export default function WaterPage() {
   const { data } = useWaterToday();
+  const del = useDeleteWater();
   const [showLog, setShowLog] = useState(false);
   return (
     <>
@@ -59,8 +61,30 @@ export default function WaterPage() {
                     </span>
                   )}
                 </span>
-                <span style={{ color: "#94a3b8", whiteSpace: "nowrap" }}>
-                  {new Date(e.occurred_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {e.source}
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: "#94a3b8", whiteSpace: "nowrap" }}>
+                    {new Date(e.occurred_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {e.source}
+                  </span>
+                  {e.id > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => del.mutate(e.id)}
+                      disabled={del.isPending}
+                      title="Delete entry"
+                      aria-label="Delete entry"
+                      style={{
+                        color: "#94a3b8",
+                        background: "transparent",
+                        border: "none",
+                        cursor: del.isPending ? "not-allowed" : "pointer",
+                        padding: 4,
+                        fontSize: 16,
+                        lineHeight: 1,
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null}
                 </span>
               </li>
             ))}

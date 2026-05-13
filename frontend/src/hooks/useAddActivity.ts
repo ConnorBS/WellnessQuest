@@ -2,11 +2,16 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { apiPost } from "@/lib/api";
+import { apiDelete, apiPost } from "@/lib/api";
 import { useViewedDay } from "@/lib/day-context";
 import { ActivityAddOut, ActivityAddOutSchema, ActivityToday } from "@/lib/schemas";
 
-type AddArgs = { minutes: number; client_id: string; exercise_type?: string | null };
+type AddArgs = {
+  minutes: number;
+  client_id: string;
+  exercise_type?: string | null;
+  name?: string | null;
+};
 
 function occurredAtFor(viewedDay: string, isToday: boolean): string {
   if (isToday) return new Date().toISOString();
@@ -23,6 +28,7 @@ export function useAddActivity() {
         minutes: args.minutes,
         client_id: args.client_id,
         exercise_type: args.exercise_type ?? null,
+        name: args.name ?? null,
         occurred_at: occurredAtFor(viewedDay, isToday),
       }),
     onMutate: async (args) => {
@@ -45,6 +51,7 @@ export function useAddActivity() {
               occurred_at: occurredAtFor(viewedDay, isToday),
               client_id: args.client_id,
               exercise_type: args.exercise_type ?? null,
+              name: args.name ?? null,
             },
             ...previous.entries,
           ],
@@ -57,6 +64,19 @@ export function useAddActivity() {
       if (previous) qc.setQueryData(key, previous);
     },
     onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["activity", "today", viewedDay] });
+      qc.invalidateQueries({ queryKey: ["activity", "recent"] });
+      qc.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
+}
+
+export function useDeleteActivity() {
+  const qc = useQueryClient();
+  const { viewedDay } = useViewedDay();
+  return useMutation<void, Error, number>({
+    mutationFn: (entry_id) => apiDelete(`/activity/${entry_id}`),
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["activity", "today", viewedDay] });
       qc.invalidateQueries({ queryKey: ["activity", "recent"] });
       qc.invalidateQueries({ queryKey: ["me"] });

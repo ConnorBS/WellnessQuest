@@ -10,6 +10,7 @@ class ActivityAddIn(BaseModel):
     client_id: str | None = Field(default=None, max_length=120)
     occurred_at: datetime | None = None
     exercise_type: str | None = Field(default=None, max_length=60)
+    name: str | None = Field(default=None, max_length=60)
 
 
 class ActivityEntryOut(BaseModel):
@@ -19,6 +20,7 @@ class ActivityEntryOut(BaseModel):
     occurred_at: datetime
     client_id: str | None = None
     exercise_type: str | None = None
+    name: str | None = None
 
 
 class ActivityTodayOut(BaseModel):
@@ -38,6 +40,12 @@ class ActivityAddOut(BaseModel):
 
 
 class ActivityRecentEntry(BaseModel):
-    exercise_type: str
+    """Recently-logged activity entry surfaced as datalist suggestions in the
+    quick-log modal. Includes both a free-form name and the exercise_type so
+    the modal can populate two distinct autocomplete fields from one fetch.
+    """
+
+    name: str | None = None
+    exercise_type: str | None = None
     minutes: int
     last_logged_at: datetime

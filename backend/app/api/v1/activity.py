@@ -68,6 +68,7 @@ async def activity_today(
                 occurred_at=e.occurred_at,
                 client_id=e.client_id,
                 exercise_type=e.exercise_type,
+                name=e.name,
             )
             for e in entries
         ],
@@ -76,20 +77,25 @@ async def activity_today(
 
 @router.get("/recent", response_model=list[ActivityRecentEntry])
 async def activity_recent(
-    limit: int = Query(default=8, ge=1, le=20),
+    limit: int = Query(default=12, ge=1, le=30),
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[ActivityRecentEntry]:
-    """Most recently logged distinct activity types, for the quick-log name dropdown."""
+    """Recently-logged entries that have either a name or an exercise_type.
+
+    The quick-log modal extracts two distinct datalists — names and exercise
+    types — from this single list, so we return the raw entries rather than
+    pre-deduping on one column.
+    """
     rows = await activity_service.recent_distinct(db, user=user, limit=limit)
     return [
         ActivityRecentEntry(
-            exercise_type=r.exercise_type or "",
+            name=r.name,
+            exercise_type=r.exercise_type,
             minutes=r.minutes,
             last_logged_at=r.occurred_at,
         )
         for r in rows
-        if r.exercise_type
     ]
 
 
@@ -107,6 +113,7 @@ async def add_activity(
         client_id=payload.client_id,
         occurred_at=payload.occurred_at,
         exercise_type=payload.exercise_type,
+        name=payload.name,
     )
     await audit(
         db,
@@ -120,6 +127,7 @@ async def add_activity(
             "source": "pwa",
             "client_id": payload.client_id,
             "exercise_type": payload.exercise_type,
+            "name": payload.name,
         },
     )
     return ActivityAddOut(
@@ -130,6 +138,7 @@ async def add_activity(
             occurred_at=result.entry.occurred_at,
             client_id=result.entry.client_id,
             exercise_type=result.entry.exercise_type,
+            name=result.entry.name,
         ),
         total_minutes=result.total_minutes,
         goal_minutes=result.goal_minutes,

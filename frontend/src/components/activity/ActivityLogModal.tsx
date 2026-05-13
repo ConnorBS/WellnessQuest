@@ -11,24 +11,28 @@ interface Props {
   onClose: () => void;
 }
 
-// Seed suggestions so first-time users see something when they open the
-// dropdown, before they've built up any history of their own.
-const SEED_SUGGESTIONS = [
+// Same seed list the preset form (settings/activity) uses, so the dropdown
+// in the modal looks consistent with the preset builder.
+const EXERCISE_TYPE_SEEDS = [
   "Walking",
   "Running",
   "Cycling",
   "Swimming",
   "Hiking",
   "Yoga",
+  "Pilates",
   "Weights",
-  "HIIT",
+  "Cardio",
   "Stretching",
+  "HIIT",
+  "Sports",
   "Chores",
 ];
 
 export function ActivityLogModal({ onClose }: Props) {
-  const [minutes, setMinutes] = useState<number | "">("");
+  const [name, setName] = useState("");
   const [exerciseType, setExerciseType] = useState("");
+  const [minutes, setMinutes] = useState<number | "">("");
   const [saveAsPreset, setSaveAsPreset] = useState(false);
 
   const add = useAddActivity();
@@ -43,24 +47,32 @@ export function ActivityLogModal({ onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Merge user history (most-recent first) with seed suggestions, deduped
-  // case-insensitively. History wins so the user's own labels float to top.
-  const suggestions = useMemo(() => {
-    const seen = new Set<string>();
-    const out: string[] = [];
+  // Two separate dropdowns: one of distinct past *names*, one of distinct past
+  // *exercise types*. Both derive from the same /recent fetch. History wins
+  // over seed suggestions so the user's own labels float to the top of the
+  // exercise-type dropdown; the name dropdown has no seeds because there's no
+  // sensible default for a free-form label.
+  const { nameSuggestions, typeSuggestions } = useMemo(() => {
+    const names = new Map<string, string>();
+    const types = new Map<string, string>();
     for (const r of recent.data ?? []) {
-      const key = r.exercise_type.trim().toLowerCase();
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      out.push(r.exercise_type.trim());
+      if (r.name) {
+        const key = r.name.trim().toLowerCase();
+        if (key && !names.has(key)) names.set(key, r.name.trim());
+      }
+      if (r.exercise_type) {
+        const key = r.exercise_type.trim().toLowerCase();
+        if (key && !types.has(key)) types.set(key, r.exercise_type.trim());
+      }
     }
-    for (const s of SEED_SUGGESTIONS) {
-      const key = s.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(s);
+    for (const seed of EXERCISE_TYPE_SEEDS) {
+      const key = seed.toLowerCase();
+      if (!types.has(key)) types.set(key, seed);
     }
-    return out;
+    return {
+      nameSuggestions: Array.from(names.values()),
+      typeSuggestions: Array.from(types.values()),
+    };
   }, [recent.data]);
 
   const minutesNum = typeof minutes === "number" ? minutes : Number(minutes);
@@ -69,25 +81,29 @@ export function ActivityLogModal({ onClose }: Props) {
 
   function handleLog() {
     if (!valid) return;
-    const trimmed = exerciseType.trim();
-    const type = trimmed ? trimmed.slice(0, 60) : null;
+    const trimmedName = name.trim();
+    const trimmedType = exerciseType.trim();
+    const entryName = trimmedName ? trimmedName.slice(0, 60) : null;
+    const entryType = trimmedType ? trimmedType.slice(0, 60) : null;
     const roundedMinutes = Math.round(minutesNum);
     add.mutate(
       {
         minutes: roundedMinutes,
         client_id: uuidv4(),
-        exercise_type: type,
+        exercise_type: entryType,
+        name: entryName,
       },
       {
         onSuccess: () => {
-          // "Save as quick activity" creates a preset with the same minutes
-          // and type. Label falls back to "X min" when there's no name, which
-          // matches how Quick foods labels nameless entries.
+          // "Save as quick activity" creates a preset whose label is the
+          // entry's name when present, the exercise type otherwise, falling
+          // back to a "X min" label so the button has *something* to display.
           if (saveAsPreset) {
+            const label = entryName ?? entryType ?? `${roundedMinutes} min`;
             createPreset.mutate({
-              label: type ?? `${roundedMinutes} min`,
+              label,
               minutes: roundedMinutes,
-              exercise_type: type,
+              exercise_type: entryType,
               icon_kind: "none",
               icon_key: null,
               sort_order: 0,
@@ -156,19 +172,42 @@ export function ActivityLogModal({ onClose }: Props) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <label>
-            <span style={labelStyle}>Activity</span>
+            <span style={labelStyle}>
+              Name <span style={{ color: "#64748b" }}>(optional)</span>
+            </span>
+            <input
+              type="text"
+              maxLength={60}
+              placeholder="e.g. Morning walk, Quick lunch run"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              list="activity-name-suggestions"
+              style={inputStyle}
+              data-testid="activity-log-name"
+            />
+            <datalist id="activity-name-suggestions">
+              {nameSuggestions.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          </label>
+
+          <label>
+            <span style={labelStyle}>
+              Exercise type <span style={{ color: "#64748b" }}>(optional)</span>
+            </span>
             <input
               type="text"
               maxLength={60}
               placeholder="e.g. Walking, Yoga, Chores"
               value={exerciseType}
               onChange={(e) => setExerciseType(e.target.value)}
-              list="activity-recent-suggestions"
+              list="activity-type-suggestions-modal"
               style={inputStyle}
-              data-testid="activity-log-name"
+              data-testid="activity-log-type"
             />
-            <datalist id="activity-recent-suggestions">
-              {suggestions.map((s) => (
+            <datalist id="activity-type-suggestions-modal">
+              {typeSuggestions.map((s) => (
                 <option key={s} value={s} />
               ))}
             </datalist>

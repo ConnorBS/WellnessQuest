@@ -68,6 +68,7 @@ async def add(
     client_id: str | None,
     occurred_at: datetime | None,
     exercise_type: str | None = None,
+    name: str | None = None,
 ) -> ActivityAddResult:
     today = day_for_user(user.timezone)
     before_total = await total_today(db, user=user)
@@ -80,6 +81,7 @@ async def add(
         minutes=minutes,
         source=source,
         exercise_type=(exercise_type.strip() or None) if exercise_type else None,
+        name=(name.strip() or None) if name else None,
         occurred_at=occurred_at or utcnow(),
         client_id=client_id,
     )
@@ -140,38 +142,27 @@ async def _get_by_client_id(
 
 
 async def recent_distinct(
-    db: AsyncSession, *, user: User, limit: int = 8
+    db: AsyncSession, *, user: User, limit: int = 12
 ) -> list[ActivityEntry]:
-    """Most-recently-logged distinct activities, keyed on lowercased exercise_type.
-
-    Mirrors food_service.recent_distinct so the quick-log modal can offer the
-    activity names the user has already used. Entries without an exercise_type
-    are skipped — there's nothing to suggest for them.
+    """Most recently-logged activity entries that have *either* a name or
+    exercise_type set. The quick-log modal builds two separate datalists from
+    the result — one of distinct names, one of distinct exercise types — so we
+    return raw entries and let the client dedup. Returning more entries than
+    requested keeps the two dropdowns varied even when one dimension repeats.
     """
-    fetch_limit = max(limit * 5, 20)
+    fetch_limit = max(limit * 5, 30)
     stmt = (
         select(ActivityEntry)
         .where(
             ActivityEntry.user_id == user.id,
-            ActivityEntry.exercise_type.is_not(None),
+            (ActivityEntry.exercise_type.is_not(None))
+            | (ActivityEntry.name.is_not(None)),
         )
         .order_by(ActivityEntry.occurred_at.desc())
         .limit(fetch_limit)
     )
     rows = list((await db.execute(stmt)).scalars().all())
-    seen: set[str] = set()
-    result: list[ActivityEntry] = []
-    for row in rows:
-        if row.exercise_type is None:
-            continue
-        key = row.exercise_type.strip().lower()
-        if not key or key in seen:
-            continue
-        seen.add(key)
-        result.append(row)
-        if len(result) >= limit:
-            break
-    return result
+    return rows[:limit]
 
 
 async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:
