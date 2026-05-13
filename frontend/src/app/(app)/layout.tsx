@@ -6,6 +6,7 @@ import { useEffect } from "react";
 
 import { DayHeader } from "@/components/DayHeader";
 import { useSwipe } from "@/hooks/useSwipe";
+import { useMe } from "@/hooks/useMe";
 import { clearTokens, isLoggedIn } from "@/lib/auth";
 import { DayProvider, useViewedDay } from "@/lib/day-context";
 
@@ -38,10 +39,15 @@ function MainBody({ pathname, children }: { pathname: string | null; children: R
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { data: me } = useMe();
 
   useEffect(() => {
     if (!isLoggedIn()) router.replace("/login");
   }, [router]);
+
+  useEffect(() => {
+    if (me?.must_change_password) router.replace("/change-password");
+  }, [me?.must_change_password, router]);
 
   function onLogout() {
     clearTokens();

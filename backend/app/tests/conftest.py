@@ -18,8 +18,6 @@ os.environ.setdefault(
 )
 os.environ.setdefault("JWT_SECRET", "test-jwt-secret")
 os.environ.setdefault("FERNET_KEY", "test-fernet-key")
-os.environ.setdefault("ADMIN_PASSWORD", "TestAdminPass123!")
-os.environ.setdefault("PARTNER_PASSWORD", "TestPartnerPass123!")
 
 import app.db.session as session_mod  # noqa: E402
 from app import models  # noqa: F401,E402  -- register models with Base.metadata

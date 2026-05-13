@@ -6,14 +6,6 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
 
-class SignupIn(BaseModel):
-    invite_code: str = Field(..., min_length=8)
-    email: EmailStr
-    password: str = Field(..., min_length=10, max_length=200)
-    display_name: str = Field(..., min_length=1, max_length=120)
-    timezone: str = "UTC"
-
-
 class LoginIn(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=1, max_length=200)
@@ -40,6 +32,8 @@ class MeOut(BaseModel):
     timezone: str
     show_weight_card: bool = True
     weight_unit: str = "kg"
+    must_change_password: bool = False
+    disabled: bool = False
 
 
 class MePatchIn(BaseModel):
@@ -47,11 +41,42 @@ class MePatchIn(BaseModel):
     weight_unit: str | None = None
 
 
-class SignupOut(BaseModel):
+class SetupStatusOut(BaseModel):
+    setup_required: bool
+
+
+class SetupAdminIn(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=10, max_length=200)
+    display_name: str = Field(..., min_length=1, max_length=120)
+    timezone: str = "UTC"
+
+
+class AuthOut(BaseModel):
+    """Combined user + tokens response used by setup and (future) login flows."""
+
     user: MeOut
     tokens: TokenPair
 
 
-class InviteCreateOut(BaseModel):
-    code: str
-    expires_at: datetime
+class ChangePasswordIn(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=200)
+    new_password: str = Field(..., min_length=10, max_length=200)
+
+
+class AdminUserCreateIn(BaseModel):
+    email: EmailStr
+    display_name: str = Field(..., min_length=1, max_length=120)
+    password: str = Field(..., min_length=10, max_length=200)
+    role: str = Field(default="user", pattern="^(admin|user)$")
+    timezone: str = "UTC"
+
+
+class AdminUserPatchIn(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=120)
+    role: str | None = Field(default=None, pattern="^(admin|user)$")
+    disabled: bool | None = None
+
+
+class AdminPasswordResetIn(BaseModel):
+    password: str = Field(..., min_length=10, max_length=200)

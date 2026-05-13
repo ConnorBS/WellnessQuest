@@ -6,7 +6,7 @@ async function adminLogin() {
   const ctx = await request.newContext();
   const resp = await ctx.post(`${API}/auth/login`, {
     data: {
-      email: process.env.ADMIN_EMAIL ?? "admin@local",
+      email: process.env.ADMIN_EMAIL ?? "admin@example.com",
       password: process.env.ADMIN_PASSWORD ?? "TestAdminPass123!",
     },
   });

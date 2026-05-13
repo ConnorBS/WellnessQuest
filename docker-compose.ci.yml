@@ -15,8 +15,15 @@ services:
       dockerfile: Dockerfile
       target: prod
     pull_policy: never
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
     environment:
+      DATABASE_URL: ${DATABASE_URL}
       LOG_LEVEL: DEBUG
+    ports:
+      - "8000:8000"
 
   frontend:
     image: wq-frontend:ci
@@ -25,8 +32,13 @@ services:
       dockerfile: Dockerfile
       target: prod
     pull_policy: never
+    depends_on:
+      - backend
     environment:
       NODE_ENV: production
+      BACKEND_UPSTREAM: http://backend:8000
+    ports:
+      - "3000:3000"
 
   backup:
     profiles: ["disabled"]
