@@ -10,8 +10,12 @@ export const MeSchema = z.object({
   timezone: z.string(),
   show_weight_card: z.boolean(),
   weight_unit: z.string(),
+  must_change_password: z.boolean(),
+  disabled: z.boolean(),
 });
 export type Me = z.infer<typeof MeSchema>;
+
+export const MeListSchema = z.array(MeSchema);
 
 export const TokenPairSchema = z.object({
   access_token: z.string(),
@@ -21,10 +25,14 @@ export const TokenPairSchema = z.object({
 });
 export type TokenPair = z.infer<typeof TokenPairSchema>;
 
-export const SignupOutSchema = z.object({
+export const AuthOutSchema = z.object({
   user: MeSchema,
   tokens: TokenPairSchema,
 });
+export type AuthOut = z.infer<typeof AuthOutSchema>;
+
+export const SetupStatusSchema = z.object({ setup_required: z.boolean() });
+export type SetupStatus = z.infer<typeof SetupStatusSchema>;
 
 export const WaterEntrySchema = z.object({
   id: z.number().int(),

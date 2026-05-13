@@ -23,8 +23,6 @@ jobs:
           echo "POSTGRES_PASSWORD=ci-postgres" >> .env
           echo "JWT_SECRET=ci-jwt-secret" >> .env
           echo "FERNET_KEY=ci-fernet-key" >> .env
-          echo "ADMIN_PASSWORD=CiAdminPass123!" >> .env
-          echo "PARTNER_PASSWORD=CiPartnerPass123!" >> .env
           echo "DATABASE_URL=postgresql+asyncpg://wq:ci-postgres@postgres:5432/wellnessquest" >> .env
 
       - name: Bring up stack
@@ -39,8 +37,11 @@ jobs:
           docker compose logs backend
           exit 1
 
-      - name: Seed
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml exec -T backend python -m app.db.seed
+      - name: First-run setup (create initial admin)
+        run: |
+          curl -fsS -X POST http://localhost:8000/api/v1/setup/admin \
+            -H "Content-Type: application/json" \
+            -d '{"email":"admin@local","password":"CiAdminPass123!","display_name":"Admin"}'
 
       - uses: pnpm/action-setup@v4
         with:

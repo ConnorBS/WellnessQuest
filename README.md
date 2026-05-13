@@ -35,12 +35,16 @@ Each module has its own page, settings sub-page (goal + presets), and dashboard 
 
 ```bash
 cp .env.example .env
-# generate JWT_SECRET, FERNET_KEY, POSTGRES_PASSWORD, ADMIN_PASSWORD, PARTNER_PASSWORD
+# generate JWT_SECRET, FERNET_KEY, POSTGRES_PASSWORD
 make dev          # build + run the dev stack with hot reload
-make seed         # create admin@local + partner@local
 ```
 
 Frontend: <http://localhost:3000>. Backend docs (Swagger): <http://localhost:8000/docs>.
+
+On first boot the database has no users. Open the app and you'll land on a
+welcome screen that asks you to create the initial admin account (Nginx Proxy
+Manager-style). After that, more users are added from inside the app
+(Settings → Users) — credentials never live in environment variables.
 
 ## Docs
 

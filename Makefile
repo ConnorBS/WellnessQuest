@@ -1,5 +1,5 @@
 .PHONY: dev down build test test-backend test-frontend lint typecheck \
-        migrate migrate-new seed psql logs backend-shell frontend-shell e2e clean
+        migrate migrate-new psql logs backend-shell frontend-shell e2e clean
 
 COMPOSE_DEV := docker compose -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_CI  := docker compose -f docker-compose.yml -f docker-compose.ci.yml
@@ -26,9 +26,6 @@ migrate:
 migrate-new:
 	@test -n "$(msg)" || (echo "usage: make migrate-new msg=\"your message\""; exit 1)
 	$(COMPOSE_DEV) exec backend alembic revision --autogenerate -m "$(msg)"
-
-seed:
-	$(COMPOSE_DEV) exec backend python -m app.db.seed
 
 psql:
 	$(COMPOSE_DEV) exec postgres psql -U $${POSTGRES_USER:-wq} -d $${POSTGRES_DB:-wellnessquest}

@@ -1,11 +1,11 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { apiPost } from "@/lib/api";
+import { apiFetch, apiPost } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
-import { TokenPairSchema } from "@/lib/schemas";
+import { MeSchema, SetupStatusSchema, TokenPairSchema } from "@/lib/schemas";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +14,20 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch("/setup/status", SetupStatusSchema, { skipAuth: true })
+      .then((s) => {
+        if (!cancelled && s.setup_required) router.replace("/setup");
+      })
+      .catch(() => {
+        /* fall through — let the user try to log in anyway */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -21,8 +35,9 @@ export default function LoginPage() {
     try {
       const tokens = await apiPost("/auth/login", TokenPairSchema, { email, password });
       setTokens(tokens);
-      router.replace("/dashboard");
-    } catch (err) {
+      const me = await apiFetch("/me", MeSchema);
+      router.replace(me.must_change_password ? "/change-password" : "/dashboard");
+    } catch {
       setError("Invalid credentials");
     } finally {
       setBusy(false);
@@ -62,9 +77,6 @@ export default function LoginPage() {
         >
           {busy ? "Signing in..." : "Sign in"}
         </button>
-        <a href="/signup" style={{ marginTop: 8, color: "#94a3b8", fontSize: 14 }}>
-          Have an invite code? Sign up
-        </a>
       </form>
     </main>
   );

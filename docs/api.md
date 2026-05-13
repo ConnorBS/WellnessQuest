@@ -7,14 +7,25 @@ All routes are under `/api/v1`. JSON only.
 
 Live OpenAPI docs at `/docs` (Swagger) and `/openapi.json`.
 
+## Setup
+
+Public, gated by "no active admin exists". Once the first admin is created the
+create endpoint returns 409 — additional users go through the authenticated
+admin API below.
+
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| GET | `/setup/status` | — | `{ setup_required: bool }` |
+| POST | `/setup/admin` | `{ email, password, display_name, timezone? }` | `{ user, tokens }` |
+
 ## Auth
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| POST | `/auth/signup` | `{ invite_code, email, password, display_name, timezone? }` | `{ user, tokens }` |
 | POST | `/auth/login` | `{ email, password }` | `TokenPair` |
 | POST | `/auth/refresh` | `{ refresh_token }` | `TokenPair` (rotated) |
 | POST | `/auth/logout` | `{ refresh_token }` | 204 |
+| POST | `/auth/change-password` | `{ current_password, new_password }` | `TokenPair` (rotated; other sessions revoked) |
 
 `TokenPair`: `{ access_token, refresh_token, access_expires_at, token_type }`.
 
@@ -25,7 +36,7 @@ Live OpenAPI docs at `/docs` (Swagger) and `/openapi.json`.
 | GET | `/me` | — | `MeOut` |
 | PATCH | `/me` | `MePatchIn` | `MeOut` |
 
-`MeOut`: `{ id, email, display_name, role, xp_total, level, timezone, show_weight_card, weight_unit }`.
+`MeOut`: `{ id, email, display_name, role, xp_total, level, timezone, show_weight_card, weight_unit, must_change_password }`.
 
 `MePatchIn`: `{ show_weight_card?, weight_unit? }` (where `weight_unit` is `"kg"` or `"lb"`).
 
@@ -148,8 +159,11 @@ Requires `role: admin`.
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| POST | `/admin/invites` | `{ email?, ttl_hours? }` | `{ code, expires_at }` |
 | GET | `/admin/users` | — | `MeOut[]` |
+| POST | `/admin/users` | `{ email, display_name, password, role?, timezone? }` | 201 `MeOut` (new user starts with `must_change_password=true`) |
+| PATCH | `/admin/users/{user_id}` | `{ display_name?, role?, disabled? }` | `MeOut` (400 `last_admin` if the change would leave zero active admins) |
+| DELETE | `/admin/users/{user_id}` | — | 204 (soft-disable; revokes outstanding refresh sessions; 400 `last_admin` guard) |
+| POST | `/admin/users/{user_id}/reset-password` | `{ password }` | 204 (sets `must_change_password=true`, revokes the user's refresh sessions) |
 
 ## Meta
 

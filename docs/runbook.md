@@ -11,20 +11,19 @@ cp .env.example .env
 # generate secrets
 python -c "import secrets; print(secrets.token_urlsafe(32))"           # JWT_SECRET
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"  # FERNET_KEY
-# pick a strong POSTGRES_PASSWORD, ADMIN_PASSWORD, PARTNER_PASSWORD
+# pick a strong POSTGRES_PASSWORD
 make dev
-# in another terminal once backend is up:
-make seed
 ```
 
-Open <http://localhost:3000>.
+Open <http://localhost:3000>. With no users yet the app redirects to `/setup`
+and asks you to create the first admin account. Add additional users from
+inside the app afterwards (Settings → Users).
 
 ## Daily ops
 
 - Logs: `make logs`
 - DB shell: `make psql`
 - Migrate after pulling: `make migrate`
-- Reseed (idempotent): `make seed`
 
 ## Backups
 

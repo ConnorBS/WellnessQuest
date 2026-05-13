@@ -11,7 +11,6 @@ from app.models.goal import Goal
 from app.models.habit import Habit
 from app.models.habit_checkin import HabitCheckin
 from app.models.integration import Integration
-from app.models.invite import Invite
 from app.models.session import Session
 from app.models.streak import Streak
 from app.models.upload_file import UploadFile
@@ -35,7 +34,6 @@ __all__ = [
     "Habit",
     "HabitCheckin",
     "Integration",
-    "Invite",
     "Session",
     "Streak",
     "UploadFile",

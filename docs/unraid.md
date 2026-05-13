@@ -60,7 +60,9 @@ python3 -c "import secrets; print(secrets.token_urlsafe(32))"                   
 python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"        # FERNET_KEY
 ```
 
-Plus pick passwords for the two seeded users (`ADMIN_PASSWORD`, `PARTNER_PASSWORD`).
+No passwords need to be pre-set — the very first time you open the WebUI you'll
+see a "Welcome — create your admin account" page (Nginx Proxy Manager style),
+and any additional household users are added from inside the app afterwards.
 
 ## Install the template
 
@@ -70,8 +72,6 @@ Plus pick passwords for the two seeded users (`ADMIN_PASSWORD`, `PARTNER_PASSWOR
    - **DATABASE_URL** — `postgresql+asyncpg://USER:PASSWORD@HOST:PORT/DBNAME` with your Postgres values from prereq 1.
    - **JWT_SECRET** — paste the generated value.
    - **FERNET_KEY** — paste the generated value.
-   - **ADMIN_PASSWORD** — your chosen admin password.
-   - **PARTNER_PASSWORD** — your wife's chosen password.
    - **App data** — host path for persistent data (uploaded preset icons today). Default `/mnt/user/appdata/wellnessquest/data` is usually right.
    - **CORS_ORIGINS**, **TZ** — defaults are fine if your LAN matches the defaults.
    - **App port** (bridge networking) — host port unraid exposes; defaults to 8000. Only matters if the container is on a bridge network (then it maps `host:APP_PORT → container:8000`). Change if it conflicts with another service.
@@ -80,33 +80,36 @@ Plus pick passwords for the two seeded users (`ADMIN_PASSWORD`, `PARTNER_PASSWOR
 
 ## First users
 
-The container auto-seeds them on every start (right after Alembic migrations, before uvicorn). It reads `ADMIN_EMAIL` / `ADMIN_PASSWORD` (and `PARTNER_EMAIL` / `PARTNER_PASSWORD` if set) and inserts them only if they don't already exist.
+Open `http://wellnessquest.lan:8000/` (or `http://<unraid-ip>:8000/`). With no
+users yet the app redirects you to `/setup` and presents a welcome screen:
+enter a full name, email, and password, and click **Save**. That creates the
+first admin and logs you straight into the dashboard.
 
-A few gotchas worth knowing:
+After that, add more household users from **Settings → Users → Add user**. You
+type their email and a temporary password; they're forced to change it on
+first login. Credentials never live in environment variables — if you ever
+need to reset someone, use the admin UI's **Reset password** button.
 
-- The seed **does not rotate passwords**. Once the user row exists in Postgres, changing `ADMIN_PASSWORD` in the template does nothing — change passwords from the UI instead.
-- If you initially set the wrong password and want to start over, delete the user row and the next container restart will re-seed:
-  ```bash
-  docker exec wellnessquest python -c "
-  import asyncio
-  from sqlalchemy import delete
-  from app.db.session import async_session
-  from app.models.user import User
-  async def main():
-      async with async_session() as db:
-          await db.execute(delete(User).where(User.email == 'admin@local'))
-          await db.commit()
-  asyncio.run(main())
-  "
-  docker restart wellnessquest
-  ```
-  (Replace `admin@local` with whatever you actually set in `ADMIN_EMAIL`.)
-- Email comparison is case-sensitive — log in with the exact value you set in `ADMIN_EMAIL`.
-- You can also run the seed manually anytime: `docker exec wellnessquest python -m app.db.seed`. Idempotent.
+If you ever need to start over completely, delete the user rows in Postgres and
+the next request will redirect you back to `/setup`:
+
+```bash
+docker exec wellnessquest python -c "
+import asyncio
+from sqlalchemy import delete
+from app.db.session import async_session
+from app.models.user import User
+async def main():
+    async with async_session() as db:
+        await db.execute(delete(User))
+        await db.commit()
+asyncio.run(main())
+"
+```
 
 ## First login
 
-Open `http://wellnessquest.lan:8000/` (or `http://<unraid-ip>:8000/`). Sign in as `admin@local`, change your password, then **Settings → Admin → New invite** to mint the signup link for your wife.
+Sign in with the admin account you created at `/setup`.
 
 Install the PWA on your phone: Safari/Chrome → "Add to Home Screen".
 

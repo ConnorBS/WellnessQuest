@@ -37,6 +37,8 @@ export default function SettingsPage() {
         <Link href="/settings/weight">Weight &amp; units</Link>
         <Link href="/settings/tokens">Home Assistant tokens</Link>
         <Link href="/settings/integrations">Integrations</Link>
+        <Link href="/change-password">Change password</Link>
+        {data?.role === "admin" && <Link href="/settings/users">Users</Link>}
       </nav>
     </>
   );

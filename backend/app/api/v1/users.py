@@ -22,6 +22,7 @@ def _to_me_out(user: User) -> MeOut:
         timezone=user.timezone,
         show_weight_card=user.show_weight_card,
         weight_unit=user.weight_unit,
+        must_change_password=user.must_change_password,
     )
 
 

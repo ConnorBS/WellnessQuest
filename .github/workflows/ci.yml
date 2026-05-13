@@ -35,8 +35,6 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://wq:wq@localhost:5432/wellnessquest_test
       JWT_SECRET: ci-jwt-secret
       FERNET_KEY: ci-fernet-key
-      ADMIN_PASSWORD: CiAdminPass123!
-      PARTNER_PASSWORD: CiPartnerPass123!
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

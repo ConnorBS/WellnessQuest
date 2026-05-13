@@ -23,11 +23,6 @@ class Settings(BaseSettings):
 
     cors_origins: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
 
-    admin_email: str = Field(default="admin@local", alias="ADMIN_EMAIL")
-    admin_password: str = Field(default="change-me-admin", alias="ADMIN_PASSWORD")
-    partner_email: str = Field(default="partner@local", alias="PARTNER_EMAIL")
-    partner_password: str = Field(default="change-me-partner", alias="PARTNER_PASSWORD")
-
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     tz: str = Field(default="UTC", alias="TZ")
 

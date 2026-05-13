@@ -1,29 +1,31 @@
 from __future__ import annotations
 
-from datetime import timedelta
-
 import pytest
 
-from app.auth.invites import generate_invite_code
-from app.models.invite import Invite
-from app.services.time_utils import utcnow
+from app.auth.passwords import hash_password
+from app.models.user import User
+from app.services.user_bootstrap import bootstrap_user_assets
 
 
 async def _signup_and_token(client, db, email: str) -> tuple[str, str]:
-    raw, code_hash = generate_invite_code()
-    db.add(Invite(code_hash=code_hash, expires_at=utcnow() + timedelta(hours=1)))
+    user = User(
+        email=email,
+        password_hash=hash_password("TestPassword-123!"),
+        display_name="Tester",
+        role="user",
+        timezone="UTC",
+        must_change_password=False,
+    )
+    db.add(user)
+    await db.flush()
+    await bootstrap_user_assets(db, user)
     await db.commit()
     r = await client.post(
-        "/api/v1/auth/signup",
-        json={
-            "invite_code": raw,
-            "email": email,
-            "password": "TestPassword-123!",
-            "display_name": "Tester",
-        },
+        "/api/v1/auth/login",
+        json={"email": email, "password": "TestPassword-123!"},
     )
-    assert r.status_code == 201
-    access = r.json()["tokens"]["access_token"]
+    assert r.status_code == 200, r.text
+    access = r.json()["access_token"]
 
     r = await client.post(
         "/api/v1/api-tokens",

@@ -65,7 +65,7 @@ module = ["jose.*", "argon2.*", "factory.*", "slowapi.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["app.tests", "app.tests.*", "app.db.seed"]
+module = ["app.tests", "app.tests.*"]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
