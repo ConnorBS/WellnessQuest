@@ -1,5 +1,10 @@
 services:
   postgres:
+    # Clear the pg_data volume mount inherited from docker-compose.yml so the
+    # tmpfs below can mount /var/lib/postgresql/data without compose tripping
+    # over two mount targets at the same path. The init.sql mount lives at a
+    # different target so we lose nothing by resetting this list.
+    volumes: !reset []
     tmpfs:
       - /var/lib/postgresql/data
 
