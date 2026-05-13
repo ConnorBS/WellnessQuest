@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: e2e-${{ github.ref }}
@@ -106,3 +107,37 @@ jobs:
             echo "=== $f ==="
             cat "$f"
           done
+
+      - name: Post failure details as PR comment
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo "## Playwright CI failure (workflow run ${{ github.run_id }})"
+            echo
+            echo "### docker compose ps"
+            echo '```'
+            docker compose -f docker-compose.yml -f docker-compose.ci.yml ps || true
+            echo '```'
+            echo
+            echo "### backend logs (last 300 lines)"
+            echo '```'
+            docker compose -f docker-compose.yml -f docker-compose.ci.yml logs backend --tail=300 --no-color 2>&1 || true
+            echo '```'
+            echo
+            echo "### frontend logs (last 200 lines)"
+            echo '```'
+            docker compose -f docker-compose.yml -f docker-compose.ci.yml logs frontend --tail=200 --no-color 2>&1 || true
+            echo '```'
+            echo
+            echo "### Playwright error contexts"
+            echo '```'
+            find frontend/test-results -name "error-context.md" 2>/dev/null | while read -r f; do
+              echo "=== $f ==="
+              cat "$f"
+            done || true
+            echo '```'
+          } > /tmp/pr-comment.md
+          gh pr comment "$PR_NUMBER" --body-file /tmp/pr-comment.md --repo "${{ github.repository }}"
