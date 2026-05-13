@@ -40,6 +40,13 @@ async def create_integration(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=f"invalid_config:{exc}"
         ) from exc
+    if cls.secrets_schema is not None and payload.secrets:
+        try:
+            cls.secrets_schema.model_validate(payload.secrets)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=f"invalid_secrets:{exc}"
+            ) from exc
 
     row = Integration(
         user_id=user.id,

@@ -14,6 +14,7 @@ class IntegrationChannel(ABC):
     kind: ClassVar[str]
     label: ClassVar[str]
     config_schema: ClassVar[type[BaseModel]]
+    secrets_schema: ClassVar[type[BaseModel] | None] = None
 
     def __init__(self, config: dict[str, Any], secrets: dict[str, Any] | None = None) -> None:
         self.config = self.config_schema.model_validate(config).model_dump()
