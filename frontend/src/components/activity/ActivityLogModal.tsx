@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAddActivity } from "@/hooks/useAddActivity";
 import { useCreateActivityPreset } from "@/hooks/useActivityPresets";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
+import { ApiError } from "@/lib/api";
 import { uuidv4 } from "@/lib/uuid";
 
 interface Props {
@@ -34,6 +35,7 @@ export function ActivityLogModal({ onClose }: Props) {
   const [exerciseType, setExerciseType] = useState("");
   const [minutes, setMinutes] = useState<number | "">("");
   const [saveAsPreset, setSaveAsPreset] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const add = useAddActivity();
   const createPreset = useCreateActivityPreset();
@@ -81,6 +83,7 @@ export function ActivityLogModal({ onClose }: Props) {
 
   function handleLog() {
     if (!valid) return;
+    setErrorMsg(null);
     const trimmedName = name.trim();
     const trimmedType = exerciseType.trim();
     const entryName = trimmedName ? trimmedName.slice(0, 60) : null;
@@ -111,6 +114,7 @@ export function ActivityLogModal({ onClose }: Props) {
           }
           onClose();
         },
+        onError: (err) => setErrorMsg(formatLogError(err)),
       },
     );
   }
@@ -248,6 +252,24 @@ export function ActivityLogModal({ onClose }: Props) {
             Save as quick activity button
           </label>
 
+          {errorMsg ? (
+            <p
+              role="alert"
+              data-testid="activity-log-error"
+              style={{
+                margin: 0,
+                padding: "8px 10px",
+                fontSize: 13,
+                color: "#fca5a5",
+                background: "rgba(248,113,113,0.08)",
+                border: "1px solid rgba(248,113,113,0.35)",
+                borderRadius: 6,
+              }}
+            >
+              {errorMsg}
+            </p>
+          ) : null}
+
           <button
             type="button"
             onClick={handleLog}
@@ -271,6 +293,16 @@ export function ActivityLogModal({ onClose }: Props) {
       </div>
     </div>
   );
+}
+
+function formatLogError(err: unknown): string {
+  if (err instanceof ApiError) {
+    const body = err.body as { detail?: unknown } | null;
+    if (body && typeof body.detail === "string") return body.detail;
+    return `Server error ${err.status}`;
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return "Couldn't reach the server. Check your connection and try again.";
 }
 
 const labelStyle: React.CSSProperties = {
