@@ -8,6 +8,12 @@ services:
     tmpfs:
       - /var/lib/postgresql/data
 
+  # `backend` and `frontend` are CI-only service names — the prod
+  # docker-compose.yml runs the unified `app` image instead. We define them
+  # standalone here (not as inheritors of `app`) so the e2e workflow can build
+  # them from the per-service Dockerfiles. Everything they need to actually
+  # boot — db waits, env vars, host port mappings — has to be set here, since
+  # nothing is inherited from the base file.
   backend:
     image: wq-backend:ci
     build:
