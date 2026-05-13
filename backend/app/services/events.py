@@ -32,4 +32,6 @@ async def _safe(h: Handler, user_id: uuid.UUID, event: str, payload: dict[str, A
     try:
         await h(user_id, event, payload)
     except Exception as exc:  # noqa: BLE001
-        log.error("event_handler_failed", event=event, handler=h.__name__, error=str(exc))
+        log.error(
+            "event_handler_failed", event_name=event, handler=h.__name__, error=str(exc)
+        )

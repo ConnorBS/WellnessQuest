@@ -22,14 +22,23 @@ Home Assistant ─────┼──────► ghcr.io/connorbs/wellness
 
 ## Modules
 
-Four trackers, each following the same shape:
+Five trackers, each following the same shape:
 
 | Module | Tables | Service | Router prefix |
 |---|---|---|---|
 | Water | `water_entries`, `water_presets`, `goals` (metric=`water_ml`) | `water_service` | `/api/v1/water`, `/api/v1/water/presets` |
+| Food | `food_entries`, `food_presets`, `goals` (metric=`food_kcal`, ceiling) | `food_service` | `/api/v1/food`, `/api/v1/food/presets`, `/api/v1/food/search` |
 | Activity | `activity_entries`, `activity_presets`, `goals` (metric=`active_minutes`) | `activity_service` | `/api/v1/activity`, `/api/v1/activity/presets` |
 | Habits | `habits`, `habit_checkins` | `habit_service` | `/api/v1/habits` |
 | Weight | `weight_entries`, `weight_targets` | `weight_service` | `/api/v1/weight` |
+
+The food module differs from water/activity in two ways: the daily goal is a
+**ceiling** (compliant = total ≤ target), and entries can carry optional macro
+breakdowns (`protein_g`, `carbs_g`, `fat_g`) and a `meal_type` tag for grouping.
+Search-as-you-type is backed by the Open Food Facts provider; selected hits are
+logged at user-chosen gram amounts (the frontend does the per-100g math).
+Streaks are not wired for `food_kcal` yet — ceiling compliance can only be
+evaluated at end-of-day, so the streak service would need a separate path.
 
 Shared across all four:
 
@@ -76,6 +85,7 @@ Current tables:
 
 - **Identity**: `users`, `sessions`, `api_tokens`, `invites`
 - **Water**: `water_entries`, `water_presets`
+- **Food**: `food_entries`, `food_presets`
 - **Activity**: `activity_entries`, `activity_presets`
 - **Habits**: `habits`, `habit_checkins`
 - **Weight**: `weight_entries`, `weight_targets`
@@ -83,15 +93,15 @@ Current tables:
 - **Operations**: `audit_log`, `error_log`
 - **Outbound**: `integrations`, `webhook_subscriptions`, `webhook_deliveries`
 
-Migration chain is linear: `0001_initial` → `0002_water_presets_uploads` → `0003_activity` → `0004_habits` → `0005_habit_monthly` → `0006_weight_and_user_prefs` → `0007_weight_target` → `0008_activity_exercise_type` → `0009_weight_targets`. Migrations run on container start before uvicorn boots.
+Migration chain is linear: `0001_initial` → `0002_water_presets_uploads` → `0003_activity` → `0004_habits` → `0005_habit_monthly` → `0006_weight_and_user_prefs` → `0007_weight_target` → `0008_activity_exercise_type` → `0009_weight_targets` → `0010_food`. Migrations run on container start before uvicorn boots.
 
-Extension path: `food_entries`, `exercise_sessions`, `quests`, `quest_progress`. Most cross-cutting tables already accept arbitrary metric keys.
+Extension path: `exercise_sessions`, `quests`, `quest_progress`. Most cross-cutting tables already accept arbitrary metric keys.
 
 ## Events & webhooks
 
 Services call `events.emit(user_id, event_name, payload)`. The webhook dispatcher is subscribed; it enumerates active `webhook_subscriptions` and inserts `webhook_deliveries` rows. A background loop drains the queue with exponential backoff (up to 5 attempts), all visible in the `webhook_deliveries` table.
 
-Events emitted today: `water.goal_met`, `activity.goal_met`. Habits don't emit yet.
+Events emitted today: `water.goal_met`, `activity.goal_met`, `food.target_exceeded`. Habits don't emit yet.
 
 ## Logging / audit / errors
 

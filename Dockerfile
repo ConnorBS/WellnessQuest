@@ -45,9 +45,13 @@ COPY backend/ .
 COPY --from=frontend-builder /build/out /app/static
 RUN mkdir -p /app/data/uploads && chmod 755 /app/data /app/data/uploads
 ENV WQ_STATIC_DIR=/app/static \
-    WQ_UPLOADS_DIR=/app/data/uploads
+    WQ_UPLOADS_DIR=/app/data/uploads \
+    APP_PORT=8000
 VOLUME ["/app/data"]
 EXPOSE 8000
+# Healthcheck honours the APP_PORT override so self-hosters who run on macvlan
+# can bind uvicorn to 80 (clean URLs at the container's LAN IP) without the
+# healthcheck false-failing on a stale port.
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD curl -fsS http://localhost:8000/api/v1/healthz || exit 1
-CMD ["sh", "-c", "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers"]
+  CMD curl -fsS "http://localhost:${APP_PORT:-8000}/api/v1/healthz" || exit 1
+CMD ["sh", "-c", "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8000} --proxy-headers"]

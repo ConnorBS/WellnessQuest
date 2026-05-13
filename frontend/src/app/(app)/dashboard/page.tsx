@@ -1,6 +1,7 @@
 "use client";
 
 import { ActivityCard } from "@/components/ActivityCard";
+import { FoodCard } from "@/components/FoodCard";
 import { HabitsCard } from "@/components/HabitsCard";
 import { StreakBadge } from "@/components/StreakBadge";
 import { WaterCard } from "@/components/WaterCard";
@@ -15,6 +16,7 @@ export default function DashboardPage() {
     <>
       <XpBar />
       <WaterCard />
+      <FoodCard />
       <ActivityCard />
       <HabitsCard />
       {showWeight && <WeightCard />}

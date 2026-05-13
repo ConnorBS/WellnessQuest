@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from app.services.time_utils import day_bounds_for_user, day_for_user
 
 
 def test_day_for_user_uses_local_zone():
     # 03:30 UTC on 2026-03-08 = 22:30 on 2026-03-07 in America/New_York
-    instant = datetime(2026, 3, 8, 3, 30, tzinfo=timezone.utc)
+    instant = datetime(2026, 3, 8, 3, 30, tzinfo=UTC)
     assert day_for_user("America/New_York", instant) == date(2026, 3, 7)
     assert day_for_user("UTC", instant) == date(2026, 3, 8)
 

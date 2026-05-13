@@ -22,7 +22,7 @@ def _to_out(p: ActivityPreset) -> ActivityPresetOut:
         label=p.label,
         minutes=p.minutes,
         exercise_type=p.exercise_type,
-        icon_kind=p.icon_kind,  # type: ignore[arg-type]
+        icon_kind=p.icon_kind,
         icon_key=p.icon_key,
         sort_order=p.sort_order,
     )

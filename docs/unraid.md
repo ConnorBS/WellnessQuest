@@ -26,12 +26,16 @@ If you want the two containers on a shared internal docker network so you can ad
 
 The `.github/workflows/deploy.yml` workflow builds and pushes `ghcr.io/connorbs/wellnessquest` on every push:
 
-| Branch | Tags published |
-|---|---|
-| `main` | `:latest`, `:stable`, `:sha-<7>` |
-| `claude/**` | `:preview`, `:sha-<7>` |
+| Source | Tags published | Who pins this |
+|---|---|---|
+| Git tag `vX.Y.Z` | `:vX.Y.Z`, `:X.Y.Z`, `:X.Y`, `:X`, `:stable`, `:latest`, `:sha-<7>` | Self-hosters (recommended) |
+| Git tag `vX.Y.Z-pre.N` | `:vX.Y.Z-pre.N`, `:X.Y.Z-pre.N`, `:sha-<7>` | RC / beta testers |
+| Branch `main` | `:edge`, `:sha-<7>` | Bleeding-edge testers |
+| Branch `claude/**` | `:preview`, `:sha-<7>` | Development only |
 
-Push the working branch, watch the **deploy** workflow under Actions until green (~3-5 min first time), then confirm the package exists at <https://github.com/ConnorBS?tab=packages> as `ghcr.io/connorbs/wellnessquest`.
+**Recommended pin for self-hosters:** `:stable` (auto-updates to the latest tagged release) or an exact `:vX.Y.Z` (never moves). `:edge` and `:preview` can include unreleased / unstable work.
+
+Push the working branch, watch the **deploy** workflow under Actions until green (~3-5 min first time), then confirm the package exists at <https://github.com/ConnorBS?tab=packages> as `ghcr.io/connorbs/wellnessquest`. See [`releasing.md`](releasing.md) for how to cut a versioned release.
 
 ### 3. Authenticate Unraid to GHCR
 
@@ -70,8 +74,9 @@ Plus pick passwords for the two seeded users (`ADMIN_PASSWORD`, `PARTNER_PASSWOR
    - **PARTNER_PASSWORD** — your wife's chosen password.
    - **App data** — host path for persistent data (uploaded preset icons today). Default `/mnt/user/appdata/wellnessquest/data` is usually right.
    - **CORS_ORIGINS**, **TZ** — defaults are fine if your LAN matches the defaults.
-   - **App port** — defaults to 8000; change if it conflicts with another service.
-4. **Apply**. The image pulls from GHCR (~30 s), then the container runs `alembic upgrade head` and starts uvicorn. Watch the log until you see `Uvicorn running on 0.0.0.0:8000`. The healthcheck flips the badge to `healthy` after ~30 s.
+   - **App port** (bridge networking) — host port unraid exposes; defaults to 8000. Only matters if the container is on a bridge network (then it maps `host:APP_PORT → container:8000`). Change if it conflicts with another service.
+   - **APP_PORT** env var (any networking, but especially macvlan / ipvlan) — sets the **internal** port uvicorn binds to inside the container. Defaults to 8000. If your container has its own LAN IP (macvlan), set this to **80** so the app is reachable at `http://<container-ip>/` with no port suffix, or **443** if you're terminating TLS inside the container (uncommon). Bridge users can usually leave it at 8000 and tune the host-side **App port** field instead.
+4. **Apply**. The image pulls from GHCR (~30 s), then the container runs `alembic upgrade head` and starts uvicorn. Watch the log until you see `Uvicorn running on 0.0.0.0:<APP_PORT>`. The healthcheck flips the badge to `healthy` after ~30 s.
 
 ## First users
 

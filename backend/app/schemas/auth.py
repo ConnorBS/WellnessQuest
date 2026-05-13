@@ -27,7 +27,7 @@ class TokenPair(BaseModel):
     access_token: str
     refresh_token: str
     access_expires_at: datetime
-    token_type: str = "Bearer"
+    token_type: str = "Bearer"  # noqa: S105 - OAuth token type literal, not a secret
 
 
 class MeOut(BaseModel):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 from pydantic import BaseModel
 
@@ -14,10 +14,21 @@ class FoodItem(BaseModel):
     name: str
     brand: str | None = None
     serving_g: float | None = None
+    serving_label: str | None = None
+    # "g" or "ml" if the data backs it; None when we genuinely don't know.
+    # Beverages should report "ml" so the frontend offers volumetric units.
+    unit: Literal["g", "ml"] | None = None
+    # Per-100g nutriments (mass basis).
     kcal_per_100g: float | None = None
-    protein_g: float | None = None
-    carbs_g: float | None = None
-    fat_g: float | None = None
+    protein_per_100g: float | None = None
+    carbs_per_100g: float | None = None
+    fat_per_100g: float | None = None
+    # Per-100ml nutriments (volume basis). Populated for liquids when the
+    # provider exposes them; lets us avoid density assumptions.
+    kcal_per_100ml: float | None = None
+    protein_per_100ml: float | None = None
+    carbs_per_100ml: float | None = None
+    fat_per_100ml: float | None = None
 
 
 class FoodProvider(ABC):

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 
 from app.auth.invites import generate_invite_code
@@ -7,7 +9,6 @@ from app.auth.passwords import hash_password, verify_password
 from app.models.invite import Invite
 from app.models.user import User
 from app.services.time_utils import utcnow
-from datetime import timedelta
 
 
 def test_password_roundtrip():

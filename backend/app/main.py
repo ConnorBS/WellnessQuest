@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -31,17 +32,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         "startup",
         version="0.1.0",
         static_dir=str(STATIC_DIR),
-        static_present=STATIC_DIR.is_dir(),
+        static_present=STATIC_DIR.is_dir(),  # noqa: ASYNC240 - one-shot stat at startup, not a hot path
     )
     task = webhook_dispatcher.start()
     try:
         yield
     finally:
         task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError, Exception):
             await task
-        except (asyncio.CancelledError, Exception):  # noqa: BLE001
-            pass
         log.info("shutdown")
 
 

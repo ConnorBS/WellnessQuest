@@ -11,17 +11,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml ./
 RUN pip install --upgrade pip && pip install .
 
+ENV APP_PORT=8000
+
 # --- Dev image: include dev deps, mount source via compose
 FROM base AS dev
 RUN pip install ".[dev]"
 COPY . .
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8000} --reload"]
 
 # --- Prod image: copy source, no dev deps
 FROM base AS prod
 COPY . .
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD curl -fsS http://localhost:8000/api/v1/healthz || exit 1
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers"]
+  CMD curl -fsS "http://localhost:${APP_PORT:-8000}/api/v1/healthz" || exit 1
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8000} --proxy-headers"]

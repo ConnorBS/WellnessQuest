@@ -21,11 +21,11 @@ os.environ.setdefault("FERNET_KEY", "test-fernet-key")
 os.environ.setdefault("ADMIN_PASSWORD", "TestAdminPass123!")
 os.environ.setdefault("PARTNER_PASSWORD", "TestPartnerPass123!")
 
+import app.db.session as session_mod  # noqa: E402
+from app import models  # noqa: F401,E402  -- register models with Base.metadata
 from app.config import settings  # noqa: E402
 from app.db import base as db_base  # noqa: E402
-import app.db.session as session_mod  # noqa: E402
 from app.main import create_app  # noqa: E402
-from app import models  # noqa: F401,E402  -- register models with Base.metadata
 
 
 @pytest.fixture(scope="session")
@@ -46,11 +46,11 @@ async def engine():
     factory = async_sessionmaker(eng, expire_on_commit=False, class_=AsyncSession)
     # Point the app's global session factory at the test engine.
     original = session_mod.async_session
-    session_mod.async_session = factory  # type: ignore[assignment]
+    session_mod.async_session = factory
     try:
         yield eng
     finally:
-        session_mod.async_session = original  # type: ignore[assignment]
+        session_mod.async_session = original
         await eng.dispose()
 
 
@@ -68,6 +68,6 @@ async def client(engine):
         yield ac
 
 
-@pytest.fixture()
+@pytest.fixture
 def unique_email() -> str:
     return f"u-{uuid.uuid4().hex[:8]}@example.com"

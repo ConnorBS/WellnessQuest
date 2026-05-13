@@ -9,7 +9,7 @@ import { useSwipe } from "@/hooks/useSwipe";
 import { clearTokens, isLoggedIn } from "@/lib/auth";
 import { DayProvider, useViewedDay } from "@/lib/day-context";
 
-const PATHS_WITH_DAY_HEADER = ["/dashboard", "/water", "/activity", "/habits"];
+const PATHS_WITH_DAY_HEADER = ["/dashboard", "/water", "/food", "/activity", "/habits"];
 
 function shouldShowDayHeader(pathname: string | null): boolean {
   if (!pathname) return false;
@@ -76,6 +76,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           >
             <Link href="/dashboard">Dashboard</Link>
             <Link href="/water">Water</Link>
+            <Link href="/food">Food</Link>
             <Link href="/activity">Activity</Link>
             <Link href="/habits">Habits</Link>
             <Link href="/weight">Weight</Link>

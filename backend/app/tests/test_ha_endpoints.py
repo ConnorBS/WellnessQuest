@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 
 from app.auth.invites import generate_invite_code
 from app.models.invite import Invite
 from app.services.time_utils import utcnow
-from datetime import timedelta
 
 
 async def _signup_and_token(client, db, email: str) -> tuple[str, str]:

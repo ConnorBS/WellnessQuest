@@ -3,6 +3,9 @@ name: deploy
 on:
   push:
     branches: [main, "claude/**"]
+    # Semver release tags (vX.Y.Z) publish the immutable :vX.Y.Z plus the
+    # :stable / :latest / :X.Y / :X aliases that self-hosters can pin.
+    tags: ["v*.*.*"]
   workflow_dispatch:
     inputs:
       tag:
@@ -34,10 +37,30 @@ jobs:
           SHA_SHORT=$(echo '${{ github.sha }}' | cut -c1-7)
           TAGS="${IMG}:sha-${SHA_SHORT}"
           case "${{ github.ref }}" in
+            refs/tags/v*.*.*)
+              # Tagged release: vX.Y.Z[-prerelease]. Publish the immutable
+              # exact tag, the X.Y / X / bare-semver aliases, and (for non-
+              # prerelease tags only) the floating :stable / :latest channels.
+              V="${{ github.ref_name }}"
+              BARE="${V#v}"
+              IFS=. read -r MAJOR MINOR REST <<< "$BARE"
+              PATCH="${REST%%-*}"
+              PRERELEASE=""
+              if [ "$REST" != "$PATCH" ]; then
+                PRERELEASE="${REST#*-}"
+              fi
+              TAGS="${TAGS},${IMG}:${V},${IMG}:${BARE}"
+              if [ -z "$PRERELEASE" ]; then
+                TAGS="${TAGS},${IMG}:${MAJOR}.${MINOR},${IMG}:${MAJOR},${IMG}:stable,${IMG}:latest"
+              fi
+              ;;
             refs/heads/main)
-              TAGS="${TAGS},${IMG}:latest,${IMG}:stable"
+              # main HEAD between releases. Self-hosters who want bleeding edge
+              # pin to :edge; :stable / :latest still point at the last release.
+              TAGS="${TAGS},${IMG}:edge"
               ;;
             refs/heads/claude/*)
+              # Feature branches share one rolling :preview tag for dev/testing.
               TAGS="${TAGS},${IMG}:preview"
               ;;
           esac
@@ -125,7 +148,7 @@ jobs:
   migrations-sql:
     runs-on: ubuntu-latest
     needs: publish
-    if: github.ref == 'refs/heads/main'
+    if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
     services:
       postgres:
         image: postgres:16-alpine
