@@ -28,7 +28,7 @@ Tune in this file over time. Reviewer agent should check at minimum:
 
 `backend/app/tests/scenarios/*.yaml` — declarative end-to-end scripts. Each scenario:
 
-1. Signs up two users via invite.
+1. Creates the first admin via `/api/v1/setup/admin`, then a second user via `/api/v1/admin/users`.
 2. Issues an HA token.
 3. Logs water via both PWA route and HA route.
 4. Asserts XP rules and webhook delivery.

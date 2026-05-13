@@ -36,7 +36,7 @@ admin API below.
 | GET | `/me` | — | `MeOut` |
 | PATCH | `/me` | `MePatchIn` | `MeOut` |
 
-`MeOut`: `{ id, email, display_name, role, xp_total, level, timezone, show_weight_card, weight_unit, must_change_password }`.
+`MeOut`: `{ id, email, display_name, role, xp_total, level, timezone, show_weight_card, weight_unit, must_change_password, disabled }`. `disabled` is meaningful on `/admin/users` listings; it's always `false` on `/me` (a disabled user can't authenticate to call it).
 
 `MePatchIn`: `{ show_weight_card?, weight_unit? }` (where `weight_unit` is `"kg"` or `"lb"`).
 

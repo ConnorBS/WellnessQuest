@@ -83,7 +83,7 @@ Postgres 16+. Single database, single role. Multi-tenant via `user_id` FK on eve
 
 Current tables:
 
-- **Identity**: `users`, `sessions`, `api_tokens`, `invites`
+- **Identity**: `users`, `sessions`, `api_tokens` (the first admin is created via the public `/api/v1/setup/admin` flow when the DB has no admin yet; additional users come from `/api/v1/admin/users`)
 - **Water**: `water_entries`, `water_presets`
 - **Food**: `food_entries`, `food_presets`
 - **Activity**: `activity_entries`, `activity_presets`
@@ -93,7 +93,7 @@ Current tables:
 - **Operations**: `audit_log`, `error_log`
 - **Outbound**: `integrations`, `webhook_subscriptions`, `webhook_deliveries`
 
-Migration chain is linear: `0001_initial` → `0002_water_presets_uploads` → `0003_activity` → `0004_habits` → `0005_habit_monthly` → `0006_weight_and_user_prefs` → `0007_weight_target` → `0008_activity_exercise_type` → `0009_weight_targets` → `0010_food`. Migrations run on container start before uvicorn boots.
+Migration chain is linear: `0001_initial` → `0002_water_presets_uploads` → `0003_activity` → `0004_habits` → `0005_habit_monthly` → `0006_weight_and_user_prefs` → `0007_weight_target` → `0008_activity_exercise_type` → `0009_weight_targets` → `0010_food` → `0011_water_entry_name` → `0012_activity_entry_name` → `0013_user_management` (drops `invites`, adds `users.must_change_password`). Migrations run on container start before uvicorn boots.
 
 Extension path: `exercise_sessions`, `quests`, `quest_progress`. Most cross-cutting tables already accept arbitrary metric keys.
 
