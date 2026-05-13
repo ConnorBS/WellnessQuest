@@ -1,17 +1,47 @@
 "use client";
 
+import { useState } from "react";
+
 import { ActivityCard } from "@/components/ActivityCard";
+import { ActivityLogModal } from "@/components/activity/ActivityLogModal";
 import { useActivityToday } from "@/hooks/useActivityToday";
 
 export default function ActivityPage() {
   const { data } = useActivityToday();
+  const [showLog, setShowLog] = useState(false);
   return (
     <>
       <ActivityCard />
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-        <h2 className="text-lg font-semibold" style={{ marginBottom: 8 }}>
-          Today
-        </h2>
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 12,
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          <h2 className="text-lg font-semibold">Today</h2>
+          <button
+            type="button"
+            onClick={() => setShowLog(true)}
+            data-testid="open-activity-log"
+            style={{
+              background: "#10b981",
+              color: "white",
+              border: "none",
+              borderRadius: 6,
+              padding: "6px 12px",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            + Log activity
+          </button>
+        </header>
         {!data || data.entries.length === 0 ? (
           <p className="text-slate-400 text-sm">No entries yet.</p>
         ) : (
@@ -37,6 +67,7 @@ export default function ActivityPage() {
           </ul>
         )}
       </section>
+      {showLog ? <ActivityLogModal onClose={() => setShowLog(false)} /> : null}
     </>
   );
 }

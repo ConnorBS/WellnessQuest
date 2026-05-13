@@ -139,6 +139,41 @@ async def _get_by_client_id(
     )
 
 
+async def recent_distinct(
+    db: AsyncSession, *, user: User, limit: int = 8
+) -> list[ActivityEntry]:
+    """Most-recently-logged distinct activities, keyed on lowercased exercise_type.
+
+    Mirrors food_service.recent_distinct so the quick-log modal can offer the
+    activity names the user has already used. Entries without an exercise_type
+    are skipped — there's nothing to suggest for them.
+    """
+    fetch_limit = max(limit * 5, 20)
+    stmt = (
+        select(ActivityEntry)
+        .where(
+            ActivityEntry.user_id == user.id,
+            ActivityEntry.exercise_type.is_not(None),
+        )
+        .order_by(ActivityEntry.occurred_at.desc())
+        .limit(fetch_limit)
+    )
+    rows = list((await db.execute(stmt)).scalars().all())
+    seen: set[str] = set()
+    result: list[ActivityEntry] = []
+    for row in rows:
+        if row.exercise_type is None:
+            continue
+        key = row.exercise_type.strip().lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        result.append(row)
+        if len(result) >= limit:
+            break
+    return result
+
+
 async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:
     stmt = select(ActivityEntry).where(
         ActivityEntry.id == entry_id, ActivityEntry.user_id == user.id

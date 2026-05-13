@@ -35,3 +35,9 @@ class ActivityAddOut(BaseModel):
     goal_minutes: int
     xp_delta: int
     goal_met: bool
+
+
+class ActivityRecentEntry(BaseModel):
+    exercise_type: str
+    minutes: int
+    last_logged_at: datetime

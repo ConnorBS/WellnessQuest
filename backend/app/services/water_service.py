@@ -67,6 +67,7 @@ async def add(
     source: str,
     client_id: str | None,
     occurred_at: datetime | None,
+    name: str | None = None,
 ) -> WaterAddResult:
     today = day_for_user(user.timezone)
     before_total = await total_today(db, user=user)
@@ -77,6 +78,7 @@ async def add(
     entry = WaterEntry(
         user_id=user.id,
         ml=ml,
+        name=(name.strip() or None) if name else None,
         source=source,
         occurred_at=occurred_at or utcnow(),
         client_id=client_id,
@@ -137,6 +139,38 @@ async def _get_by_client_id(
         goal_met=total >= goal_ml,
         newly_met=False,
     )
+
+
+async def recent_distinct(
+    db: AsyncSession, *, user: User, limit: int = 8
+) -> list[WaterEntry]:
+    """Most-recently-logged distinct water entries, keyed on lowercased name.
+
+    Mirrors food_service.recent_distinct so the quick-log modal's name
+    autocomplete can offer the labels the user has actually used. Entries
+    without a name are skipped — there's nothing to suggest for them.
+    """
+    fetch_limit = max(limit * 5, 20)
+    stmt = (
+        select(WaterEntry)
+        .where(WaterEntry.user_id == user.id, WaterEntry.name.is_not(None))
+        .order_by(WaterEntry.occurred_at.desc())
+        .limit(fetch_limit)
+    )
+    rows = list((await db.execute(stmt)).scalars().all())
+    seen: set[str] = set()
+    result: list[WaterEntry] = []
+    for row in rows:
+        if row.name is None:
+            continue
+        key = row.name.strip().lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        result.append(row)
+        if len(result) >= limit:
+            break
+    return result
 
 
 async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:

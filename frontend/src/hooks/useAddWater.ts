@@ -6,7 +6,7 @@ import { apiPost } from "@/lib/api";
 import { useViewedDay } from "@/lib/day-context";
 import { WaterAddOut, WaterAddOutSchema, WaterToday } from "@/lib/schemas";
 
-type AddArgs = { ml: number; client_id: string };
+type AddArgs = { ml: number; client_id: string; name?: string | null };
 
 function occurredAtFor(viewedDay: string, isToday: boolean): string {
   if (isToday) return new Date().toISOString();
@@ -22,7 +22,9 @@ export function useAddWater() {
   return useMutation<WaterAddOut, Error, AddArgs>({
     mutationFn: (args) =>
       apiPost("/water", WaterAddOutSchema, {
-        ...args,
+        ml: args.ml,
+        client_id: args.client_id,
+        name: args.name ?? null,
         occurred_at: occurredAtFor(viewedDay, isToday),
       }),
     onMutate: async (args) => {
@@ -42,6 +44,7 @@ export function useAddWater() {
               source: "pwa",
               occurred_at: occurredAtFor(viewedDay, isToday),
               client_id: args.client_id,
+              name: args.name ?? null,
             },
             ...previous.entries,
           ],
@@ -55,6 +58,7 @@ export function useAddWater() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["water", "today", viewedDay] });
+      qc.invalidateQueries({ queryKey: ["water", "recent"] });
       qc.invalidateQueries({ queryKey: ["me"] });
     },
   });

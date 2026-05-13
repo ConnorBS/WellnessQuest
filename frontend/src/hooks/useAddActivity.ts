@@ -58,6 +58,7 @@ export function useAddActivity() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["activity", "today", viewedDay] });
+      qc.invalidateQueries({ queryKey: ["activity", "recent"] });
       qc.invalidateQueries({ queryKey: ["me"] });
     },
   });

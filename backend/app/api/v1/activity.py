@@ -7,7 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import current_user, get_db
 from app.models.user import User
-from app.schemas.activity import ActivityAddIn, ActivityAddOut, ActivityEntryOut, ActivityTodayOut
+from app.schemas.activity import (
+    ActivityAddIn,
+    ActivityAddOut,
+    ActivityEntryOut,
+    ActivityRecentEntry,
+    ActivityTodayOut,
+)
 from app.schemas.activity_preset import ActivityGoalOut, ActivityGoalUpdate
 from app.services import activity_service, goal_service
 from app.services.time_utils import day_for_user
@@ -66,6 +72,25 @@ async def activity_today(
             for e in entries
         ],
     )
+
+
+@router.get("/recent", response_model=list[ActivityRecentEntry])
+async def activity_recent(
+    limit: int = Query(default=8, ge=1, le=20),
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[ActivityRecentEntry]:
+    """Most recently logged distinct activity types, for the quick-log name dropdown."""
+    rows = await activity_service.recent_distinct(db, user=user, limit=limit)
+    return [
+        ActivityRecentEntry(
+            exercise_type=r.exercise_type or "",
+            minutes=r.minutes,
+            last_logged_at=r.occurred_at,
+        )
+        for r in rows
+        if r.exercise_type
+    ]
 
 
 @router.post("", response_model=ActivityAddOut, status_code=status.HTTP_201_CREATED)
