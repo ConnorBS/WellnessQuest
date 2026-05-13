@@ -68,6 +68,7 @@ async def add(
     client_id: str | None,
     occurred_at: datetime | None,
     exercise_type: str | None = None,
+    name: str | None = None,
 ) -> ActivityAddResult:
     today = day_for_user(user.timezone)
     before_total = await total_today(db, user=user)
@@ -80,6 +81,7 @@ async def add(
         minutes=minutes,
         source=source,
         exercise_type=(exercise_type.strip() or None) if exercise_type else None,
+        name=(name.strip() or None) if name else None,
         occurred_at=occurred_at or utcnow(),
         client_id=client_id,
     )
@@ -137,6 +139,30 @@ async def _get_by_client_id(
         goal_met=total >= goal_minutes,
         newly_met=False,
     )
+
+
+async def recent_distinct(
+    db: AsyncSession, *, user: User, limit: int = 12
+) -> list[ActivityEntry]:
+    """Most recently-logged activity entries that have *either* a name or
+    exercise_type set. The quick-log modal builds two separate datalists from
+    the result — one of distinct names, one of distinct exercise types — so we
+    return raw entries and let the client dedup. Returning more entries than
+    requested keeps the two dropdowns varied even when one dimension repeats.
+    """
+    fetch_limit = max(limit * 5, 30)
+    stmt = (
+        select(ActivityEntry)
+        .where(
+            ActivityEntry.user_id == user.id,
+            (ActivityEntry.exercise_type.is_not(None))
+            | (ActivityEntry.name.is_not(None)),
+        )
+        .order_by(ActivityEntry.occurred_at.desc())
+        .limit(fetch_limit)
+    )
+    rows = list((await db.execute(stmt)).scalars().all())
+    return rows[:limit]
 
 
 async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:

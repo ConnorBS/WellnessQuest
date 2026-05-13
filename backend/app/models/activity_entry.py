@@ -35,6 +35,7 @@ class ActivityEntry(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    name: Mapped[str | None] = mapped_column(String(60), nullable=True)
     source: Mapped[str] = mapped_column(String(20), nullable=False)  # 'pwa' | 'ha' | 'manual'
     exercise_type: Mapped[str | None] = mapped_column(String(60), nullable=True)
     occurred_at: Mapped[datetime] = mapped_column(

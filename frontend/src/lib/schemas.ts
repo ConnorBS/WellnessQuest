@@ -32,8 +32,17 @@ export const WaterEntrySchema = z.object({
   source: z.string(),
   occurred_at: z.string(),
   client_id: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
 });
 export type WaterEntry = z.infer<typeof WaterEntrySchema>;
+
+export const WaterRecentEntrySchema = z.object({
+  name: z.string(),
+  ml: z.number().int(),
+  last_logged_at: z.string(),
+});
+export type WaterRecentEntry = z.infer<typeof WaterRecentEntrySchema>;
+export const WaterRecentListSchema = z.array(WaterRecentEntrySchema);
 
 export const WaterTodaySchema = z.object({
   date: z.string(),
@@ -87,6 +96,7 @@ export const ActivityEntrySchema = z.object({
   occurred_at: z.string(),
   client_id: z.string().nullable().optional(),
   exercise_type: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
 });
 export type ActivityEntry = z.infer<typeof ActivityEntrySchema>;
 
@@ -107,6 +117,15 @@ export const ActivityAddOutSchema = z.object({
   goal_met: z.boolean(),
 });
 export type ActivityAddOut = z.infer<typeof ActivityAddOutSchema>;
+
+export const ActivityRecentEntrySchema = z.object({
+  name: z.string().nullable().optional(),
+  exercise_type: z.string().nullable().optional(),
+  minutes: z.number().int(),
+  last_logged_at: z.string(),
+});
+export type ActivityRecentEntry = z.infer<typeof ActivityRecentEntrySchema>;
+export const ActivityRecentListSchema = z.array(ActivityRecentEntrySchema);
 
 export const ActivityPresetSchema = z.object({
   id: z.string().uuid(),

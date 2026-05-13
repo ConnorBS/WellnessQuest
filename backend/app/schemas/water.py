@@ -9,6 +9,7 @@ class WaterAddIn(BaseModel):
     ml: int = Field(..., gt=0, le=5000)
     client_id: str | None = Field(default=None, max_length=120)
     occurred_at: datetime | None = None
+    name: str | None = Field(default=None, max_length=60)
 
 
 class WaterEntryOut(BaseModel):
@@ -17,6 +18,7 @@ class WaterEntryOut(BaseModel):
     source: str
     occurred_at: datetime
     client_id: str | None = None
+    name: str | None = None
 
 
 class WaterTodayOut(BaseModel):
@@ -33,3 +35,9 @@ class WaterAddOut(BaseModel):
     goal_ml: int
     xp_delta: int
     goal_met: bool
+
+
+class WaterRecentEntry(BaseModel):
+    name: str
+    ml: int
+    last_logged_at: datetime

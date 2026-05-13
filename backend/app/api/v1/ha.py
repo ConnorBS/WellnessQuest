@@ -47,6 +47,7 @@ async def ha_add_water(
         source="ha",
         client_id=payload.client_id,
         occurred_at=payload.occurred_at,
+        name=payload.name,
     )
     await audit(
         db,
@@ -55,7 +56,12 @@ async def ha_add_water(
         user_id=user.id,
         target_type="water_entry",
         target_id=str(result.entry.id),
-        meta={"ml": payload.ml, "source": "ha", "client_id": payload.client_id},
+        meta={
+            "ml": payload.ml,
+            "source": "ha",
+            "client_id": payload.client_id,
+            "name": payload.name,
+        },
     )
     return WaterAddOut(
         entry=WaterEntryOut(
@@ -64,6 +70,7 @@ async def ha_add_water(
             source=result.entry.source,
             occurred_at=result.entry.occurred_at,
             client_id=result.entry.client_id,
+            name=result.entry.name,
         ),
         total_ml=result.total_ml,
         goal_ml=result.goal_ml,

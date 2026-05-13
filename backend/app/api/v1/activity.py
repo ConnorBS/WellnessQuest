@@ -7,7 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import current_user, get_db
 from app.models.user import User
-from app.schemas.activity import ActivityAddIn, ActivityAddOut, ActivityEntryOut, ActivityTodayOut
+from app.schemas.activity import (
+    ActivityAddIn,
+    ActivityAddOut,
+    ActivityEntryOut,
+    ActivityRecentEntry,
+    ActivityTodayOut,
+)
 from app.schemas.activity_preset import ActivityGoalOut, ActivityGoalUpdate
 from app.services import activity_service, goal_service
 from app.services.time_utils import day_for_user
@@ -62,10 +68,35 @@ async def activity_today(
                 occurred_at=e.occurred_at,
                 client_id=e.client_id,
                 exercise_type=e.exercise_type,
+                name=e.name,
             )
             for e in entries
         ],
     )
+
+
+@router.get("/recent", response_model=list[ActivityRecentEntry])
+async def activity_recent(
+    limit: int = Query(default=12, ge=1, le=30),
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[ActivityRecentEntry]:
+    """Recently-logged entries that have either a name or an exercise_type.
+
+    The quick-log modal extracts two distinct datalists — names and exercise
+    types — from this single list, so we return the raw entries rather than
+    pre-deduping on one column.
+    """
+    rows = await activity_service.recent_distinct(db, user=user, limit=limit)
+    return [
+        ActivityRecentEntry(
+            name=r.name,
+            exercise_type=r.exercise_type,
+            minutes=r.minutes,
+            last_logged_at=r.occurred_at,
+        )
+        for r in rows
+    ]
 
 
 @router.post("", response_model=ActivityAddOut, status_code=status.HTTP_201_CREATED)
@@ -82,6 +113,7 @@ async def add_activity(
         client_id=payload.client_id,
         occurred_at=payload.occurred_at,
         exercise_type=payload.exercise_type,
+        name=payload.name,
     )
     await audit(
         db,
@@ -95,6 +127,7 @@ async def add_activity(
             "source": "pwa",
             "client_id": payload.client_id,
             "exercise_type": payload.exercise_type,
+            "name": payload.name,
         },
     )
     return ActivityAddOut(
@@ -105,6 +138,7 @@ async def add_activity(
             occurred_at=result.entry.occurred_at,
             client_id=result.entry.client_id,
             exercise_type=result.entry.exercise_type,
+            name=result.entry.name,
         ),
         total_minutes=result.total_minutes,
         goal_minutes=result.goal_minutes,
