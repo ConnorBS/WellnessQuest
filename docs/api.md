@@ -44,8 +44,9 @@ admin API below.
 
 | Method | Path | Body | Notes |
 |---|---|---|---|
-| GET | `/water/today?date=YYYY-MM-DD` | — | Today by default. Returns `{ date, total_ml, goal_ml, percent, entries[] }`. |
-| POST | `/water` | `{ ml, client_id?, occurred_at? }` | Returns `{ entry, total_ml, goal_ml, xp_delta, goal_met }`. |
+| GET | `/water/today?date=YYYY-MM-DD` | — | Today by default. Returns `{ date, total_ml, goal_ml, percent, entries[] }`. Each entry: `{ id, ml, source, occurred_at, client_id, name }`. |
+| GET | `/water/recent?limit=N` | — | Most-recently-logged distinct named entries (default 8, max 20). Returns `[{ name, ml, last_logged_at }, …]` for the quick-log modal's name dropdown. |
+| POST | `/water` | `{ ml, client_id?, occurred_at?, name? }` | Returns `{ entry, total_ml, goal_ml, xp_delta, goal_met }`. `name` is an optional free-form label up to 60 chars (e.g. "Bottle", "Coffee"). |
 | DELETE | `/water/{id}` | — | 204. |
 | PATCH | `/water/goal` | `{ target_ml }` | Returns `{ target_ml }`. Updates the active water_ml/day goal. |
 | GET | `/water/presets` | — | `WaterPresetOut[]`. |
@@ -61,8 +62,9 @@ Idempotency on POST `/water`: when `client_id` is provided, the same `(user_id, 
 
 | Method | Path | Body | Notes |
 |---|---|---|---|
-| GET | `/activity/today?date=YYYY-MM-DD` | — | Returns `{ date, total_minutes, goal_minutes, percent, entries[] }`. |
-| POST | `/activity` | `{ minutes, client_id?, occurred_at?, exercise_type? }` | Returns `ActivityAddOut`. |
+| GET | `/activity/today?date=YYYY-MM-DD` | — | Returns `{ date, total_minutes, goal_minutes, percent, entries[] }`. Each entry: `{ id, minutes, source, occurred_at, client_id, exercise_type, name }`. |
+| GET | `/activity/recent?limit=N` | — | Recently-logged entries that have a name or exercise_type (default 12, max 30). Returns `[{ name, exercise_type, minutes, last_logged_at }, …]`. The quick-log modal builds two separate dropdowns from this — one of distinct names, one of distinct exercise types. |
+| POST | `/activity` | `{ minutes, client_id?, occurred_at?, exercise_type?, name? }` | Returns `ActivityAddOut`. `name` is a free-form label (≤ 60 chars); `exercise_type` is the categorical tag. |
 | DELETE | `/activity/{id}` | — | 204. |
 | PATCH | `/activity/goal` | `{ target_minutes }` | Returns `{ target_minutes }`. |
 | GET | `/activity/presets` | — | `ActivityPresetOut[]`. |
@@ -143,7 +145,7 @@ Header: `X-WQ-Token: wq_ha_...`. Rate-limited.
 
 | Method | Path | Scope | Body | Returns |
 |---|---|---|---|---|
-| POST | `/ha/water/add` | `water:write` | `{ ml, client_id? }` | `WaterAddOut` |
+| POST | `/ha/water/add` | `water:write` | `{ ml, client_id?, name? }` | `WaterAddOut` |
 | GET | `/ha/water/today` | `water:read` | — | `WaterTodayOut` (entries omitted) |
 | GET | `/ha/me/stats` | `water:read` | — | `{ xp_total, level, streaks }` |
 

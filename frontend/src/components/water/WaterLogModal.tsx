@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAddWater } from "@/hooks/useAddWater";
 import { useCreatePreset } from "@/hooks/useWaterPresets";
 import { useRecentWater } from "@/hooks/useRecentWater";
+import { ApiError } from "@/lib/api";
 import { uuidv4 } from "@/lib/uuid";
 
 interface Props {
@@ -31,6 +32,7 @@ export function WaterLogModal({ onClose }: Props) {
   const [unit, setUnit] = useState<Unit>("ml");
   const [name, setName] = useState("");
   const [saveAsPreset, setSaveAsPreset] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const add = useAddWater();
   const createPreset = useCreatePreset();
@@ -73,6 +75,7 @@ export function WaterLogModal({ onClose }: Props) {
 
   function handleLog() {
     if (!valid) return;
+    setErrorMsg(null);
     const trimmed = name.trim();
     const entryName = trimmed ? trimmed.slice(0, 60) : null;
     add.mutate(
@@ -90,6 +93,7 @@ export function WaterLogModal({ onClose }: Props) {
           }
           onClose();
         },
+        onError: (err) => setErrorMsg(formatLogError(err)),
       },
     );
   }
@@ -231,6 +235,24 @@ export function WaterLogModal({ onClose }: Props) {
             Save as quick water button
           </label>
 
+          {errorMsg ? (
+            <p
+              role="alert"
+              data-testid="water-log-error"
+              style={{
+                margin: 0,
+                padding: "8px 10px",
+                fontSize: 13,
+                color: "#fca5a5",
+                background: "rgba(248,113,113,0.08)",
+                border: "1px solid rgba(248,113,113,0.35)",
+                borderRadius: 6,
+              }}
+            >
+              {errorMsg}
+            </p>
+          ) : null}
+
           <button
             type="button"
             onClick={handleLog}
@@ -254,6 +276,16 @@ export function WaterLogModal({ onClose }: Props) {
       </div>
     </div>
   );
+}
+
+function formatLogError(err: unknown): string {
+  if (err instanceof ApiError) {
+    const body = err.body as { detail?: unknown } | null;
+    if (body && typeof body.detail === "string") return body.detail;
+    return `Server error ${err.status}`;
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return "Couldn't reach the server. Check your connection and try again.";
 }
 
 const labelStyle: React.CSSProperties = {
