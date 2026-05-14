@@ -44,7 +44,13 @@ FROM base AS prod
 COPY backend/ .
 COPY --from=frontend-builder /build/out /app/static
 RUN mkdir -p /app/data/uploads && chmod 755 /app/data /app/data/uploads
-ENV WQ_STATIC_DIR=/app/static \
+# Build provenance for the /api/v1/version endpoint. CI passes the commit SHA
+# and the head_commit timestamp so the running container can self-identify.
+ARG GIT_SHA=""
+ARG BUILD_TIMESTAMP=""
+ENV WQ_GIT_SHA=$GIT_SHA \
+    WQ_BUILD_TIMESTAMP=$BUILD_TIMESTAMP \
+    WQ_STATIC_DIR=/app/static \
     WQ_UPLOADS_DIR=/app/data/uploads \
     APP_PORT=8000
 VOLUME ["/app/data"]

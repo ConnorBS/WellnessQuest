@@ -23,6 +23,10 @@ CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8000} -
 # --- Prod image: copy source, no dev deps
 FROM base AS prod
 COPY . .
+ARG GIT_SHA=""
+ARG BUILD_TIMESTAMP=""
+ENV WQ_GIT_SHA=$GIT_SHA \
+    WQ_BUILD_TIMESTAMP=$BUILD_TIMESTAMP
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD curl -fsS "http://localhost:${APP_PORT:-8000}/api/v1/healthz" || exit 1

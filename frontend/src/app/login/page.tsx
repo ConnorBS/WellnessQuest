@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { VersionFooter } from "@/components/VersionFooter";
 import { apiFetch, apiPost } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
 import { MeSchema, SetupStatusSchema, TokenPairSchema } from "@/lib/schemas";
@@ -78,6 +79,7 @@ export default function LoginPage() {
           {busy ? "Signing in..." : "Sign in"}
         </button>
       </form>
+      <VersionFooter />
     </main>
   );
 }
