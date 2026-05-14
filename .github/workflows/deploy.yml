@@ -94,6 +94,9 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            BUILD_TIMESTAMP=${{ github.event.head_commit.timestamp }}
           cache-from: type=gha,scope=wellnessquest
           cache-to: type=gha,mode=max,scope=wellnessquest
 

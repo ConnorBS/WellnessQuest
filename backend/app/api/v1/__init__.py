@@ -15,6 +15,7 @@ from app.api.v1 import (
     telemetry,
     uploads,
     users,
+    version,
     water,
     water_presets,
     webhooks,
@@ -40,6 +41,7 @@ api_v1.include_router(webhooks.router)
 api_v1.include_router(ha.router)
 api_v1.include_router(telemetry.router)
 api_v1.include_router(admin.router)
+api_v1.include_router(version.router)
 
 
 @api_v1.get("/healthz", tags=["meta"])

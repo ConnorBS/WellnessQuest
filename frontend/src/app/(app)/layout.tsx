@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { DayHeader } from "@/components/DayHeader";
+import { VersionFooter } from "@/components/VersionFooter";
 import { useSwipe } from "@/hooks/useSwipe";
 import { useMe } from "@/hooks/useMe";
 import { clearTokens, isLoggedIn } from "@/lib/auth";
@@ -93,6 +94,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </nav>
         </header>
         <MainBody pathname={pathname}>{children}</MainBody>
+        <VersionFooter />
       </div>
     </DayProvider>
   );
