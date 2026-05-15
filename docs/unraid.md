@@ -190,9 +190,9 @@ add `-W` and paste it.
 ```sh
 psql -U <USER> -d <DB> \
   -c "SELECT id, email, role, disabled_at FROM users ORDER BY created_at;" \
-  -c "SELECT 'water_logs' AS tbl, count(*) FROM water_logs
-      UNION ALL SELECT 'food_logs', count(*) FROM food_logs
-      UNION ALL SELECT 'activity_logs', count(*) FROM activity_logs
+  -c "SELECT 'water_entries' AS tbl, count(*) FROM water_entries
+      UNION ALL SELECT 'food_entries', count(*) FROM food_entries
+      UNION ALL SELECT 'activity_entries', count(*) FROM activity_entries
       UNION ALL SELECT 'weight_entries', count(*) FROM weight_entries
       UNION ALL SELECT 'habits', count(*) FROM habits;"
 ```
@@ -252,15 +252,16 @@ password change on first login.
 
 This is the rarest case (data tables have rows but the `users` table is empty).
 Recovering means reattaching old rows to a new admin. The user-data tables
-(`water_logs`, `food_logs`, `activity_logs`, `weight_entries`, `habits`,
-`goals`, `water_presets`, `activity_presets`, `food_presets`) all carry a
-`user_id` foreign key. Look at the distinct `user_id`s that show up in each:
+(`water_entries`, `food_entries`, `activity_entries`, `weight_entries`,
+`habits`, `goals`, `water_presets`, `activity_presets`, `food_presets`) all
+carry a `user_id` foreign key. Look at the distinct `user_id`s that show up
+in each:
 
 ```sh
 psql -U <USER> -d <DB> \
-  -c "SELECT DISTINCT user_id FROM water_logs
-      UNION SELECT DISTINCT user_id FROM food_logs
-      UNION SELECT DISTINCT user_id FROM activity_logs;"
+  -c "SELECT DISTINCT user_id FROM water_entries
+      UNION SELECT DISTINCT user_id FROM food_entries
+      UNION SELECT DISTINCT user_id FROM activity_entries;"
 ```
 
 If there's a single `user_id` (one-person household), create a new admin via
@@ -268,12 +269,12 @@ the setup form, then re-point the old rows at the new admin's id:
 
 ```sh
 psql -U <USER> -d <DB> \
-  -c "UPDATE water_logs    SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
-  -c "UPDATE food_logs     SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
-  -c "UPDATE activity_logs SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
-  -c "UPDATE weight_entries SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
-  -c "UPDATE habits        SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
-  -c "UPDATE goals         SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';"
+  -c "UPDATE water_entries    SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE food_entries     SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE activity_entries SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE weight_entries   SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE habits           SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE goals            SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';"
 ```
 
 (Multi-user households: do this per old user, mapping each to a freshly-created
