@@ -45,7 +45,7 @@ true:
 
 1. The DB is genuinely fresh (rows = 0 everywhere) — setup form is correct.
 2. Users exist but the admin row has `disabled_at` set — reactivate, no setup needed.
-3. User-data tables (`water_logs`, `food_logs`, etc.) have rows but `users` is empty — orphaned data; need a recovery flow that re-creates an admin without nuking the existing rows.
+3. User-data tables (`water_entries`, `food_entries`, etc.) have rows but `users` is empty — orphaned data; need a recovery flow that re-creates an admin without nuking the existing rows.
 
 Filling in the setup form in scenario 2 or 3 leads to a new admin with a new
 `user_id` whose dashboard appears empty — even though the data is still in the
@@ -54,6 +54,21 @@ DB linked to the old user.
 The diagnostic queries and one-liner fixes for each scenario live in
 [`docs/unraid.md` → Diagnostics & recovery](docs/unraid.md#diagnostics--recovery).
 Point the operator there rather than re-deriving the commands.
+
+## Postgres storage-path footgun on Unraid
+
+If scenario 1 (genuinely empty DB) shows up after a reboot or template edit,
+the cause is almost always the postgres container being pointed at a
+**phantom path under `/mnt/<pool>/...`** that doesn't resolve to a real pool
+(pool was renamed, template copied from an older Unraid version, or pool
+failed to mount on boot). Docker silently creates the directory empty,
+postgres runs its first-boot init, you get an empty DB with the configured
+user/db but zero rows.
+
+Suggest `/mnt/user/appdata/...` over `/mnt/<pool>/appdata/...` for postgres
+storage paths — the user share survives pool renames. Full write-up + a User
+Scripts backup recipe lives in
+[`docs/unraid.md` → Diagnostics & recovery](docs/unraid.md#why-this-happens-and-how-to-prevent-it).
 
 ## Auth flow recap
 

@@ -176,6 +176,88 @@ All commands below are mobile-friendly: tap your **postgres container's icon
 in the Unraid WebUI → `>_` (Console)** to drop into a shell inside it. No
 `docker exec` or `docker compose` required.
 
+### Why this happens (and how to prevent it)
+
+The most common cause on Unraid is the postgres container being pointed at a
+**phantom storage path** — a path under `/mnt/<pool-name>/...` that doesn't
+resolve to a real pool. When that happens, Docker silently creates the
+directory as an empty bind mount on container start. Postgres looks at its
+data dir, sees it's empty, and runs the official image's first-boot init
+script: it creates `POSTGRES_USER` and `POSTGRES_DB` from the env vars but
+seeds **no** data. To you it looks like "my reboot wiped the DB"; in reality
+the data was never at the path the container was pointing to.
+
+This usually happens because:
+
+- You renamed your cache pool (e.g. `cache` → `ssd_cache`) but the template's
+  Storage Path still references the old name.
+- You copy-pasted a template from a guide written for an older Unraid version
+  whose default pool name doesn't match yours.
+- The pool failed to mount on boot — same effect: the path becomes a hollow
+  Docker-created dir.
+
+**Two prevention strategies, in order of preference:**
+
+1. **Point at the user share, not the raw pool**:
+   `/mnt/user/appdata/postgresql16` instead of `/mnt/<pool-name>/appdata/postgresql16`.
+   The user share is the merged FUSE view across whichever pool currently
+   holds the share, so pool renames and Mover don't break it. (Check that the
+   `appdata` share's **Included disk(s)** / pool settings actually include
+   your SSD pool — if `appdata` is constrained to `array` only, the user-share
+   path will be empty.)
+2. **Sanity check on container start**: before exposing the container, SSH /
+   web-terminal in and run `ls /mnt/<your-pool>/appdata/postgresql16/`. If
+   the path is empty when you expected to see `PG_VERSION`, `base/`, `pg_wal/`
+   etc., **stop the container** and fix the path before postgres init runs.
+   Once init has run with the wrong path, the old data is no easier to find
+   than it was before.
+
+### Set up a backup before you need one
+
+The unified Unraid image doesn't bundle a backup service. Two low-effort
+options that take five minutes each:
+
+**Option A — User Scripts plugin (recommended on Unraid).** Install the
+"User Scripts" plugin from Community Apps, add a new script, set the
+schedule to **Daily** (`0 3 * * *` for 03:00 nightly):
+
+```sh
+#!/bin/bash
+set -euo pipefail
+OUT=/mnt/user/backups/wellnessquest
+mkdir -p "$OUT"
+STAMP=$(date +%Y%m%d-%H%M)
+docker exec postgresql16 pg_dump -U WellnessQuest -d WellnessQuest -Fc \
+  | gzip > "$OUT/wq-$STAMP.dump.gz"
+# Keep last 14 daily + 8 weekly (Sunday)
+find "$OUT" -type f -name 'wq-*.dump.gz' -mtime +14 \
+  ! -name "wq-$(date -d 'last sunday' +%Y%m%d)*" -delete
+```
+
+Substitute your container name, `POSTGRES_USER`, and `POSTGRES_DB`. The dumps
+land on `/mnt/user/backups/` so they're on the array, not the cache pool that
+just bit you.
+
+**Option B — sidecar container.** Run a tiny postgres-client container with
+a cron entrypoint, attached to the same docker network as your postgres.
+There's a working example in `infra/backup/` in the repo (used by the compose
+stack); you can lift its Dockerfile + entrypoint and add it as a custom Unraid
+container if you'd rather have it visible alongside the others.
+
+To restore one of the dumps later:
+
+```sh
+# Stop WellnessQuest first so nothing writes mid-restore
+docker stop wellnessquest
+# Drop + recreate the DB (lose anything that landed after the dump)
+docker exec postgresql16 psql -U <USER> -d postgres \
+  -c "DROP DATABASE \"<DB>\"; CREATE DATABASE \"<DB>\";"
+# Pipe the chosen dump in
+gunzip -c /mnt/user/backups/wellnessquest/wq-YYYYMMDD-HHMM.dump.gz \
+  | docker exec -i postgresql16 pg_restore -U <USER> -d <DB> --clean --if-exists
+docker start wellnessquest
+```
+
 ### Find your DB user and DB name
 
 The runbook examples use `wq` / `wellnessquest`, but on Unraid these are whatever
