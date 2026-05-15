@@ -6,6 +6,7 @@ import {
   clearTokens,
   getAccessToken,
   getRefreshToken,
+  isPersistent,
   setTokens,
 } from "@/lib/auth";
 import { TokenPairSchema } from "@/lib/schemas";
@@ -23,6 +24,7 @@ type FetchOpts = RequestInit & { skipAuth?: boolean };
 async function refreshTokens(): Promise<boolean> {
   const refresh = getRefreshToken();
   if (!refresh) return false;
+  const persistent = isPersistent();
   const r = await fetch(`${API_BASE}/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -37,7 +39,7 @@ async function refreshTokens(): Promise<boolean> {
     clearTokens();
     return false;
   }
-  setTokens(parsed.data);
+  setTokens(parsed.data, persistent);
   return true;
 }
 

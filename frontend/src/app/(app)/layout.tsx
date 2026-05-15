@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { DayHeader } from "@/components/DayHeader";
 import { VersionFooter } from "@/components/VersionFooter";
@@ -40,10 +40,15 @@ function MainBody({ pathname, children }: { pathname: string | null; children: R
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [authReady, setAuthReady] = useState(false);
   const { data: me } = useMe();
 
   useEffect(() => {
-    if (!isLoggedIn()) router.replace("/login");
+    if (!isLoggedIn()) {
+      router.replace("/login");
+      return;
+    }
+    setAuthReady(true);
   }, [router]);
 
   useEffect(() => {
@@ -54,6 +59,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     clearTokens();
     router.replace("/login");
   }
+
+  if (!authReady) return null;
 
   return (
     <DayProvider>
