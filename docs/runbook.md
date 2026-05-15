@@ -72,3 +72,4 @@ If something breaks after a pull, switch `WQ_IMAGE_TAG` in `.env` from `latest` 
 | HA sensor stuck at last value | Backend down or token revoked | Check `docker compose ps`, check Settings → Tokens for `last_used_at` |
 | Water entries duplicated | Same `client_id` reused across different totals | Generate a fresh `crypto.randomUUID()` per click; offline queue already does this |
 | Webhook never fires in HA | `webhook_id` mismatch | Compare WQ integration `config.webhook_id` with the id in your HA automation |
+| Welcome / create-admin page on a working install | Admin row disabled, deleted, or DB swapped under the app | **Don't submit the form** — see [`unraid.md` → Diagnostics & recovery](unraid.md#diagnostics--recovery). Submitting creates a new `user_id` and orphans existing rows. |

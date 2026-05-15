@@ -164,6 +164,131 @@ If that's clean, the GHA build will be clean too.
 
 Unraid auto-writes your live container's customizations to `/boot/config/plugins/dockerMan/templates-user/my-wellnessquest.xml`. Diff that against the repo's template if something gets out of sync.
 
+## Diagnostics & recovery
+
+If the welcome / create-admin page shows up on a deployment that was working
+before, **don't fill the form in yet** — your data may still be there. A new
+admin created via setup gets a new `user_id`, and your old water/food/activity
+rows are linked to the *previous* `user_id`, so the new account's dashboard
+will look empty even though the data exists.
+
+All commands below are mobile-friendly: tap your **postgres container's icon
+in the Unraid WebUI → `>_` (Console)** to drop into a shell inside it. No
+`docker exec` or `docker compose` required.
+
+### Find your DB user and DB name
+
+The runbook examples use `wq` / `wellnessquest`, but on Unraid these are whatever
+*you* picked when you set up the postgres container. Check them in the Unraid
+WebUI: click your postgres container → **Edit** → look at `POSTGRES_USER` and
+`POSTGRES_DB`. Substitute those values everywhere `<USER>` and `<DB>` appear
+below. If you set a custom password and the console rejects passwordless login,
+add `-W` and paste it.
+
+### Step 1 — see what's in the database
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "SELECT id, email, role, disabled_at FROM users ORDER BY created_at;" \
+  -c "SELECT 'water_logs' AS tbl, count(*) FROM water_logs
+      UNION ALL SELECT 'food_logs', count(*) FROM food_logs
+      UNION ALL SELECT 'activity_logs', count(*) FROM activity_logs
+      UNION ALL SELECT 'weight_entries', count(*) FROM weight_entries
+      UNION ALL SELECT 'habits', count(*) FROM habits;"
+```
+
+Three possible outcomes:
+
+| What you see | Meaning | Go to |
+|---|---|---|
+| Users listed, your admin row has a `disabled_at` timestamp | Account got disabled, data intact | **Step 2a** |
+| Users listed, but none have `role='admin'` (or the admin row is missing) | Admin lost, other users + data may be intact | **Step 2b** |
+| `users` empty AND every `count` returns 0 | DB really is fresh; just fill in the setup form on the WQ page | — |
+| `users` empty BUT some counts > 0 | Orphaned data — see **Step 2c** | **Step 2c** |
+
+### Step 2a — re-enable your existing admin
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "UPDATE users SET disabled_at = NULL WHERE email = 'you@example.com';"
+```
+
+Refresh the WQ page, sign in normally. Done.
+
+### Step 2b — promote an existing user back to admin
+
+If the admin row was deleted but other user rows exist, promote one of them
+(this also clears `disabled_at` if it was set):
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "UPDATE users SET role = 'admin', disabled_at = NULL,
+                       must_change_password = true
+      WHERE email = 'you@example.com';"
+```
+
+You won't know the old password, so set a new hash via the WQ container shell
+(it has Python + the app code, so it can hash with the same algorithm):
+
+```sh
+docker exec -it wellnessquest python -c "
+from app.auth.passwords import hash_password
+print(hash_password('YourNewTempPassword!'))
+"
+```
+
+Copy the printed hash and write it back:
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "UPDATE users SET password_hash = '<paste-hash-here>'
+      WHERE email = 'you@example.com';"
+```
+
+Sign in with `you@example.com` / `YourNewTempPassword!`. The app forces a
+password change on first login.
+
+### Step 2c — orphaned data, no users at all
+
+This is the rarest case (data tables have rows but the `users` table is empty).
+Recovering means reattaching old rows to a new admin. The user-data tables
+(`water_logs`, `food_logs`, `activity_logs`, `weight_entries`, `habits`,
+`goals`, `water_presets`, `activity_presets`, `food_presets`) all carry a
+`user_id` foreign key. Look at the distinct `user_id`s that show up in each:
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "SELECT DISTINCT user_id FROM water_logs
+      UNION SELECT DISTINCT user_id FROM food_logs
+      UNION SELECT DISTINCT user_id FROM activity_logs;"
+```
+
+If there's a single `user_id` (one-person household), create a new admin via
+the setup form, then re-point the old rows at the new admin's id:
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "UPDATE water_logs    SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE food_logs     SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE activity_logs SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE weight_entries SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE habits        SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE goals         SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';"
+```
+
+(Multi-user households: do this per old user, mapping each to a freshly-created
+new user.)
+
+### Restore from the backup container's dumps
+
+If steps 2a-c don't apply (data really is gone), the `backup` service in
+`docker-compose.yml` writes nightly `pg_dump` archives. On Unraid you'll only
+have these if you wired up an equivalent backup container — the unified
+WellnessQuest image doesn't bundle one. Check `/mnt/user/appdata/` for a
+`wq-YYYYMMDD-HHMM.dump.gz` you trust, then follow the restore steps in
+[`runbook.md` → Backups](runbook.md#backups), substituting your `<USER>` /
+`<DB>` and your postgres container name.
+
 ## Switching to HTTPS later
 
 Two paths once you've validated the slice:
