@@ -21,26 +21,39 @@ export class ApiError extends Error {
 
 type FetchOpts = RequestInit & { skipAuth?: boolean };
 
-async function refreshTokens(): Promise<boolean> {
-  const refresh = getRefreshToken();
-  if (!refresh) return false;
-  const persistent = isPersistent();
-  const r = await fetch(`${API_BASE}/auth/refresh`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refresh }),
+// Backend rotates the refresh token on every /auth/refresh call: the first
+// request to succeed revokes the token that any concurrent callers are still
+// holding. Without dedup, a cold app load fires N queries in parallel, all
+// race on /auth/refresh, the runner-up gets 401 and wipes the just-issued
+// tokens — effectively logging the user out the moment they come back.
+let inflightRefresh: Promise<boolean> | null = null;
+
+function refreshTokens(): Promise<boolean> {
+  if (inflightRefresh) return inflightRefresh;
+  inflightRefresh = (async () => {
+    const refresh = getRefreshToken();
+    if (!refresh) return false;
+    const persistent = isPersistent();
+    const r = await fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refresh }),
+    });
+    if (!r.ok) {
+      clearTokens();
+      return false;
+    }
+    const parsed = TokenPairSchema.safeParse(await r.json());
+    if (!parsed.success) {
+      clearTokens();
+      return false;
+    }
+    setTokens(parsed.data, persistent);
+    return true;
+  })().finally(() => {
+    inflightRefresh = null;
   });
-  if (!r.ok) {
-    clearTokens();
-    return false;
-  }
-  const parsed = TokenPairSchema.safeParse(await r.json());
-  if (!parsed.success) {
-    clearTokens();
-    return false;
-  }
-  setTokens(parsed.data, persistent);
-  return true;
+  return inflightRefresh;
 }
 
 async function rawFetch(path: string, opts: FetchOpts = {}): Promise<Response> {

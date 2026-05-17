@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { DayHeader } from "@/components/DayHeader";
 import { VersionFooter } from "@/components/VersionFooter";
@@ -40,16 +40,18 @@ function MainBody({ pathname, children }: { pathname: string | null; children: R
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [authReady, setAuthReady] = useState(false);
-  const { data: me } = useMe();
+  const { data: me, error: meError } = useMe();
 
   useEffect(() => {
-    if (!isLoggedIn()) {
-      router.replace("/login");
-      return;
-    }
-    setAuthReady(true);
+    if (!isLoggedIn()) router.replace("/login");
   }, [router]);
+
+  // /me failing means tokens are either gone (api.ts cleared them after a
+  // failed refresh) or the backend rejected them. Either way, send the user
+  // to /login instead of leaving them staring at an empty shell.
+  useEffect(() => {
+    if (meError) router.replace("/login");
+  }, [meError, router]);
 
   useEffect(() => {
     if (me?.must_change_password) router.replace("/change-password");
@@ -60,7 +62,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.replace("/login");
   }
 
-  if (!authReady) return null;
+  if (!me) return null;
 
   return (
     <DayProvider>
