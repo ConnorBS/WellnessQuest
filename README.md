@@ -2,11 +2,11 @@
 
 [![Deploy](https://github.com/ConnorBS/WellnessQuest/actions/workflows/deploy.yml/badge.svg)](https://github.com/ConnorBS/WellnessQuest/actions/workflows/deploy.yml)
 
-A gamified household wellness tracker. Log water, activity, habits, and weight; see progress against goals on a single dashboard; tie it to Home Assistant for two-way automation. Designed for a two-person home running on Unraid.
+A gamified household wellness tracker. Log water, activity, habits, weight, and blood pressure; see progress against goals on a single dashboard; tie it to Home Assistant for two-way automation. Designed for a two-person home running on Unraid.
 
 ## Status
 
-Four trackers wired up, day-by-day navigation, Material Design icon picker, PWA install on phone, Home Assistant two-way integration for water. Single Docker image, bring-your-own Postgres.
+Five trackers wired up, day-by-day navigation, Material Design icon picker, PWA install on phone, Home Assistant two-way integration for water. Single Docker image, bring-your-own Postgres.
 
 ## Modules
 
@@ -16,6 +16,7 @@ Four trackers wired up, day-by-day navigation, Material Design icon picker, PWA 
 | **Activity** | Active minutes against a goal, with optional exercise type tag | Continuous scalar, per-day total |
 | **Habits** | Discrete tap-to-check items with flexible cadence | `daily` / `weekly(N)` / `monthly(N)` / `every K days` |
 | **Weight** | Time-series weight entries + versioned target history | Append-only log, sparkline + delta |
+| **Blood pressure** | Systolic/diastolic (+ optional pulse) with AHA classification | Append-only log, multiple readings/day, optional target |
 
 Each module has its own page, settings sub-page (goal + presets), and dashboard card. Day-navigation arrows + horizontal swipe move the dashboard between days (never future).
 

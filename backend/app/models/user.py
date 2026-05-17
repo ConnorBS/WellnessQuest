@@ -24,6 +24,9 @@ class User(Base):
     level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="UTC")
     show_weight_card: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    show_bp_card: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
     weight_unit: Mapped[str] = mapped_column(String(4), nullable=False, default="kg")
     must_change_password: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"

@@ -4,6 +4,8 @@ from app.models.activity_entry import ActivityEntry
 from app.models.activity_preset import ActivityPreset
 from app.models.api_token import ApiToken
 from app.models.audit_log import AuditLog
+from app.models.blood_pressure_entry import BloodPressureEntry
+from app.models.blood_pressure_target import BloodPressureTarget
 from app.models.error_log import ErrorLog
 from app.models.food_entry import FoodEntry
 from app.models.food_preset import FoodPreset
@@ -27,6 +29,8 @@ __all__ = [
     "ActivityPreset",
     "ApiToken",
     "AuditLog",
+    "BloodPressureEntry",
+    "BloodPressureTarget",
     "ErrorLog",
     "FoodEntry",
     "FoodPreset",

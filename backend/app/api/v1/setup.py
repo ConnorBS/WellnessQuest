@@ -90,6 +90,7 @@ async def setup_admin(
             level=user.level,
             timezone=user.timezone,
             show_weight_card=user.show_weight_card,
+            show_bp_card=user.show_bp_card,
             weight_unit=user.weight_unit,
             must_change_password=user.must_change_password,
         ),
