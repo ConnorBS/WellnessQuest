@@ -72,9 +72,12 @@ Scripts backup recipe lives in
 
 ## Auth flow recap
 
-- Tokens live in `localStorage` (remember-me on, default) or `sessionStorage` (off). See `frontend/src/lib/auth.ts`.
+- Tokens live in `localStorage` (remember-me on, default) or `sessionStorage` (off). See `frontend/src/lib/auth.ts`. `setTokens(tokens, persistent)` writes to one and clears the other so the choice is reflected on disk; `getAccessToken` / `getRefreshToken` read from either.
 - Access token TTL: 15 min default (`ACCESS_TOKEN_TTL_SECONDS`). Refresh token TTL: 30 days default (`REFRESH_TOKEN_TTL_SECONDS`). Both are env-overridable.
-- The protected layout (`frontend/src/app/(app)/layout.tsx`) gates rendering on a synchronous auth check so the app shell doesn't flash before redirecting unauthenticated users to `/login`.
+- **Refresh is rotation-based and deduplicated.** Backend revokes the old refresh row on every successful `/auth/refresh`, so concurrent callers must not each fire their own refresh — the runner-up would be left holding a revoked token and clear the freshly-issued ones. `frontend/src/lib/api.ts` serializes through a single in-flight promise (`inflightRefresh`); don't bypass it.
+- **The protected layout (`frontend/src/app/(app)/layout.tsx`) gates rendering on `useMe()` succeeding**, not on `isLoggedIn()` alone. An expired-but-still-stored access token passes `isLoggedIn()`, so a presence-only gate would render the empty shell and then leave the user staring at it if refresh failed. The layout returns `null` until `/me` returns and redirects to `/login` on any `/me` error.
+- React Query is configured (`frontend/src/lib/queryClient.ts`) to **not retry 4xx responses**. Retrying a 401 just delays the redirect by an extra failed refresh.
+- The setup page (`frontend/src/app/setup/page.tsx`) hits `/setup/status` first and only renders the form if `setup_required` is true; if a recovered user lands there with `setup_required=false`, it redirects them to `/login` so they can sign in normally.
 
 ## Where things live
 
