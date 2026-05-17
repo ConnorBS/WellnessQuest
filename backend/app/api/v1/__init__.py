@@ -6,6 +6,7 @@ from app.api.v1 import (
     admin,
     api_tokens,
     auth,
+    blood_pressure,
     food,
     food_presets,
     ha,
@@ -34,6 +35,7 @@ api_v1.include_router(food.router)
 api_v1.include_router(food_presets.router)
 api_v1.include_router(habits.router)
 api_v1.include_router(weight.router)
+api_v1.include_router(blood_pressure.router)
 api_v1.include_router(uploads.router)
 api_v1.include_router(api_tokens.router)
 api_v1.include_router(integrations.router)

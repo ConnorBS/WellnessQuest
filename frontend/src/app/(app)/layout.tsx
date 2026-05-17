@@ -96,6 +96,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link href="/activity">Activity</Link>
             <Link href="/habits">Habits</Link>
             <Link href="/weight">Weight</Link>
+            <Link href="/blood-pressure">BP</Link>
             <Link href="/settings">Settings</Link>
             <button onClick={onLogout} style={{ color: "#94a3b8" }}>
               Sign out

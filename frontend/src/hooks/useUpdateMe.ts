@@ -7,6 +7,7 @@ import { MeSchema } from "@/lib/schemas";
 
 interface MePatch {
   show_weight_card?: boolean;
+  show_bp_card?: boolean;
   weight_unit?: "kg" | "lb";
 }
 
@@ -17,6 +18,7 @@ export function useUpdateMe() {
     onSuccess: (data) => {
       qc.setQueryData(["me"], data);
       qc.invalidateQueries({ queryKey: ["weight"] });
+      qc.invalidateQueries({ queryKey: ["bp"] });
     },
   });
 }

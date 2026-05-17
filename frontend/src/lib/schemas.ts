@@ -9,6 +9,7 @@ export const MeSchema = z.object({
   level: z.number().int(),
   timezone: z.string(),
   show_weight_card: z.boolean(),
+  show_bp_card: z.boolean(),
   weight_unit: z.string(),
   must_change_password: z.boolean(),
   disabled: z.boolean(),
@@ -218,6 +219,34 @@ export const WeightSummarySchema = z.object({
   current_target: WeightTargetSchema.nullable().optional(),
 });
 export type WeightSummary = z.infer<typeof WeightSummarySchema>;
+
+export const BloodPressureEntrySchema = z.object({
+  id: z.number().int(),
+  systolic: z.number().int(),
+  diastolic: z.number().int(),
+  pulse: z.number().int().nullable().optional(),
+  occurred_at: z.string(),
+  note: z.string().nullable().optional(),
+});
+export type BloodPressureEntry = z.infer<typeof BloodPressureEntrySchema>;
+
+export const BloodPressureEntryListSchema = z.array(BloodPressureEntrySchema);
+
+export const BloodPressureTargetSchema = z.object({
+  id: z.number().int(),
+  target_systolic: z.number().int().nullable(),
+  target_diastolic: z.number().int().nullable(),
+  effective_at: z.string(),
+});
+export type BloodPressureTarget = z.infer<typeof BloodPressureTargetSchema>;
+
+export const BloodPressureTargetListSchema = z.array(BloodPressureTargetSchema);
+
+export const BloodPressureSummarySchema = z.object({
+  latest: BloodPressureEntrySchema.nullable(),
+  current_target: BloodPressureTargetSchema.nullable().optional(),
+});
+export type BloodPressureSummary = z.infer<typeof BloodPressureSummarySchema>;
 
 export const MealTypeSchema = z.enum(["breakfast", "lunch", "dinner", "snack"]);
 export type MealType = z.infer<typeof MealTypeSchema>;

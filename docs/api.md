@@ -36,9 +36,9 @@ admin API below.
 | GET | `/me` | — | `MeOut` |
 | PATCH | `/me` | `MePatchIn` | `MeOut` |
 
-`MeOut`: `{ id, email, display_name, role, xp_total, level, timezone, show_weight_card, weight_unit, must_change_password, disabled }`. `disabled` is meaningful on `/admin/users` listings; it's always `false` on `/me` (a disabled user can't authenticate to call it).
+`MeOut`: `{ id, email, display_name, role, xp_total, level, timezone, show_weight_card, show_bp_card, weight_unit, must_change_password, disabled }`. `disabled` is meaningful on `/admin/users` listings; it's always `false` on `/me` (a disabled user can't authenticate to call it).
 
-`MePatchIn`: `{ show_weight_card?, weight_unit? }` (where `weight_unit` is `"kg"` or `"lb"`).
+`MePatchIn`: `{ show_weight_card?, show_bp_card?, weight_unit? }` (where `weight_unit` is `"kg"` or `"lb"`).
 
 ## Water
 
@@ -105,6 +105,23 @@ The list endpoint returns `HabitWithStatusOut`: each item has `{ habit, status }
 | DELETE | `/weight/targets/{id}` | — | 204. |
 
 `WeightTarget`: `{ id, target_kg, effective_at }`. Each save is a new row — the table is the audit trail. "Current target" = latest row. NULL `target_kg` = explicit clear.
+
+## Blood pressure
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/blood-pressure/summary` | — | `{ latest, current_target }`. |
+| GET | `/blood-pressure?limit=N` | — | History newest first (default 90, max 365). Each entry: `{ id, systolic, diastolic, pulse, occurred_at, note }`. |
+| POST | `/blood-pressure` | `{ systolic, diastolic, pulse?, occurred_at?, note? }` | 201. Server enforces `systolic > diastolic`, `systolic` in `[1, 299]`, `diastolic` in `[1, 199]`, `pulse` in `[1, 299]` when present. |
+| DELETE | `/blood-pressure/{id}` | — | 204. |
+| GET | `/blood-pressure/targets?limit=N` | — | Append-only target history, newest first. |
+| GET | `/blood-pressure/targets/current` | — | Latest `BloodPressureTargetOut` or `null`. |
+| POST | `/blood-pressure/targets` | `{ target_systolic?, target_diastolic?, effective_at? }` | 201. Both fields null records "no goal as of effective_at"; otherwise both required together (sys > dia). |
+| DELETE | `/blood-pressure/targets/{id}` | — | 204. |
+
+`BloodPressureTarget`: `{ id, target_systolic, target_diastolic, effective_at }`. Each save is a new row. "Current target" = latest row. Both fields NULL = explicit clear.
+
+Category (Normal / Elevated / Stage 1 / Stage 2 / Crisis) is computed client-side per AHA 2017 thresholds — the API does not include it on entries, so a guideline update never requires a backfill.
 
 ## Uploads (custom icons)
 

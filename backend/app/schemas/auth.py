@@ -31,6 +31,7 @@ class MeOut(BaseModel):
     level: int
     timezone: str
     show_weight_card: bool = True
+    show_bp_card: bool = True
     weight_unit: str = "kg"
     must_change_password: bool = False
     disabled: bool = False
@@ -38,6 +39,7 @@ class MeOut(BaseModel):
 
 class MePatchIn(BaseModel):
     show_weight_card: bool | None = None
+    show_bp_card: bool | None = None
     weight_unit: str | None = None
 
 

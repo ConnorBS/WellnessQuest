@@ -35,6 +35,7 @@ export default function SettingsPage() {
         <Link href="/settings/activity">Activity goal &amp; presets</Link>
         <Link href="/settings/habits">Habits</Link>
         <Link href="/settings/weight">Weight &amp; units</Link>
+        <Link href="/settings/blood-pressure">Blood pressure</Link>
         <Link href="/settings/tokens">Home Assistant tokens</Link>
         <Link href="/settings/integrations">Integrations</Link>
         <Link href="/change-password">Change password</Link>

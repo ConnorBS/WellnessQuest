@@ -21,6 +21,7 @@ def _to_me_out(user: User) -> MeOut:
         level=user.level,
         timezone=user.timezone,
         show_weight_card=user.show_weight_card,
+        show_bp_card=user.show_bp_card,
         weight_unit=user.weight_unit,
         must_change_password=user.must_change_password,
     )
@@ -39,6 +40,8 @@ async def patch_me(
 ) -> MeOut:
     if payload.show_weight_card is not None:
         user.show_weight_card = payload.show_weight_card
+    if payload.show_bp_card is not None:
+        user.show_bp_card = payload.show_bp_card
     if payload.weight_unit is not None:
         if payload.weight_unit not in ("kg", "lb"):
             raise HTTPException(
