@@ -164,6 +164,214 @@ If that's clean, the GHA build will be clean too.
 
 Unraid auto-writes your live container's customizations to `/boot/config/plugins/dockerMan/templates-user/my-wellnessquest.xml`. Diff that against the repo's template if something gets out of sync.
 
+## Diagnostics & recovery
+
+If the welcome / create-admin page shows up on a deployment that was working
+before, **don't fill the form in yet** — your data may still be there. A new
+admin created via setup gets a new `user_id`, and your old water/food/activity
+rows are linked to the *previous* `user_id`, so the new account's dashboard
+will look empty even though the data exists.
+
+All commands below are mobile-friendly: tap your **postgres container's icon
+in the Unraid WebUI → `>_` (Console)** to drop into a shell inside it. No
+`docker exec` or `docker compose` required.
+
+### Why this happens (and how to prevent it)
+
+The most common cause on Unraid is the postgres container being pointed at a
+**phantom storage path** — a path under `/mnt/<pool-name>/...` that doesn't
+resolve to a real pool. When that happens, Docker silently creates the
+directory as an empty bind mount on container start. Postgres looks at its
+data dir, sees it's empty, and runs the official image's first-boot init
+script: it creates `POSTGRES_USER` and `POSTGRES_DB` from the env vars but
+seeds **no** data. To you it looks like "my reboot wiped the DB"; in reality
+the data was never at the path the container was pointing to.
+
+This usually happens because:
+
+- You renamed your cache pool (e.g. `cache` → `ssd_cache`) but the template's
+  Storage Path still references the old name.
+- You copy-pasted a template from a guide written for an older Unraid version
+  whose default pool name doesn't match yours.
+- The pool failed to mount on boot — same effect: the path becomes a hollow
+  Docker-created dir.
+
+**Two prevention strategies, in order of preference:**
+
+1. **Point at the user share, not the raw pool**:
+   `/mnt/user/appdata/postgresql16` instead of `/mnt/<pool-name>/appdata/postgresql16`.
+   The user share is the merged FUSE view across whichever pool currently
+   holds the share, so pool renames and Mover don't break it. (Check that the
+   `appdata` share's **Included disk(s)** / pool settings actually include
+   your SSD pool — if `appdata` is constrained to `array` only, the user-share
+   path will be empty.)
+2. **Sanity check on container start**: before exposing the container, SSH /
+   web-terminal in and run `ls /mnt/<your-pool>/appdata/postgresql16/`. If
+   the path is empty when you expected to see `PG_VERSION`, `base/`, `pg_wal/`
+   etc., **stop the container** and fix the path before postgres init runs.
+   Once init has run with the wrong path, the old data is no easier to find
+   than it was before.
+
+### Set up a backup before you need one
+
+The unified Unraid image doesn't bundle a backup service. Two low-effort
+options that take five minutes each:
+
+**Option A — User Scripts plugin (recommended on Unraid).** Install the
+"User Scripts" plugin from Community Apps, add a new script, set the
+schedule to **Daily** (`0 3 * * *` for 03:00 nightly):
+
+```sh
+#!/bin/bash
+set -euo pipefail
+OUT=/mnt/user/backups/wellnessquest
+mkdir -p "$OUT"
+STAMP=$(date +%Y%m%d-%H%M)
+docker exec postgresql16 pg_dump -U WellnessQuest -d WellnessQuest -Fc \
+  | gzip > "$OUT/wq-$STAMP.dump.gz"
+# Keep last 14 daily + 8 weekly (Sunday)
+find "$OUT" -type f -name 'wq-*.dump.gz' -mtime +14 \
+  ! -name "wq-$(date -d 'last sunday' +%Y%m%d)*" -delete
+```
+
+Substitute your container name, `POSTGRES_USER`, and `POSTGRES_DB`. The dumps
+land on `/mnt/user/backups/` so they're on the array, not the cache pool that
+just bit you.
+
+**Option B — sidecar container.** Run a tiny postgres-client container with
+a cron entrypoint, attached to the same docker network as your postgres.
+There's a working example in `infra/backup/` in the repo (used by the compose
+stack); you can lift its Dockerfile + entrypoint and add it as a custom Unraid
+container if you'd rather have it visible alongside the others.
+
+To restore one of the dumps later:
+
+```sh
+# Stop WellnessQuest first so nothing writes mid-restore
+docker stop wellnessquest
+# Drop + recreate the DB (lose anything that landed after the dump)
+docker exec postgresql16 psql -U <USER> -d postgres \
+  -c "DROP DATABASE \"<DB>\"; CREATE DATABASE \"<DB>\";"
+# Pipe the chosen dump in
+gunzip -c /mnt/user/backups/wellnessquest/wq-YYYYMMDD-HHMM.dump.gz \
+  | docker exec -i postgresql16 pg_restore -U <USER> -d <DB> --clean --if-exists
+docker start wellnessquest
+```
+
+### Find your DB user and DB name
+
+The runbook examples use `wq` / `wellnessquest`, but on Unraid these are whatever
+*you* picked when you set up the postgres container. Check them in the Unraid
+WebUI: click your postgres container → **Edit** → look at `POSTGRES_USER` and
+`POSTGRES_DB`. Substitute those values everywhere `<USER>` and `<DB>` appear
+below. If you set a custom password and the console rejects passwordless login,
+add `-W` and paste it.
+
+### Step 1 — see what's in the database
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "SELECT id, email, role, disabled_at FROM users ORDER BY created_at;" \
+  -c "SELECT 'water_entries' AS tbl, count(*) FROM water_entries
+      UNION ALL SELECT 'food_entries', count(*) FROM food_entries
+      UNION ALL SELECT 'activity_entries', count(*) FROM activity_entries
+      UNION ALL SELECT 'weight_entries', count(*) FROM weight_entries
+      UNION ALL SELECT 'habits', count(*) FROM habits;"
+```
+
+Three possible outcomes:
+
+| What you see | Meaning | Go to |
+|---|---|---|
+| Users listed, your admin row has a `disabled_at` timestamp | Account got disabled, data intact | **Step 2a** |
+| Users listed, but none have `role='admin'` (or the admin row is missing) | Admin lost, other users + data may be intact | **Step 2b** |
+| `users` empty AND every `count` returns 0 | DB really is fresh; just fill in the setup form on the WQ page | — |
+| `users` empty BUT some counts > 0 | Orphaned data — see **Step 2c** | **Step 2c** |
+
+### Step 2a — re-enable your existing admin
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "UPDATE users SET disabled_at = NULL WHERE email = 'you@example.com';"
+```
+
+Refresh the WQ page, sign in normally. Done.
+
+### Step 2b — promote an existing user back to admin
+
+If the admin row was deleted but other user rows exist, promote one of them
+(this also clears `disabled_at` if it was set):
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "UPDATE users SET role = 'admin', disabled_at = NULL,
+                       must_change_password = true
+      WHERE email = 'you@example.com';"
+```
+
+You won't know the old password, so set a new hash via the WQ container shell
+(it has Python + the app code, so it can hash with the same algorithm):
+
+```sh
+docker exec -it wellnessquest python -c "
+from app.auth.passwords import hash_password
+print(hash_password('YourNewTempPassword!'))
+"
+```
+
+Copy the printed hash and write it back:
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "UPDATE users SET password_hash = '<paste-hash-here>'
+      WHERE email = 'you@example.com';"
+```
+
+Sign in with `you@example.com` / `YourNewTempPassword!`. The app forces a
+password change on first login.
+
+### Step 2c — orphaned data, no users at all
+
+This is the rarest case (data tables have rows but the `users` table is empty).
+Recovering means reattaching old rows to a new admin. The user-data tables
+(`water_entries`, `food_entries`, `activity_entries`, `weight_entries`,
+`habits`, `goals`, `water_presets`, `activity_presets`, `food_presets`) all
+carry a `user_id` foreign key. Look at the distinct `user_id`s that show up
+in each:
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "SELECT DISTINCT user_id FROM water_entries
+      UNION SELECT DISTINCT user_id FROM food_entries
+      UNION SELECT DISTINCT user_id FROM activity_entries;"
+```
+
+If there's a single `user_id` (one-person household), create a new admin via
+the setup form, then re-point the old rows at the new admin's id:
+
+```sh
+psql -U <USER> -d <DB> \
+  -c "UPDATE water_entries    SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE food_entries     SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE activity_entries SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE weight_entries   SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE habits           SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';" \
+  -c "UPDATE goals            SET user_id = '<new-admin-uuid>' WHERE user_id = '<old-uuid>';"
+```
+
+(Multi-user households: do this per old user, mapping each to a freshly-created
+new user.)
+
+### Restore from the backup container's dumps
+
+If steps 2a-c don't apply (data really is gone), the `backup` service in
+`docker-compose.yml` writes nightly `pg_dump` archives. On Unraid you'll only
+have these if you wired up an equivalent backup container — the unified
+WellnessQuest image doesn't bundle one. Check `/mnt/user/appdata/` for a
+`wq-YYYYMMDD-HHMM.dump.gz` you trust, then follow the restore steps in
+[`runbook.md` → Backups](runbook.md#backups), substituting your `<USER>` /
+`<DB>` and your postgres container name.
+
 ## Switching to HTTPS later
 
 Two paths once you've validated the slice:

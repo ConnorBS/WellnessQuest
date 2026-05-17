@@ -40,11 +40,18 @@ function MainBody({ pathname, children }: { pathname: string | null; children: R
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: me } = useMe();
+  const { data: me, error: meError } = useMe();
 
   useEffect(() => {
     if (!isLoggedIn()) router.replace("/login");
   }, [router]);
+
+  // /me failing means tokens are either gone (api.ts cleared them after a
+  // failed refresh) or the backend rejected them. Either way, send the user
+  // to /login instead of leaving them staring at an empty shell.
+  useEffect(() => {
+    if (meError) router.replace("/login");
+  }, [meError, router]);
 
   useEffect(() => {
     if (me?.must_change_password) router.replace("/change-password");
@@ -54,6 +61,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     clearTokens();
     router.replace("/login");
   }
+
+  if (!me) return null;
 
   return (
     <DayProvider>

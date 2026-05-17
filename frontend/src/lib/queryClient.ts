@@ -8,7 +8,13 @@ export function makeQueryClient(): QueryClient {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: 1,
+        retry: (failureCount, error) => {
+          const status = (error as { status?: number }).status;
+          if (typeof status === "number" && status >= 400 && status < 500) {
+            return false;
+          }
+          return failureCount < 1;
+        },
       },
       mutations: {
         retry: 0,

@@ -12,6 +12,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -35,7 +36,7 @@ export default function LoginPage() {
     setError(null);
     try {
       const tokens = await apiPost("/auth/login", TokenPairSchema, { email, password });
-      setTokens(tokens);
+      setTokens(tokens, remember);
       const me = await apiFetch("/me", MeSchema);
       router.replace(me.must_change_password ? "/change-password" : "/dashboard");
     } catch {
@@ -69,6 +70,14 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             style={{ width: "100%", padding: 8, marginTop: 4, background: "#0f172a", border: "1px solid #334155", color: "inherit" }}
           />
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#cbd5e1" }}>
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+          />
+          Remember me on this device
         </label>
         {error && <p style={{ color: "#fca5a5", fontSize: 14 }}>{error}</p>}
         <button

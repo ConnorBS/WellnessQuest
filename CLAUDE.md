@@ -1,0 +1,90 @@
+# Notes for AI agents
+
+Quick orientation for Claude / agent sessions so we don't re-derive deployment
+context every time.
+
+## Where this actually runs
+
+Production is **Unraid**, not `docker compose`. The compose stack in this repo
+(`docker-compose.yml`) is for local laptop dev only — it bundles its own
+Postgres with `wq:wq@postgres:5432/wellnessquest` defaults. None of those
+values exist on the operator's Unraid box.
+
+On Unraid:
+
+- WellnessQuest runs as a **single container** from `ghcr.io/connorbs/wellnessquest:<tag>` (template at `unraid/wellnessquest.xml`).
+- Postgres is a **separate, operator-owned container** (Community Apps `postgres:16`, name varies — `postgresql16` is typical). The operator picks `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD` themselves.
+- WellnessQuest's `DATABASE_URL` env var points at that postgres. The user/db/host are whatever the operator chose, **not** the `wq` / `wellnessquest` shown in the compose file or runbook examples.
+
+When suggesting diagnostics or recovery commands, treat `POSTGRES_USER` and
+`POSTGRES_DB` as unknowns to be looked up from the operator's postgres container
+(Unraid UI → click container → Edit → POSTGRES_USER / POSTGRES_DB fields).
+Don't assume `wq` / `wellnessquest`.
+
+## The operator's primary interface is mobile
+
+Long shell pipelines, multi-step `find | xargs` chains, and "open three
+terminals" workflows are awkward. Prefer:
+
+1. **Unraid container console** (tap container icon → `>_`) for psql work — it
+   drops you straight into a shell inside that container. No `docker exec`
+   needed, no `docker compose` needed.
+2. **Single-line `psql -c "..."`** invocations the operator can paste once,
+   over multi-statement heredocs.
+3. **Unraid web terminal** (top-right `>_` in the WebUI) for `docker exec`
+   one-liners against named containers when you do need host-level access.
+
+`docker compose ...` commands do not work on the Unraid host — there's no
+`docker-compose.yml` in their cwd. Don't suggest them.
+
+## When the setup page appears unexpectedly
+
+If the operator reports "I'm being shown the welcome / create-admin page", do
+**not** instruct them to fill it in until you've confirmed which of these is
+true:
+
+1. The DB is genuinely fresh (rows = 0 everywhere) — setup form is correct.
+2. Users exist but the admin row has `disabled_at` set — reactivate, no setup needed.
+3. User-data tables (`water_entries`, `food_entries`, etc.) have rows but `users` is empty — orphaned data; need a recovery flow that re-creates an admin without nuking the existing rows.
+
+Filling in the setup form in scenario 2 or 3 leads to a new admin with a new
+`user_id` whose dashboard appears empty — even though the data is still in the
+DB linked to the old user.
+
+The diagnostic queries and one-liner fixes for each scenario live in
+[`docs/unraid.md` → Diagnostics & recovery](docs/unraid.md#diagnostics--recovery).
+Point the operator there rather than re-deriving the commands.
+
+## Postgres storage-path footgun on Unraid
+
+If scenario 1 (genuinely empty DB) shows up after a reboot or template edit,
+the cause is almost always the postgres container being pointed at a
+**phantom path under `/mnt/<pool>/...`** that doesn't resolve to a real pool
+(pool was renamed, template copied from an older Unraid version, or pool
+failed to mount on boot). Docker silently creates the directory empty,
+postgres runs its first-boot init, you get an empty DB with the configured
+user/db but zero rows.
+
+Suggest `/mnt/user/appdata/...` over `/mnt/<pool>/appdata/...` for postgres
+storage paths — the user share survives pool renames. Full write-up + a User
+Scripts backup recipe lives in
+[`docs/unraid.md` → Diagnostics & recovery](docs/unraid.md#why-this-happens-and-how-to-prevent-it).
+
+## Auth flow recap
+
+- Tokens live in `localStorage` (remember-me on, default) or `sessionStorage` (off). See `frontend/src/lib/auth.ts`. `setTokens(tokens, persistent)` writes to one and clears the other so the choice is reflected on disk; `getAccessToken` / `getRefreshToken` read from either.
+- Access token TTL: 15 min default (`ACCESS_TOKEN_TTL_SECONDS`). Refresh token TTL: 30 days default (`REFRESH_TOKEN_TTL_SECONDS`). Both are env-overridable.
+- **Refresh is rotation-based and deduplicated.** Backend revokes the old refresh row on every successful `/auth/refresh`, so concurrent callers must not each fire their own refresh — the runner-up would be left holding a revoked token and clear the freshly-issued ones. `frontend/src/lib/api.ts` serializes through a single in-flight promise (`inflightRefresh`); don't bypass it.
+- **The protected layout (`frontend/src/app/(app)/layout.tsx`) gates rendering on `useMe()` succeeding**, not on `isLoggedIn()` alone. An expired-but-still-stored access token passes `isLoggedIn()`, so a presence-only gate would render the empty shell and then leave the user staring at it if refresh failed. The layout returns `null` until `/me` returns and redirects to `/login` on any `/me` error.
+- React Query is configured (`frontend/src/lib/queryClient.ts`) to **not retry 4xx responses**. Retrying a 401 just delays the redirect by an extra failed refresh.
+- The setup page (`frontend/src/app/setup/page.tsx`) hits `/setup/status` first and only renders the form if `setup_required` is true; if a recovered user lands there with `setup_required=false`, it redirects them to `/login` so they can sign in normally.
+
+## Where things live
+
+- Backend FastAPI app: `backend/app/`
+  - Auth & setup endpoints: `backend/app/api/v1/auth.py`, `backend/app/api/v1/setup.py`
+  - Models: `backend/app/models/`
+  - Per-user defaults seeded on user creation: `backend/app/services/user_bootstrap.py`
+- Frontend Next.js (App Router) PWA: `frontend/src/app/`
+- Unraid template: `unraid/wellnessquest.xml`
+- Operator docs: `docs/unraid.md`, `docs/runbook.md`
