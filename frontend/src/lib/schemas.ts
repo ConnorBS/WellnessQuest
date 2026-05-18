@@ -251,6 +251,38 @@ export type BloodPressureSummary = z.infer<typeof BloodPressureSummarySchema>;
 export const MealTypeSchema = z.enum(["breakfast", "lunch", "dinner", "snack"]);
 export type MealType = z.infer<typeof MealTypeSchema>;
 
+// Per-portion Canadian Nutrition Facts panel. Mirrors backend
+// schemas.food.NutrientPanel — keep the key list in sync. Values are
+// already-multiplied for the logged portion (not per-100g).
+export const NutrientPanelSchema = z.object({
+  saturated_fat_g: z.coerce.number().nullable().optional(),
+  trans_fat_g: z.coerce.number().nullable().optional(),
+  saturated_trans_g: z.coerce.number().nullable().optional(),
+  fibre_g: z.coerce.number().nullable().optional(),
+  sugars_g: z.coerce.number().nullable().optional(),
+  cholesterol_mg: z.coerce.number().nullable().optional(),
+  sodium_mg: z.coerce.number().nullable().optional(),
+  potassium_mg: z.coerce.number().nullable().optional(),
+  calcium_mg: z.coerce.number().nullable().optional(),
+  iron_mg: z.coerce.number().nullable().optional(),
+  vit_a_mcg_rae: z.coerce.number().nullable().optional(),
+  vit_c_mg: z.coerce.number().nullable().optional(),
+  vit_d_mcg: z.coerce.number().nullable().optional(),
+  vit_e_mg: z.coerce.number().nullable().optional(),
+  vit_k_mcg: z.coerce.number().nullable().optional(),
+  thiamin_mg: z.coerce.number().nullable().optional(),
+  riboflavin_mg: z.coerce.number().nullable().optional(),
+  niacin_mg: z.coerce.number().nullable().optional(),
+  vit_b6_mg: z.coerce.number().nullable().optional(),
+  folate_mcg_dfe: z.coerce.number().nullable().optional(),
+  vit_b12_mcg: z.coerce.number().nullable().optional(),
+  pantothenate_mg: z.coerce.number().nullable().optional(),
+  phosphorus_mg: z.coerce.number().nullable().optional(),
+  magnesium_mg: z.coerce.number().nullable().optional(),
+  zinc_mg: z.coerce.number().nullable().optional(),
+});
+export type NutrientPanel = z.infer<typeof NutrientPanelSchema>;
+
 export const FoodEntrySchema = z.object({
   id: z.number().int(),
   name: z.string(),
@@ -259,6 +291,10 @@ export const FoodEntrySchema = z.object({
   protein_g: z.coerce.number().nullable().optional(),
   carbs_g: z.coerce.number().nullable().optional(),
   fat_g: z.coerce.number().nullable().optional(),
+  servings: z.coerce.number().nullable().optional(),
+  serving_g: z.coerce.number().nullable().optional(),
+  serving_label: z.string().nullable().optional(),
+  nutrients: z.record(z.string(), z.number()).nullable().optional(),
   meal_type: MealTypeSchema.nullable().optional(),
   source: z.string(),
   provider: z.string().nullable().optional(),
@@ -283,6 +319,8 @@ export const FoodTodaySchema = z.object({
   over_target: z.boolean(),
   remaining_kcal: z.number().int(),
   macros: FoodMacroTotalsSchema,
+  nutrients_total: z.record(z.string(), z.number()),
+  dv_percent: z.record(z.string(), z.number()),
   entries: z.array(FoodEntrySchema),
 });
 export type FoodToday = z.infer<typeof FoodTodaySchema>;
@@ -307,6 +345,9 @@ export const FoodPresetSchema = z.object({
   protein_g: z.coerce.number().nullable(),
   carbs_g: z.coerce.number().nullable(),
   fat_g: z.coerce.number().nullable(),
+  serving_g: z.coerce.number().nullable().optional(),
+  serving_label: z.string().nullable().optional(),
+  nutrients: z.record(z.string(), z.number()).nullable().optional(),
   meal_type: MealTypeSchema.nullable(),
   provider: z.string().nullable(),
   provider_id: z.string().nullable(),
@@ -337,6 +378,7 @@ export const FoodSearchHitSchema = z.object({
   protein_per_100ml: z.number().nullable().optional(),
   carbs_per_100ml: z.number().nullable().optional(),
   fat_per_100ml: z.number().nullable().optional(),
+  nutrients_per_100g: z.record(z.string(), z.number()).nullable().optional(),
 });
 export type FoodSearchHit = z.infer<typeof FoodSearchHitSchema>;
 
@@ -353,6 +395,10 @@ export const FoodRecentEntrySchema = z.object({
   protein_g: z.coerce.number().nullable().optional(),
   carbs_g: z.coerce.number().nullable().optional(),
   fat_g: z.coerce.number().nullable().optional(),
+  servings: z.coerce.number().nullable().optional(),
+  serving_g: z.coerce.number().nullable().optional(),
+  serving_label: z.string().nullable().optional(),
+  nutrients: z.record(z.string(), z.number()).nullable().optional(),
   meal_type: MealTypeSchema.nullable().optional(),
   provider: z.string().nullable().optional(),
   provider_id: z.string().nullable().optional(),
@@ -360,3 +406,41 @@ export const FoodRecentEntrySchema = z.object({
 });
 export type FoodRecentEntry = z.infer<typeof FoodRecentEntrySchema>;
 export const FoodRecentListSchema = z.array(FoodRecentEntrySchema);
+
+// Server-side Canadian DV reference. Cached indefinitely on the client —
+// editing requires a backend deploy.
+export const DailyValuesSchema = z.object({
+  values: z.record(z.string(), z.number()),
+  meta: z.record(
+    z.string(),
+    z.object({
+      label: z.string(),
+      unit: z.string(),
+      kind: z.enum(["macro", "encourage", "limit"]),
+    }),
+  ),
+});
+export type DailyValues = z.infer<typeof DailyValuesSchema>;
+
+// Patch response — same shape as Add minus xp_delta (XP is only on first log).
+export const FoodPatchOutSchema = z.object({
+  entry: FoodEntrySchema,
+  total_kcal: z.number().int(),
+  target_kcal: z.number().int(),
+  over_target: z.boolean(),
+});
+export type FoodPatchOut = z.infer<typeof FoodPatchOutSchema>;
+
+// Label scan output. All fields optional except `raw_text` so the review
+// screen can show the source for debugging / manual cross-check.
+export const LabelScanOutSchema = z.object({
+  name: z.string().nullable().optional(),
+  brand: z.string().nullable().optional(),
+  serving_g: z.number().nullable().optional(),
+  serving_label: z.string().nullable().optional(),
+  kcal: z.number().int().nullable().optional(),
+  nutrients: NutrientPanelSchema,
+  raw_text: z.string(),
+  language: z.enum(["en", "fr", "mixed"]),
+});
+export type LabelScanOut = z.infer<typeof LabelScanOutSchema>;

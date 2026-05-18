@@ -29,6 +29,10 @@ class FoodItem(BaseModel):
     protein_per_100ml: float | None = None
     carbs_per_100ml: float | None = None
     fat_per_100ml: float | None = None
+    # Extended Canadian Nutrition Facts panel, per-100g mass basis. Keys are
+    # a subset of schemas.food.ALLOWED_NUTRIENT_KEYS. Sparse — providers
+    # rarely fill every field, especially vitamins.
+    nutrients_per_100g: dict[str, float] | None = None
 
 
 class FoodProvider(ABC):

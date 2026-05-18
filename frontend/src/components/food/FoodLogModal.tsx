@@ -7,16 +7,19 @@ import { useFoodBarcode } from "@/hooks/useFoodBarcode";
 import { useCreateFoodPreset } from "@/hooks/useFoodPresets";
 import { useFoodSearch } from "@/hooks/useFoodSearch";
 import { ApiError } from "@/lib/api";
-import type { FoodSearchHit, FoodUnit, MealType } from "@/lib/schemas";
-import {
-  PORTION_UNIT_LABELS,
-  type PortionUnit,
-  portionUnitsFor,
-  toNative,
-} from "@/lib/units";
+import type {
+  FoodSearchHit,
+  FoodUnit,
+  LabelScanOut,
+  MealType,
+  NutrientPanel,
+} from "@/lib/schemas";
 import { uuidv4 } from "@/lib/uuid";
 
 import { BarcodeScanner } from "@/components/food/BarcodeScanner";
+import { NutrientPanel as NutrientPanelView } from "@/components/food/NutrientPanel";
+import { NutritionLabelScanner } from "@/components/food/NutritionLabelScanner";
+import { ParsedLabelReview, type ReviewedLabel } from "@/components/food/ParsedLabelReview";
 
 // What unit set to show in the picker when OFF couldn't tell us the product's
 // native unit. We default to solid (g/oz) — most packaged foods are mass-labelled.
@@ -52,17 +55,19 @@ interface Props {
   onClose: () => void;
 }
 
-type Mode = "search" | "manual";
+type Mode = "search" | "manual" | "scan-review";
 
 export function FoodLogModal({ onClose }: Props) {
   const [mode, setMode] = useState<Mode>("search");
   const [meal, setMeal] = useState<MealType>(inferDefaultMeal());
   const [selected, setSelected] = useState<FoodSearchHit | null>(null);
-  const [amount, setAmount] = useState<number>(100);
-  const [amountUnit, setAmountUnit] = useState<PortionUnit>("g");
-  // Fallback when the selected OFF hit has no per-100 nutriment data: let the
-  // user type the kcal/macros for the portion they actually ate, instead of
-  // silently disabling the Log button.
+  // Servings-first portion model: user types "2", we resolve grams from
+  // selected.serving_g. The legacy gram-amount input is now a collapsible
+  // override for foods without a serving size or volumetric items.
+  const [servings, setServings] = useState<number>(1);
+  const [overrideGrams, setOverrideGrams] = useState<number | "">("");
+  const [showGramOverride, setShowGramOverride] = useState(false);
+  // Manual-mode kcal/macros for foods without OFF nutrition data.
   const [overrideKcal, setOverrideKcal] = useState<number | "">("");
   const [overrideProtein, setOverrideProtein] = useState<number | "">("");
   const [overrideCarbs, setOverrideCarbs] = useState<number | "">("");
@@ -76,6 +81,10 @@ export function FoodLogModal({ onClose }: Props) {
   const [saveAsPreset, setSaveAsPreset] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  // Label-scan review state
+  const [scanResult, setScanResult] = useState<LabelScanOut | null>(null);
+  const [scanImageUrl, setScanImageUrl] = useState<string | null>(null);
+  const [expandNutrients, setExpandNutrients] = useState(false);
   const addFood = useAddFood();
   const createPreset = useCreateFoodPreset();
   const barcodeLookup = useFoodBarcode();
@@ -102,22 +111,20 @@ export function FoodLogModal({ onClose }: Props) {
 
   function selectHit(hit: FoodSearchHit) {
     setSelected(hit);
-    // Seed the input in the product's native unit at its serving size, falling
-    // back to 100 (which is what the per-100 nutriments are normalised against).
-    // Liquids get mL/cup-style units; solids get g/oz.
-    const native: FoodUnit = hit.unit ?? DEFAULT_NATIVE_UNIT;
-    setAmountUnit(native);
-    if (hit.serving_g && hit.serving_g > 0) {
-      setAmount(Math.round(hit.serving_g));
-    } else {
-      setAmount(100);
-    }
-    // Clear any previous manual overrides; the new product gets a fresh prompt
-    // if it also lacks nutriment data.
+    setServings(1);
+    setOverrideGrams("");
+    setShowGramOverride(!hit.serving_g); // foods without a serving size fall back to grams immediately
     setOverrideKcal("");
     setOverrideProtein("");
     setOverrideCarbs("");
     setOverrideFat("");
+  }
+
+  function onLabelScanned(parsed: LabelScanOut, file: File) {
+    setScanResult(parsed);
+    if (scanImageUrl) URL.revokeObjectURL(scanImageUrl);
+    setScanImageUrl(URL.createObjectURL(file));
+    setMode("scan-review");
   }
 
   useEffect(() => {
@@ -128,18 +135,31 @@ export function FoodLogModal({ onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  useEffect(
+    () => () => {
+      if (scanImageUrl) URL.revokeObjectURL(scanImageUrl);
+    },
+    [scanImageUrl],
+  );
+
   const computed = useMemo(() => {
     if (!selected) return null;
     const native: FoodUnit = selected.unit ?? DEFAULT_NATIVE_UNIT;
-    // Convert the user-entered amount to the product's native unit (g for solids,
-    // mL for liquids). Returns null when the user picked a unit that can't be
-    // converted without density (e.g. cup of cereal) — we treat the value as
-    // already-in-native-units in that case, so the math still produces a number.
-    const inNative = toNative(amount, amountUnit, native) ?? amount;
-    const factor = inNative / 100;
-    // Liquids prefer per-100ml nutriments when OFF exposes them; solids use
-    // per-100g. Falling back across mass<->volume is fine if the other set is
-    // missing — water-density approximation is good enough for v1.
+    // Resolve "how many grams (or mL) of the product am I logging?"
+    //   - if the user overrode grams, use that.
+    //   - else if the product has a serving size, multiply by servings count.
+    //   - else fall back to 100 (per-100 nutriment basis — preserves old behaviour
+    //     for foods without serving info).
+    let nativeAmount: number;
+    if (showGramOverride && overrideGrams !== "") {
+      nativeAmount = Number(overrideGrams);
+    } else if (selected.serving_g) {
+      nativeAmount = selected.serving_g * servings;
+    } else {
+      nativeAmount = 100;
+    }
+    if (!Number.isFinite(nativeAmount) || nativeAmount < 0) nativeAmount = 0;
+    const factor = nativeAmount / 100;
     const kcalPer100 =
       native === "ml"
         ? selected.kcal_per_100ml ?? selected.kcal_per_100g
@@ -158,14 +178,29 @@ export function FoodLogModal({ onClose }: Props) {
         : selected.fat_per_100g ?? selected.fat_per_100ml;
     const scale = (v: number | null | undefined) =>
       v == null ? null : Math.round(v * factor * 10) / 10;
+
+    // Extended nutrients (the Canadian panel) — scale OFF's per-100g panel by
+    // the same factor. OFF rarely returns vitamins, but sat-fat / fibre /
+    // sodium / cholesterol are commonly present.
+    const nutPer100 = selected.nutrients_per_100g ?? {};
+    const nutrients: NutrientPanel = {};
+    for (const [key, v] of Object.entries(nutPer100)) {
+      const scaled = v * factor;
+      (nutrients as Record<string, number>)[key] =
+        Math.round(scaled * 1000) / 1000;
+    }
+
     return {
       hasNutritionData: kcalPer100 != null,
+      nativeAmount,
+      nativeUnit: native,
       kcal: kcalPer100 != null ? Math.round(kcalPer100 * factor) : null,
       protein_g: scale(pPer100),
       carbs_g: scale(cPer100),
       fat_g: scale(fPer100),
+      nutrients,
     };
-  }, [selected, amount, amountUnit]);
+  }, [selected, servings, overrideGrams, showGramOverride]);
 
   // When OFF returned no per-100 nutriments, we fall back to whatever the user
   // typed in the override fields. Leaving them blank is valid — it logs the
@@ -193,7 +228,7 @@ export function FoodLogModal({ onClose }: Props) {
     : null;
 
   function logSelected() {
-    if (!selected || finalKcal < 0) return;
+    if (!selected || !computed || finalKcal < 0) return;
     addFood.mutate(
       {
         name: selected.name,
@@ -202,6 +237,13 @@ export function FoodLogModal({ onClose }: Props) {
         protein_g: finalProtein,
         carbs_g: finalCarbs,
         fat_g: finalFat,
+        servings: showGramOverride ? null : servings,
+        serving_g: selected.serving_g ?? null,
+        serving_label: selected.serving_label ?? null,
+        nutrients:
+          computed.hasNutritionData && Object.keys(computed.nutrients).length
+            ? computed.nutrients
+            : null,
         meal_type: meal,
         provider: selected.provider,
         provider_id: selected.provider_id,
@@ -210,13 +252,29 @@ export function FoodLogModal({ onClose }: Props) {
       {
         onSuccess: () => {
           if (saveAsPreset && finalKcal != null) {
+            // Preset stores the PER-SERVING values, not the multiplied ones,
+            // so re-logging the preset gives a stable starting point. We
+            // resolve per-serving from the per-100g and the product's
+            // serving_g.
+            const presetKcal = perServing(selected.kcal_per_100g, selected.serving_g);
+            const presetProtein = perServing(selected.protein_per_100g, selected.serving_g);
+            const presetCarbs = perServing(selected.carbs_per_100g, selected.serving_g);
+            const presetFat = perServing(selected.fat_per_100g, selected.serving_g);
+            const presetNutrients: Record<string, number> = {};
+            for (const [key, v] of Object.entries(selected.nutrients_per_100g ?? {})) {
+              const ps = perServing(v, selected.serving_g);
+              if (ps != null) presetNutrients[key] = ps;
+            }
             createPreset.mutate({
               label: selected.name,
               brand: selected.brand ?? null,
-              kcal: finalKcal,
-              protein_g: finalProtein,
-              carbs_g: finalCarbs,
-              fat_g: finalFat,
+              kcal: presetKcal ?? finalKcal,
+              protein_g: presetProtein ?? finalProtein,
+              carbs_g: presetCarbs ?? finalCarbs,
+              fat_g: presetFat ?? finalFat,
+              serving_g: selected.serving_g ?? null,
+              serving_label: selected.serving_label ?? null,
+              nutrients: Object.keys(presetNutrients).length ? presetNutrients : null,
               meal_type: meal,
               provider: selected.provider,
               provider_id: selected.provider_id,
@@ -257,6 +315,9 @@ export function FoodLogModal({ onClose }: Props) {
               protein_g: protein,
               carbs_g: carbs,
               fat_g: fat,
+              serving_g: null,
+              serving_label: null,
+              nutrients: null,
               meal_type: meal,
               provider: null,
               provider_id: null,
@@ -266,6 +327,55 @@ export function FoodLogModal({ onClose }: Props) {
             });
           }
           onClose();
+        },
+      },
+    );
+  }
+
+  function saveReviewed(values: ReviewedLabel, alsoLog: boolean) {
+    // From the OCR review screen: always save as a preset so the scanned label
+    // is reusable. Optionally also log 1 serving now.
+    createPreset.mutate(
+      {
+        label: values.name,
+        brand: values.brand,
+        kcal: values.kcal,
+        protein_g: values.protein_g,
+        carbs_g: values.carbs_g,
+        fat_g: values.fat_g,
+        serving_g: values.serving_g,
+        serving_label: values.serving_label,
+        nutrients: emptyToNull(values.nutrients),
+        meal_type: values.meal_type,
+        provider: null,
+        provider_id: null,
+        icon_kind: "builtin",
+        icon_key: "food-apple",
+        sort_order: 0,
+      },
+      {
+        onSuccess: () => {
+          if (!alsoLog) {
+            onClose();
+            return;
+          }
+          addFood.mutate(
+            {
+              name: values.name,
+              brand: values.brand,
+              kcal: values.kcal,
+              protein_g: values.protein_g,
+              carbs_g: values.carbs_g,
+              fat_g: values.fat_g,
+              servings: 1,
+              serving_g: values.serving_g,
+              serving_label: values.serving_label,
+              nutrients: emptyToNull(values.nutrients),
+              meal_type: values.meal_type,
+              client_id: uuidv4(),
+            },
+            { onSuccess: () => onClose() },
+          );
         },
       },
     );
@@ -309,7 +419,9 @@ export function FoodLogModal({ onClose }: Props) {
             marginBottom: 12,
           }}
         >
-          <h2 style={{ fontSize: 18, fontWeight: 600 }}>Log food</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 600 }}>
+            {mode === "scan-review" ? "Confirm label" : "Log food"}
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -320,492 +432,513 @@ export function FoodLogModal({ onClose }: Props) {
           </button>
         </header>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <button
-            type="button"
-            onClick={() => setMode("search")}
-            style={tabStyle(mode === "search")}
-          >
-            Search
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("manual")}
-            style={tabStyle(mode === "manual")}
-          >
-            Manual
-          </button>
-        </div>
-
-        <label style={{ display: "block", marginBottom: 12 }}>
-          <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
-            Meal
-          </span>
-          <select
-            value={meal}
-            onChange={(e) => setMeal(e.target.value as MealType)}
-            style={inputStyle}
-          >
-            {MEAL_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {mode === "search" ? (
+        {mode === "scan-review" && scanResult ? (
+          <ParsedLabelReview
+            parsed={scanResult}
+            imageUrl={scanImageUrl}
+            defaultMeal={meal}
+            onCancel={() => {
+              setMode("search");
+              setScanResult(null);
+              if (scanImageUrl) URL.revokeObjectURL(scanImageUrl);
+              setScanImageUrl(null);
+            }}
+            onSave={(v) => saveReviewed(v, false)}
+            onSaveAndLog={(v) => saveReviewed(v, true)}
+            busy={createPreset.isPending || addFood.isPending}
+          />
+        ) : (
           <>
-            <label style={{ display: "block", marginBottom: 8 }}>
-              <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
-                Search Open Food Facts
-              </span>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  type="search"
-                  placeholder="e.g. greek yogurt"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setSelected(null);
-                  }}
-                  style={{ ...inputStyle, flex: 1 }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setScanError(null);
-                    setScannerOpen(true);
-                  }}
-                  disabled={barcodeLookup.isPending}
-                  title="Scan a barcode"
-                  style={{
-                    padding: "0 12px",
-                    background: "transparent",
-                    color: "#10b981",
-                    border: "1px solid #1e293b",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontSize: 13,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {barcodeLookup.isPending ? "Looking up…" : "Scan"}
-                </button>
-              </div>
-            </label>
-            {scanError && (
-              <p style={{ fontSize: 13, color: "#fca5a5", marginBottom: 8 }}>{scanError}</p>
-            )}
-            {search.trim().length < 2 ? (
-              <p style={{ fontSize: 12, color: "#64748b" }}>
-                Type at least 2 characters to search.
-              </p>
-            ) : isError ? (
-              <div style={{ fontSize: 13, color: "#fca5a5", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <span>Search failed: {searchErrorMessage(error)}.</span>
-                <button
-                  type="button"
-                  onClick={() => refetch()}
-                  style={{
-                    background: "transparent",
-                    color: "#10b981",
-                    border: "1px solid #1e293b",
-                    borderRadius: 6,
-                    padding: "2px 8px",
-                    cursor: "pointer",
-                    fontSize: 12,
-                  }}
-                >
-                  Retry
-                </button>
-              </div>
-            ) : isLoading ? (
-              <p style={{ fontSize: 13, color: "#94a3b8" }}>Searching…</p>
-            ) : data && data.hits.length > 0 ? (
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: "0 0 12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 4,
-                  maxHeight: 240,
-                  overflowY: "auto",
-                  borderTop: "1px solid #1e293b",
-                  borderBottom: "1px solid #1e293b",
-                }}
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <button
+                type="button"
+                onClick={() => setMode("search")}
+                style={tabStyle(mode === "search")}
               >
-                {data.hits.map((h) => {
-                  const isSel =
-                    selected?.provider_id === h.provider_id &&
-                    selected?.provider === h.provider;
-                  return (
-                    <li key={`${h.provider}-${h.provider_id}`}>
-                      <button
-                        type="button"
-                        onClick={() => selectHit(h)}
-                        style={{
-                          width: "100%",
-                          textAlign: "left",
-                          background: isSel ? "#1e293b" : "transparent",
-                          border: "none",
-                          color: "#e2e8f0",
-                          padding: "8px 6px",
-                          borderBottom: "1px solid #1e293b",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <div style={{ fontSize: 14 }}>
-                          {h.name}
-                          {h.brand ? (
-                            <span style={{ color: "#64748b" }}> · {h.brand}</span>
-                          ) : null}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#94a3b8" }}>
-                          {(() => {
-                            const native = h.unit ?? DEFAULT_NATIVE_UNIT;
-                            const per100 =
-                              native === "ml"
-                                ? h.kcal_per_100ml ?? h.kcal_per_100g
-                                : h.kcal_per_100g ?? h.kcal_per_100ml;
-                            const unitLabel = native === "ml" ? "mL" : "g";
-                            return per100 != null
-                              ? `${Math.round(per100)} kcal / 100 ${unitLabel}`
-                              : "no kcal data";
-                          })()}
-                          {h.serving_label
-                            ? ` · serving: ${h.serving_label}`
-                            : h.serving_g
-                              ? ` · serving: ${h.serving_g} ${h.unit === "ml" ? "mL" : "g"}`
-                              : ""}
-                        </div>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : data && !isFetching ? (
-              <p style={{ fontSize: 13, color: "#94a3b8" }}>No matches.</p>
-            ) : null}
+                Search
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("manual")}
+                style={tabStyle(mode === "manual")}
+              >
+                Manual
+              </button>
+            </div>
 
-            {selected
-              ? (() => {
-                  const native: FoodUnit = selected.unit ?? DEFAULT_NATIVE_UNIT;
-                  const unitChoices = portionUnitsFor(native);
-                  const nativeLabel = PORTION_UNIT_LABELS[native];
-                  return (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      <label>
-                        <span
-                          style={{
-                            display: "block",
-                            fontSize: 12,
-                            color: "#94a3b8",
-                            marginBottom: 4,
-                          }}
-                        >
-                          Amount eaten
-                        </span>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <input
-                            type="number"
-                            min={0.1}
-                            step={amountUnit === "g" || amountUnit === "ml" ? 1 : 0.25}
-                            max={amountUnit === "g" || amountUnit === "ml" ? 5000 : 50}
-                            value={amount}
-                            onChange={(e) =>
-                              setAmount(Math.max(0, Number(e.target.value) || 0))
-                            }
-                            style={{ ...inputStyle, flex: 1 }}
-                          />
-                          <select
-                            value={amountUnit}
-                            onChange={(e) => {
-                              const next = e.target.value as PortionUnit;
-                              setAmountUnit(next);
-                            }}
-                            style={{ ...inputStyle, width: 100 }}
-                          >
-                            {unitChoices.map((u) => (
-                              <option key={u} value={u}>
-                                {PORTION_UNIT_LABELS[u]}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            color: "#64748b",
-                            display: "block",
-                            marginTop: 4,
-                          }}
-                        >
-                          Nutrition data is per 100 {nativeLabel} for this product.
-                        </span>
-                      </label>
-                      {selected.serving_g ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAmountUnit(native);
-                            setAmount(Math.round(selected.serving_g ?? amount));
-                          }}
-                          style={{
-                            alignSelf: "start",
-                            fontSize: 12,
-                            color: "#10b981",
-                            background: "transparent",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: 0,
-                          }}
-                        >
-                          Use 1 serving (
-                          {selected.serving_label ??
-                            `${selected.serving_g} ${nativeLabel}`}
-                          )
-                        </button>
-                      ) : null}
-                {computed?.hasNutritionData ? (
-                  <div style={{ fontSize: 13, color: "#cbd5e1" }}>
-                    {`${computed.kcal} kcal · P ${fmt(computed.protein_g)} · C ${fmt(
-                      computed.carbs_g,
-                    )} · F ${fmt(computed.fat_g)}`}
+            <div style={{ marginBottom: 12 }}>
+              <NutritionLabelScanner
+                onScanned={onLabelScanned}
+                label="Scan a nutrition label"
+              />
+            </div>
+
+            <label style={{ display: "block", marginBottom: 12 }}>
+              <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
+                Meal
+              </span>
+              <select
+                value={meal}
+                onChange={(e) => setMeal(e.target.value as MealType)}
+                style={inputStyle}
+              >
+                {MEAL_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {mode === "search" ? (
+              <>
+                <label style={{ display: "block", marginBottom: 8 }}>
+                  <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
+                    Search Open Food Facts
+                  </span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      type="search"
+                      placeholder="e.g. greek yogurt"
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setSelected(null);
+                      }}
+                      style={{ ...inputStyle, flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScanError(null);
+                        setScannerOpen(true);
+                      }}
+                      disabled={barcodeLookup.isPending}
+                      title="Scan a barcode"
+                      style={{
+                        padding: "0 12px",
+                        background: "transparent",
+                        color: "#10b981",
+                        border: "1px solid #1e293b",
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        fontSize: 13,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {barcodeLookup.isPending ? "Looking up…" : "Barcode"}
+                    </button>
                   </div>
-                ) : (
-                  <div
+                </label>
+                {scanError && (
+                  <p style={{ fontSize: 13, color: "#fca5a5", marginBottom: 8 }}>{scanError}</p>
+                )}
+                {search.trim().length < 2 ? (
+                  <p style={{ fontSize: 12, color: "#64748b" }}>
+                    Type at least 2 characters to search.
+                  </p>
+                ) : isError ? (
+                  <div style={{ fontSize: 13, color: "#fca5a5", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <span>Search failed: {searchErrorMessage(error)}.</span>
+                    <button
+                      type="button"
+                      onClick={() => refetch()}
+                      style={{
+                        background: "transparent",
+                        color: "#10b981",
+                        border: "1px solid #1e293b",
+                        borderRadius: 6,
+                        padding: "2px 8px",
+                        cursor: "pointer",
+                        fontSize: 12,
+                      }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : isLoading ? (
+                  <p style={{ fontSize: 13, color: "#94a3b8" }}>Searching…</p>
+                ) : data && data.hits.length > 0 ? (
+                  <ul
                     style={{
+                      listStyle: "none",
+                      padding: 0,
+                      margin: "0 0 12px",
                       display: "flex",
                       flexDirection: "column",
-                      gap: 8,
-                      padding: 10,
-                      background: "#0b1220",
-                      border: "1px solid #1e293b",
-                      borderRadius: 6,
+                      gap: 4,
+                      maxHeight: 240,
+                      overflowY: "auto",
+                      borderTop: "1px solid #1e293b",
+                      borderBottom: "1px solid #1e293b",
                     }}
                   >
-                    <p style={{ fontSize: 12, color: "#fcd34d", margin: 0 }}>
-                      Open Food Facts doesn&apos;t have nutrition data for this product.
-                      Enter the values from the package below, or leave them blank to log
-                      the food without nutrition info.
-                    </p>
-                    <label>
-                      <span
-                        style={{
-                          display: "block",
-                          fontSize: 12,
-                          color: "#94a3b8",
-                          marginBottom: 4,
-                        }}
-                      >
-                        Calories (kcal) for this portion
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={20000}
-                        value={overrideKcal}
-                        onChange={(e) =>
-                          setOverrideKcal(e.target.value === "" ? "" : Number(e.target.value))
-                        }
-                        style={inputStyle}
-                      />
-                    </label>
-                    <div
-                      style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}
-                    >
-                      <label>
-                        <span
-                          style={{
-                            display: "block",
-                            fontSize: 12,
-                            color: "#94a3b8",
-                            marginBottom: 4,
-                          }}
-                        >
-                          Protein (g)
-                        </span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={overrideProtein}
-                          onChange={(e) =>
-                            setOverrideProtein(
-                              e.target.value === "" ? "" : Number(e.target.value),
-                            )
-                          }
-                          style={inputStyle}
-                        />
-                      </label>
-                      <label>
-                        <span
-                          style={{
-                            display: "block",
-                            fontSize: 12,
-                            color: "#94a3b8",
-                            marginBottom: 4,
-                          }}
-                        >
-                          Carbs (g)
-                        </span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={overrideCarbs}
-                          onChange={(e) =>
-                            setOverrideCarbs(
-                              e.target.value === "" ? "" : Number(e.target.value),
-                            )
-                          }
-                          style={inputStyle}
-                        />
-                      </label>
-                      <label>
-                        <span
-                          style={{
-                            display: "block",
-                            fontSize: 12,
-                            color: "#94a3b8",
-                            marginBottom: 4,
-                          }}
-                        >
-                          Fat (g)
-                        </span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={overrideFat}
-                          onChange={(e) =>
-                            setOverrideFat(
-                              e.target.value === "" ? "" : Number(e.target.value),
-                            )
-                          }
-                          style={inputStyle}
-                        />
-                      </label>
-                    </div>
-                  </div>
-                )}
+                    {data.hits.map((h) => {
+                      const isSel =
+                        selected?.provider_id === h.provider_id &&
+                        selected?.provider === h.provider;
+                      return (
+                        <li key={`${h.provider}-${h.provider_id}`}>
+                          <button
+                            type="button"
+                            onClick={() => selectHit(h)}
+                            style={{
+                              width: "100%",
+                              textAlign: "left",
+                              background: isSel ? "#1e293b" : "transparent",
+                              border: "none",
+                              color: "#e2e8f0",
+                              padding: "8px 6px",
+                              borderBottom: "1px solid #1e293b",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <div style={{ fontSize: 14 }}>
+                              {h.name}
+                              {h.brand ? (
+                                <span style={{ color: "#64748b" }}> · {h.brand}</span>
+                              ) : null}
+                            </div>
+                            <div style={{ fontSize: 12, color: "#94a3b8" }}>
+                              {(() => {
+                                const native = h.unit ?? DEFAULT_NATIVE_UNIT;
+                                const per100 =
+                                  native === "ml"
+                                    ? h.kcal_per_100ml ?? h.kcal_per_100g
+                                    : h.kcal_per_100g ?? h.kcal_per_100ml;
+                                const unitLabel = native === "ml" ? "mL" : "g";
+                                return per100 != null
+                                  ? `${Math.round(per100)} kcal / 100 ${unitLabel}`
+                                  : "no kcal data";
+                              })()}
+                              {h.serving_label
+                                ? ` · serving: ${h.serving_label}`
+                                : h.serving_g
+                                  ? ` · serving: ${h.serving_g} ${h.unit === "ml" ? "mL" : "g"}`
+                                  : ""}
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : data && !isFetching ? (
+                  <p style={{ fontSize: 13, color: "#94a3b8" }}>No matches.</p>
+                ) : null}
+
+                {selected
+                  ? (() => {
+                      const servingUnitLabel =
+                        selected.unit === "ml" ? "mL" : "g";
+                      return (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {selected.serving_g ? (
+                            <label>
+                              <span
+                                style={{
+                                  display: "block",
+                                  fontSize: 12,
+                                  color: "#94a3b8",
+                                  marginBottom: 4,
+                                }}
+                              >
+                                Servings
+                              </span>
+                              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setServings((s) => Math.max(0.25, +(s - 0.5).toFixed(2)))}
+                                  style={stepperBtn}
+                                  aria-label="Half a serving less"
+                                >
+                                  −
+                                </button>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  step={0.25}
+                                  value={servings}
+                                  onChange={(e) =>
+                                    setServings(Math.max(0, Number(e.target.value) || 0))
+                                  }
+                                  style={{ ...inputStyle, flex: 1, textAlign: "center" }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setServings((s) => +(s + 0.5).toFixed(2))}
+                                  style={stepperBtn}
+                                  aria-label="Half a serving more"
+                                >
+                                  +
+                                </button>
+                              </div>
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  color: "#64748b",
+                                  display: "block",
+                                  marginTop: 4,
+                                }}
+                              >
+                                1 serving ={" "}
+                                {selected.serving_label ??
+                                  `${selected.serving_g} ${servingUnitLabel}`}
+                                {selected.serving_label && selected.serving_g
+                                  ? ` (${selected.serving_g} ${servingUnitLabel})`
+                                  : ""}
+                              </span>
+                            </label>
+                          ) : null}
+
+                          <button
+                            type="button"
+                            onClick={() => setShowGramOverride((v) => !v)}
+                            style={linkBtn}
+                          >
+                            {showGramOverride
+                              ? "Use servings instead"
+                              : `Use exact ${servingUnitLabel} instead`}
+                          </button>
+
+                          {showGramOverride ? (
+                            <label>
+                              <span style={fieldLabel}>
+                                Amount ({servingUnitLabel})
+                              </span>
+                              <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                max={5000}
+                                value={overrideGrams}
+                                onChange={(e) =>
+                                  setOverrideGrams(
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
+                                placeholder={
+                                  selected.serving_g
+                                    ? String(selected.serving_g)
+                                    : "100"
+                                }
+                                style={inputStyle}
+                              />
+                            </label>
+                          ) : null}
+
+                          {computed?.hasNutritionData ? (
+                            <>
+                              <div style={{ fontSize: 13, color: "#cbd5e1" }}>
+                                {`${computed.kcal} kcal · P ${fmt(computed.protein_g)} · C ${fmt(
+                                  computed.carbs_g,
+                                )} · F ${fmt(computed.fat_g)}`}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setExpandNutrients((v) => !v)}
+                                style={linkBtn}
+                              >
+                                {expandNutrients ? "Hide" : "Show"} full nutrient panel
+                              </button>
+                              {expandNutrients ? (
+                                <NutrientPanelView
+                                  totals={{
+                                    kcal: computed.kcal ?? 0,
+                                    protein_g: computed.protein_g ?? null,
+                                    carbs_g: computed.carbs_g ?? null,
+                                    fat_g: computed.fat_g ?? null,
+                                    ...computed.nutrients,
+                                  }}
+                                />
+                              ) : null}
+                            </>
+                          ) : (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 8,
+                                padding: 10,
+                                background: "#0b1220",
+                                border: "1px solid #1e293b",
+                                borderRadius: 6,
+                              }}
+                            >
+                              <p style={{ fontSize: 12, color: "#fcd34d", margin: 0 }}>
+                                Open Food Facts doesn&apos;t have nutrition data for this
+                                product. Enter the values from the package below, or use
+                                &quot;Scan a nutrition label&quot; above.
+                              </p>
+                              <label>
+                                <span style={fieldLabel}>Calories (kcal) for this portion</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={20000}
+                                  value={overrideKcal}
+                                  onChange={(e) =>
+                                    setOverrideKcal(
+                                      e.target.value === "" ? "" : Number(e.target.value),
+                                    )
+                                  }
+                                  style={inputStyle}
+                                />
+                              </label>
+                              <div
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns: "1fr 1fr 1fr",
+                                  gap: 8,
+                                }}
+                              >
+                                <label>
+                                  <span style={fieldLabel}>Protein (g)</span>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={overrideProtein}
+                                    onChange={(e) =>
+                                      setOverrideProtein(
+                                        e.target.value === "" ? "" : Number(e.target.value),
+                                      )
+                                    }
+                                    style={inputStyle}
+                                  />
+                                </label>
+                                <label>
+                                  <span style={fieldLabel}>Carbs (g)</span>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={overrideCarbs}
+                                    onChange={(e) =>
+                                      setOverrideCarbs(
+                                        e.target.value === "" ? "" : Number(e.target.value),
+                                      )
+                                    }
+                                    style={inputStyle}
+                                  />
+                                </label>
+                                <label>
+                                  <span style={fieldLabel}>Fat (g)</span>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={overrideFat}
+                                    onChange={(e) =>
+                                      setOverrideFat(
+                                        e.target.value === "" ? "" : Number(e.target.value),
+                                      )
+                                    }
+                                    style={inputStyle}
+                                  />
+                                </label>
+                              </div>
+                            </div>
+                          )}
+                          <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
+                          {(() => {
+                            const disabled = addFood.isPending || finalKcal < 0;
+                            return (
+                              <button
+                                type="button"
+                                onClick={logSelected}
+                                disabled={disabled}
+                                style={primaryBtnStyleFor(disabled)}
+                              >
+                                {addFood.isPending
+                                  ? "Logging…"
+                                  : computed?.hasNutritionData || overrideKcal !== ""
+                                    ? "Log it"
+                                    : "Log without nutrition"}
+                              </button>
+                            );
+                          })()}
+                        </div>
+                      );
+                    })()
+                  : null}
+              </>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <label>
+                  <span style={fieldLabel}>Name</span>
+                  <input
+                    type="text"
+                    value={manualName}
+                    onChange={(e) => setManualName(e.target.value)}
+                    style={inputStyle}
+                  />
+                </label>
+                <label>
+                  <span style={fieldLabel}>Calories (kcal)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20000}
+                    value={manualKcal}
+                    onChange={(e) =>
+                      setManualKcal(e.target.value === "" ? "" : Number(e.target.value))
+                    }
+                    style={inputStyle}
+                  />
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                  <label>
+                    <span style={fieldLabel}>Protein (g)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={manualProtein}
+                      onChange={(e) =>
+                        setManualProtein(e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                      style={inputStyle}
+                    />
+                  </label>
+                  <label>
+                    <span style={fieldLabel}>Carbs (g)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={manualCarbs}
+                      onChange={(e) =>
+                        setManualCarbs(e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                      style={inputStyle}
+                    />
+                  </label>
+                  <label>
+                    <span style={fieldLabel}>Fat (g)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={manualFat}
+                      onChange={(e) =>
+                        setManualFat(e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                      style={inputStyle}
+                    />
+                  </label>
+                </div>
                 <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
                 {(() => {
-                  const disabled = addFood.isPending || finalKcal < 0;
+                  const manualDisabled =
+                    addFood.isPending || !manualName.trim() || manualKcal === "" || manualKcal < 0;
                   return (
                     <button
                       type="button"
-                      onClick={logSelected}
-                      disabled={disabled}
-                      style={primaryBtnStyleFor(disabled)}
+                      onClick={logManual}
+                      disabled={manualDisabled}
+                      style={primaryBtnStyleFor(manualDisabled)}
                     >
-                      {addFood.isPending
-                        ? "Logging…"
-                        : computed?.hasNutritionData || overrideKcal !== ""
-                          ? "Log it"
-                          : "Log without nutrition"}
+                      {addFood.isPending ? "Logging…" : "Log it"}
                     </button>
                   );
                 })()}
               </div>
-                  );
-                })()
-              : null}
+            )}
           </>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <label>
-              <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
-                Name
-              </span>
-              <input
-                type="text"
-                value={manualName}
-                onChange={(e) => setManualName(e.target.value)}
-                style={inputStyle}
-              />
-            </label>
-            <label>
-              <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
-                Calories (kcal)
-              </span>
-              <input
-                type="number"
-                min={0}
-                max={20000}
-                value={manualKcal}
-                onChange={(e) =>
-                  setManualKcal(e.target.value === "" ? "" : Number(e.target.value))
-                }
-                style={inputStyle}
-              />
-            </label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-              <label>
-                <span
-                  style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}
-                >
-                  Protein (g)
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  value={manualProtein}
-                  onChange={(e) =>
-                    setManualProtein(e.target.value === "" ? "" : Number(e.target.value))
-                  }
-                  style={inputStyle}
-                />
-              </label>
-              <label>
-                <span
-                  style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}
-                >
-                  Carbs (g)
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  value={manualCarbs}
-                  onChange={(e) =>
-                    setManualCarbs(e.target.value === "" ? "" : Number(e.target.value))
-                  }
-                  style={inputStyle}
-                />
-              </label>
-              <label>
-                <span
-                  style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}
-                >
-                  Fat (g)
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  value={manualFat}
-                  onChange={(e) =>
-                    setManualFat(e.target.value === "" ? "" : Number(e.target.value))
-                  }
-                  style={inputStyle}
-                />
-              </label>
-            </div>
-            <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
-            {(() => {
-              const manualDisabled =
-                addFood.isPending || !manualName.trim() || manualKcal === "" || manualKcal < 0;
-              return (
-                <button
-                  type="button"
-                  onClick={logManual}
-                  disabled={manualDisabled}
-                  style={primaryBtnStyleFor(manualDisabled)}
-                >
-                  {addFood.isPending ? "Logging…" : "Log it"}
-                </button>
-              );
-            })()}
-          </div>
         )}
       </div>
       {scannerOpen && (
@@ -851,6 +984,23 @@ function fmt(v: number | null | undefined): string {
   return v >= 10 ? `${Math.round(v)}g` : `${v.toFixed(1)}g`;
 }
 
+function perServing(
+  per100: number | null | undefined,
+  servingG: number | null | undefined,
+): number | null {
+  if (per100 == null || !servingG) return null;
+  return Math.round((per100 * (servingG / 100)) * 100) / 100;
+}
+
+function emptyToNull(n: NutrientPanel): Record<string, number> | null {
+  if (!n) return null;
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(n)) {
+    if (v != null) out[k] = v;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 function tabStyle(active: boolean): React.CSSProperties {
   return {
     flex: 1,
@@ -872,6 +1022,35 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 6,
   color: "#e2e8f0",
   fontSize: 14,
+};
+
+const fieldLabel: React.CSSProperties = {
+  display: "block",
+  fontSize: 12,
+  color: "#94a3b8",
+  marginBottom: 4,
+};
+
+const stepperBtn: React.CSSProperties = {
+  width: 40,
+  height: 40,
+  fontSize: 18,
+  background: "#1e293b",
+  color: "#e2e8f0",
+  border: "1px solid #334155",
+  borderRadius: 6,
+  cursor: "pointer",
+  fontWeight: 600,
+};
+
+const linkBtn: React.CSSProperties = {
+  alignSelf: "start",
+  fontSize: 12,
+  color: "#10b981",
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  padding: 0,
 };
 
 function primaryBtnStyleFor(disabled: boolean): React.CSSProperties {

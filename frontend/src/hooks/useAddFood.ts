@@ -10,6 +10,7 @@ import {
   FoodEntry,
   FoodToday,
   type MealType,
+  type NutrientPanel,
 } from "@/lib/schemas";
 
 export type AddFoodArgs = {
@@ -19,6 +20,10 @@ export type AddFoodArgs = {
   protein_g?: number | null;
   carbs_g?: number | null;
   fat_g?: number | null;
+  servings?: number | null;
+  serving_g?: number | null;
+  serving_label?: string | null;
+  nutrients?: NutrientPanel | null;
   meal_type?: MealType | null;
   provider?: string | null;
   provider_id?: string | null;
@@ -54,6 +59,10 @@ export function useAddFood() {
           protein_g: args.protein_g ?? null,
           carbs_g: args.carbs_g ?? null,
           fat_g: args.fat_g ?? null,
+          servings: args.servings ?? null,
+          serving_g: args.serving_g ?? null,
+          serving_label: args.serving_label ?? null,
+          nutrients: stripNullsFromNutrients(args.nutrients),
           meal_type: args.meal_type ?? null,
           source: "pwa",
           provider: args.provider ?? null,
@@ -61,6 +70,10 @@ export function useAddFood() {
           occurred_at: occurredAtFor(viewedDay, isToday),
           client_id: args.client_id,
         };
+        const mergedNutrientsTotal = mergeNutrientTotals(
+          previous.nutrients_total,
+          optimistic.nutrients ?? null,
+        );
         qc.setQueryData<FoodToday>(key, {
           ...previous,
           total_kcal,
@@ -72,6 +85,10 @@ export function useAddFood() {
             carbs_g: previous.macros.carbs_g + (args.carbs_g ?? 0),
             fat_g: previous.macros.fat_g + (args.fat_g ?? 0),
           },
+          nutrients_total: mergedNutrientsTotal,
+          // Don't recompute dv_percent client-side — the server-truth lands
+          // on settle. Leaving the previous values briefly is fine because
+          // the optimistic delta is small relative to the day total.
           entries: [optimistic, ...previous.entries],
         });
       }
@@ -87,6 +104,29 @@ export function useAddFood() {
       qc.invalidateQueries({ queryKey: ["me"] });
     },
   });
+}
+
+function stripNullsFromNutrients(
+  n: NutrientPanel | null | undefined,
+): Record<string, number> | null {
+  if (!n) return null;
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(n)) {
+    if (v != null) out[k] = v;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+function mergeNutrientTotals(
+  base: Record<string, number>,
+  add: Record<string, number> | null,
+): Record<string, number> {
+  if (!add) return base;
+  const out: Record<string, number> = { ...base };
+  for (const [k, v] of Object.entries(add)) {
+    out[k] = (out[k] ?? 0) + v;
+  }
+  return out;
 }
 
 export function useDeleteFood() {

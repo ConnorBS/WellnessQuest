@@ -5,6 +5,7 @@ import { useState } from "react";
 import { FoodCard } from "@/components/FoodCard";
 import { FoodLogModal } from "@/components/food/FoodLogModal";
 import { MealGroups } from "@/components/food/MealGroup";
+import { NutrientPanel } from "@/components/food/NutrientPanel";
 import { useFoodToday } from "@/hooks/useFoodToday";
 import { useUpdateFoodGoal } from "@/hooks/useFoodGoal";
 
@@ -14,6 +15,7 @@ export default function FoodPage() {
   const [editTarget, setEditTarget] = useState(false);
   const updateGoal = useUpdateFoodGoal();
   const [targetDraft, setTargetDraft] = useState<number | "">("");
+  const [showAllNutrients, setShowAllNutrients] = useState(false);
 
   function saveTarget() {
     if (targetDraft === "" || targetDraft <= 0) return;
@@ -22,9 +24,62 @@ export default function FoodPage() {
     });
   }
 
+  // Server returns nutrients_total but the macros + kcal live in the typed
+  // columns. Merge them for the NutrientPanel so it can render the full
+  // Canadian table from one source.
+  const panelTotals = data
+    ? {
+        kcal: data.total_kcal,
+        protein_g: data.macros.protein_g,
+        carbs_g: data.macros.carbs_g,
+        fat_g: data.macros.fat_g,
+        ...data.nutrients_total,
+      }
+    : {};
+
   return (
     <>
       <FoodCard />
+
+      <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 12,
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          <h2 className="text-lg font-semibold">Today&apos;s nutrients</h2>
+          <button
+            type="button"
+            onClick={() => setShowAllNutrients((v) => !v)}
+            style={{
+              background: "transparent",
+              color: "#94a3b8",
+              border: "1px solid #1e293b",
+              borderRadius: 6,
+              padding: "6px 10px",
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            {showAllNutrients ? "Show key nutrients" : "Show all"}
+          </button>
+        </header>
+        <p style={{ fontSize: 12, color: "#64748b", marginTop: 0, marginBottom: 12 }}>
+          % Daily Value uses Health Canada&apos;s reference table. There&apos;s no
+          goal — just an indicator of where you are against the panel printed on
+          every Canadian label.
+        </p>
+        <NutrientPanel
+          totals={panelTotals}
+          dvPercent={data?.dv_percent}
+          compact={!showAllNutrients}
+        />
+      </section>
 
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
         <header
