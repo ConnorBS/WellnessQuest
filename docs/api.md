@@ -7,6 +7,11 @@ All routes are under `/api/v1`. JSON only.
 
 Live OpenAPI docs at `/docs` (Swagger) and `/openapi.json`.
 
+Entry-shape values that recur below:
+
+- `source` (on water/food/activity entries) is `'pwa' | 'ha' | 'manual'`. Web app writes `'pwa'`; the Home Assistant adapter under `/ha/...` writes `'ha'` (water only — no HA write endpoint exists for food or activity); `'manual'` is reserved for direct DB inserts.
+- `icon_kind` (on every preset and on habits) is `'builtin' | 'upload' | 'none'`. `'builtin'` keys into the Material Design Icons catalog; `'upload'` keys into `/uploads/{id}`.
+
 ## Setup
 
 Public, gated by "no active admin exists". Once the first admin is created the
@@ -73,6 +78,36 @@ Idempotency on POST `/water`: when `client_id` is provided, the same `(user_id, 
 | DELETE | `/activity/presets/{id}` | — | 204. |
 
 `ActivityPreset`: `{ id, label, minutes, exercise_type, icon_kind, icon_key, sort_order }`. `exercise_type` is free-text (`Walking`, `Running`, etc.); presets pre-tag their entries with it when used as a quick-add.
+
+Note: activity does NOT enforce a `(user_id, client_id)` unique constraint today, so retried POSTs with the same `client_id` will create duplicate rows. Water and food do enforce it.
+
+## Food
+
+The food module's daily goal is a **ceiling** (compliant = total ≤ target). XP per food log is a flat +1 (max 5/day) regardless of kcal — it doesn't reward over-eating.
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/food/today?date=YYYY-MM-DD` | — | Returns `FoodTodayOut`: `{ date, total_kcal, target_kcal, percent, over_target, remaining_kcal, macros, entries[] }`. `remaining_kcal` can be negative; `percent` can exceed 100 (capped at 999). |
+| POST | `/food` | `FoodAddIn` | Returns `{ entry, total_kcal, target_kcal, xp_delta, over_target }`. Triggers `food.target_exceeded` webhook once when the ceiling is crossed. |
+| DELETE | `/food/{id}` | — | 204. |
+| PATCH | `/food/goal` | `{ target_kcal }` (1..20000) | Returns `{ target_kcal }`. The goal row is auto-created on first read with a default if it doesn't exist yet. |
+| GET | `/food/recent?limit=N` | — | Most-recently-logged distinct foods (default 8, max 20). Each: `{ name, brand, kcal, protein_g, carbs_g, fat_g, meal_type, provider, provider_id, last_logged_at }`. |
+| GET | `/food/search?q=...&limit=N` | — | Open Food Facts search. `q` ≥2 chars. Returns `{ query, hits[] }`. 502 on upstream failure (rate-limit/transport). |
+| GET | `/food/barcode/{code}` | — | Single-product OFF lookup by barcode (`code` 6–14 digits). Returns one `FoodSearchHit`. 400 `bad_barcode`, 404 if OFF has no match. |
+| GET | `/food/presets` | — | `FoodPresetOut[]`. |
+| POST | `/food/presets` | `FoodPresetIn` | 201. |
+| PATCH | `/food/presets/{id}` | `FoodPresetIn` | Updated row. |
+| DELETE | `/food/presets/{id}` | — | 204. |
+
+`FoodAddIn`: `{ name, brand?, kcal, protein_g?, carbs_g?, fat_g?, meal_type?, provider?, provider_id?, client_id?, occurred_at? }`. `meal_type` ∈ `"breakfast" | "lunch" | "dinner" | "snack"` (CHECK-enforced). `provider` + `provider_id` are free-form tracing tags (typically `"openfoodfacts"` + the OFF product code) — the server doesn't validate them against any registry.
+
+`FoodEntryOut`: `{ id, name, brand, kcal, protein_g, carbs_g, fat_g, meal_type, source, provider, provider_id, occurred_at, client_id }`. Macros are stored as already-multiplied gram values for the logged portion (not per-100g) — the frontend does the per-serving math at log time.
+
+`FoodSearchHit` carries both `_per_100g` and `_per_100ml` nutriments plus an optional `unit: "g" | "ml"` hint so the picker knows which to use.
+
+Idempotency on POST `/food`: same `(user_id, client_id)` rule as water — re-POSTing the same `client_id` returns the existing row with `xp_delta: 0`.
+
+Food is **not** seeded by `bootstrap_user_assets` — no default goal, no presets. The goal materialises on first GET/PATCH; presets stay empty until the user creates them.
 
 ## Habits
 
@@ -154,7 +189,7 @@ Allowed scopes: `water:read`, `water:write`.
 | GET | `/integrations/{id}/webhooks` | — | `WebhookSubscriptionOut[]` |
 | DELETE | `/integrations/{id}/webhooks/{sub_id}` | — | 204 |
 
-Events emitted: `water.goal_met`, `activity.goal_met`.
+Events emitted: `water.goal_met`, `activity.goal_met`, `food.target_exceeded`. These are the only three. Each fires once per crossing (see CLAUDE.md → "Goal-met events fire exactly once per crossing"). Habits, weight, and BP do not emit events. Delivery retries: 5 attempts, exponential backoff starting at 30s (`webhook_dispatcher.py`).
 
 ## Home Assistant–facing
 

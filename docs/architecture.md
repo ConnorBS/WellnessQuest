@@ -27,10 +27,11 @@ Five trackers, each following the same shape:
 | Module | Tables | Service | Router prefix |
 |---|---|---|---|
 | Water | `water_entries`, `water_presets`, `goals` (metric=`water_ml`) | `water_service` | `/api/v1/water`, `/api/v1/water/presets` |
-| Food | `food_entries`, `food_presets`, `goals` (metric=`food_kcal`, ceiling) | `food_service` | `/api/v1/food`, `/api/v1/food/presets`, `/api/v1/food/search` |
+| Food | `food_entries`, `food_presets`, `goals` (metric=`food_kcal`, ceiling) | `food_service` | `/api/v1/food`, `/api/v1/food/presets`, `/api/v1/food/search`, `/api/v1/food/barcode` |
 | Activity | `activity_entries`, `activity_presets`, `goals` (metric=`active_minutes`) | `activity_service` | `/api/v1/activity`, `/api/v1/activity/presets` |
 | Habits | `habits`, `habit_checkins` | `habit_service` | `/api/v1/habits` |
 | Weight | `weight_entries`, `weight_targets` | `weight_service` | `/api/v1/weight` |
+| Blood pressure | `blood_pressure_entries`, `blood_pressure_targets` | `blood_pressure_service` | `/api/v1/blood-pressure` |
 
 The food module differs from water/activity in two ways: the daily goal is a
 **ceiling** (compliant = total ≤ target), and entries can carry optional macro
@@ -89,11 +90,12 @@ Current tables:
 - **Activity**: `activity_entries`, `activity_presets`
 - **Habits**: `habits`, `habit_checkins`
 - **Weight**: `weight_entries`, `weight_targets`
+- **Blood pressure**: `blood_pressure_entries`, `blood_pressure_targets`
 - **Cross-cutting**: `goals`, `streaks`, `xp_events`, `upload_files`
 - **Operations**: `audit_log`, `error_log`
 - **Outbound**: `integrations`, `webhook_subscriptions`, `webhook_deliveries`
 
-Migration chain is linear: `0001_initial` → `0002_water_presets_uploads` → `0003_activity` → `0004_habits` → `0005_habit_monthly` → `0006_weight_and_user_prefs` → `0007_weight_target` → `0008_activity_exercise_type` → `0009_weight_targets` → `0010_food` → `0011_water_entry_name` → `0012_activity_entry_name` → `0013_user_management` (drops `invites`, adds `users.must_change_password`). Migrations run on container start before uvicorn boots.
+Migration chain is linear: `0001_initial` → `0002_water_presets_uploads` → `0003_activity` → `0004_habits` → `0005_habit_monthly` → `0006_weight_and_user_prefs` → `0007_weight_target` → `0008_activity_exercise_type` → `0009_weight_targets` → `0010_food` → `0011_water_entry_name` → `0012_activity_entry_name` → `0013_user_management` (drops `invites`, adds `users.must_change_password`) → `0014_blood_pressure`. Migrations run on container start before uvicorn boots.
 
 Extension path: `exercise_sessions`, `quests`, `quest_progress`. Most cross-cutting tables already accept arbitrary metric keys.
 
