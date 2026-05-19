@@ -15,8 +15,10 @@ from app.models.habit_checkin import HabitCheckin
 from app.models.integration import Integration
 from app.models.session import Session
 from app.models.streak import Streak
+from app.models.title import Title
 from app.models.upload_file import UploadFile
 from app.models.user import User
+from app.models.user_title import UserTitle
 from app.models.water_entry import WaterEntry
 from app.models.water_preset import WaterPreset
 from app.models.webhook import WebhookDelivery, WebhookSubscription
@@ -40,8 +42,10 @@ __all__ = [
     "Integration",
     "Session",
     "Streak",
+    "Title",
     "UploadFile",
     "User",
+    "UserTitle",
     "WaterEntry",
     "WaterPreset",
     "WebhookDelivery",

@@ -5,6 +5,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.schemas.title import TitleSummary
+
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -35,12 +37,20 @@ class MeOut(BaseModel):
     weight_unit: str = "kg"
     must_change_password: bool = False
     disabled: bool = False
+    equipped_title: TitleSummary | None = None
+    title_hidden: bool = False
+    weight_titles_opt_out: bool = False
+    bp_titles_opt_out: bool = False
+    pending_title_unlocks: list[TitleSummary] = Field(default_factory=list)
 
 
 class MePatchIn(BaseModel):
     show_weight_card: bool | None = None
     show_bp_card: bool | None = None
     weight_unit: str | None = None
+    title_hidden: bool | None = None
+    weight_titles_opt_out: bool | None = None
+    bp_titles_opt_out: bool | None = None
 
 
 class SetupStatusOut(BaseModel):

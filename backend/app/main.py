@@ -16,7 +16,7 @@ from app import integrations as _integrations  # noqa: F401 - register channels
 from app import providers as _providers  # noqa: F401 - register providers
 from app.api.v1 import api_v1
 from app.config import settings
-from app.services import webhook_dispatcher
+from app.services import title_sync, webhook_dispatcher
 from app.telemetry.logger import configure_logging, get_logger
 from app.telemetry.middleware import RequestContextMiddleware
 
@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         static_dir=str(STATIC_DIR),
         static_present=STATIC_DIR.is_dir(),  # noqa: ASYNC240 - one-shot stat at startup, not a hot path
     )
+    await title_sync.sync_catalog_at_startup()
     task = webhook_dispatcher.start()
     try:
         yield

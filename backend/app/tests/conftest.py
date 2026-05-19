@@ -18,6 +18,7 @@ os.environ.setdefault(
 )
 os.environ.setdefault("JWT_SECRET", "test-jwt-secret")
 os.environ.setdefault("FERNET_KEY", "test-fernet-key")
+os.environ.setdefault("WQ_DISABLE_TITLE_SYNC", "1")
 
 import app.db.session as session_mod  # noqa: E402
 from app import models  # noqa: F401,E402  -- register models with Base.metadata

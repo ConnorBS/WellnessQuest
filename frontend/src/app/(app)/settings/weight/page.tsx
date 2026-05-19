@@ -216,6 +216,25 @@ export default function WeightSettingsPage() {
 
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
         <h2 className="text-lg font-semibold" style={{ marginBottom: 12 }}>
+          Achievements
+        </h2>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={me.weight_titles_opt_out}
+            disabled={updateMe.isPending}
+            onChange={(e) => updateMe.mutate({ weight_titles_opt_out: e.target.checked })}
+          />
+          Opt out of weight-related titles
+        </label>
+        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+          Hides titles tied to weight milestones. You can turn this back on
+          any time.
+        </p>
+      </section>
+
+      <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+        <h2 className="text-lg font-semibold" style={{ marginBottom: 12 }}>
           Units
         </h2>
         <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, flexWrap: "wrap" }}>
