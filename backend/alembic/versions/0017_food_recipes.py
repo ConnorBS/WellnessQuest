@@ -5,8 +5,8 @@ their totals so the list endpoint stays a single SELECT; logging a recipe
 multiplies totals by `servings / yields_servings` and writes a single
 `food_entries` row via the existing `food_service.add()` path.
 
-Revision ID: 0016_food_recipes
-Revises: 0015_food_full_nutrients
+Revision ID: 0017_food_recipes
+Revises: 0016_titles
 Create Date: 2026-05-19 12:00:00
 """
 from __future__ import annotations
@@ -18,8 +18,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "0016_food_recipes"
-down_revision: str | None = "0015_food_full_nutrients"
+revision: str = "0017_food_recipes"
+down_revision: str | None = "0016_titles"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
