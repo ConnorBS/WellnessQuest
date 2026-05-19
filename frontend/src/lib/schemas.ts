@@ -4,6 +4,7 @@ export const TitleSummarySchema = z.object({
   id: z.string().uuid(),
   slug: z.string(),
   name: z.string(),
+  description: z.string(),
   rarity: z.string(),
   category: z.string(),
 });

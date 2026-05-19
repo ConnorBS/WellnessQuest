@@ -56,16 +56,39 @@ async def list_categories(
     ]
 
 
+def _sort_key(title: Title) -> tuple[int, int, str]:
+    """Order titles by the difficulty you'd unlock them in: threshold first
+    (lowest = unlocks earliest), then sort_order as a tiebreaker for
+    same-threshold curated entries, then name. `exercise_type_minutes`
+    titles use `minutes` instead of `threshold`; `signup` and any future
+    paramless kinds sort to the very front (0)."""
+    params = title.condition_params or {}
+    raw = params.get("threshold")
+    if raw is None:
+        raw = params.get("minutes", 0)
+    try:
+        threshold = int(raw)
+    except (TypeError, ValueError):
+        threshold = 0
+    return (threshold, title.sort_order, title.name)
+
+
 @router.get("", response_model=list[TitleOut])
 async def list_titles(
     category: str | None = Query(default=None, max_length=40),
+    unlocked: bool | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[TitleOut]:
     """Catalog browse, paginated within a category. Filters opted-out groups
-    and hides secret titles the user hasn't unlocked yet."""
+    and hides secret titles the user hasn't unlocked yet.
+
+    Ordered by expected unlock difficulty (threshold ascending) so the page
+    reads as a progression. `unlocked=true` filters to only unlocked rows,
+    `unlocked=false` to only locked rows; omit for both.
+    """
     unlocked_rows = (
         await db.execute(
             select(UserTitle).where(UserTitle.user_id == user.id)
@@ -76,14 +99,19 @@ async def list_titles(
     stmt = select(Title).where(Title.archived_at.is_(None))
     if category is not None:
         stmt = stmt.where(Title.category == category)
-    stmt = stmt.order_by(Title.category, Title.sort_order, Title.name)
     all_titles = list((await db.execute(stmt)).scalars().all())
+    all_titles.sort(key=_sort_key)
 
     visible: list[Title] = []
     for t in all_titles:
         if not _allowed_by_opt_out(t, user):
             continue
-        if t.is_secret and t.id not in unlocked_by_id:
+        is_unlocked = t.id in unlocked_by_id
+        if t.is_secret and not is_unlocked:
+            continue
+        if unlocked is True and not is_unlocked:
+            continue
+        if unlocked is False and is_unlocked:
             continue
         visible.append(t)
 
@@ -124,6 +152,16 @@ async def acknowledge_title(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="not_unlocked"
         )
+
+
+@router.post("/acknowledge-all", status_code=status.HTTP_204_NO_CONTENT)
+async def acknowledge_all_titles(
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Dismiss every still-pending unlock popup in one shot. Idempotent —
+    returns 204 even when nothing was pending."""
+    await title_service.acknowledge_all(db, user)
 
 
 @router.patch("/equipped", response_model=MeOut)

@@ -339,6 +339,23 @@ async def acknowledge(
     return True
 
 
+async def acknowledge_all(db: AsyncSession, user: User) -> int:
+    """Mark every still-pending unlock for `user` as seen. Returns the count
+    of rows acknowledged. Used by the popup's "Accept all" button when the
+    user has a backlog of unlocks (e.g. after a catalog deploy)."""
+    stmt = select(UserTitle).where(
+        UserTitle.user_id == user.id,
+        UserTitle.acknowledged_at.is_(None),
+    )
+    rows = list((await db.execute(stmt)).scalars().all())
+    now = utcnow()
+    for row in rows:
+        row.acknowledged_at = now
+    if rows:
+        await db.flush()
+    return len(rows)
+
+
 async def unlocked_count_by_category(
     db: AsyncSession, user: User
 ) -> dict[str, int]:

@@ -7,11 +7,17 @@ from pydantic import BaseModel
 
 
 class TitleSummary(BaseModel):
-    """Minimal title payload used by /me (equipped + pending unlocks)."""
+    """Minimal title payload used by /me (equipped + pending unlocks).
+
+    `description` is included so the unlock popup can tell the user *why*
+    they earned the title without a separate fetch — "Marvin's Mood" is
+    meaningless until you also see "Active 5 distinct days."
+    """
 
     id: uuid.UUID
     slug: str
     name: str
+    description: str
     rarity: str
     category: str
 

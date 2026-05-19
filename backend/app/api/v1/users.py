@@ -19,6 +19,7 @@ def _to_title_summary(title: Title) -> TitleSummary:
         id=title.id,
         slug=title.slug,
         name=title.name,
+        description=title.description,
         rarity=title.rarity,
         category=title.category,
     )

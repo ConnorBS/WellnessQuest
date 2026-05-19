@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { useMe } from "@/hooks/useMe";
 import {
+  LockFilter,
   useEquipTitle,
   useTitleCategories,
   useTitlesInCategory,
@@ -116,6 +117,7 @@ export default function TitlesPage() {
   const { data: me } = useMe();
   const categories = useTitleCategories();
   const [active, setActive] = useState<string | null>(null);
+  const [lockFilter, setLockFilter] = useState<LockFilter>("all");
   const equipMutation = useEquipTitle();
   const updateMe = useUpdateMe();
 
@@ -125,7 +127,7 @@ export default function TitlesPage() {
     return categories.data?.[0]?.category ?? null;
   }, [active, categories.data]);
 
-  const titles = useTitlesInCategory(effectiveCategory);
+  const titles = useTitlesInCategory(effectiveCategory, lockFilter);
 
   if (!me) {
     return (
@@ -219,10 +221,51 @@ export default function TitlesPage() {
                 );
               })}
             </div>
+            <div
+              role="tablist"
+              aria-label="Filter by lock state"
+              style={{ display: "flex", gap: 6, marginBottom: 12 }}
+            >
+              {(
+                [
+                  { key: "all", label: "All" },
+                  { key: "unlocked", label: "Unlocked" },
+                  { key: "locked", label: "Locked" },
+                ] as { key: LockFilter; label: string }[]
+              ).map((opt) => {
+                const isActive = lockFilter === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setLockFilter(opt.key)}
+                    style={{
+                      padding: "4px 12px",
+                      borderRadius: 999,
+                      fontSize: 12,
+                      background: isActive ? "#0f172a" : "transparent",
+                      color: isActive ? "#e2e8f0" : "#94a3b8",
+                      border: `1px solid ${isActive ? "#475569" : "#1e293b"}`,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
             {titles.isLoading ? (
               <p style={{ color: "#94a3b8" }}>Loading…</p>
             ) : !titles.data || titles.data.length === 0 ? (
-              <p style={{ color: "#94a3b8" }}>Nothing here.</p>
+              <p style={{ color: "#94a3b8" }}>
+                {lockFilter === "unlocked"
+                  ? "Nothing unlocked here yet."
+                  : lockFilter === "locked"
+                  ? "Everything here is unlocked!"
+                  : "Nothing here."}
+              </p>
             ) : (
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {titles.data.map((t) => (

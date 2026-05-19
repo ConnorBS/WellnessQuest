@@ -32812,7 +32812,7 @@
   },
   {
     "slug": "activity_streak_current_1",
-    "name": "Activity Day Streak",
+    "name": "Newbie Streaker",
     "description": "Hold an activity-goal streak of 1 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -32840,7 +32840,7 @@
   },
   {
     "slug": "activity_streak_current_2",
-    "name": "Activity Two Day Heat",
+    "name": "Sophomore Streaker",
     "description": "Hold an activity-goal streak of 2 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -32854,7 +32854,7 @@
   },
   {
     "slug": "activity_streak_current_3",
-    "name": "Activity Three Day Heat",
+    "name": "Junior Streaker",
     "description": "Hold an activity-goal streak of 3 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -32868,7 +32868,7 @@
   },
   {
     "slug": "activity_streak_current_4",
-    "name": "Activity Four Day Heat",
+    "name": "Cadet Streaker",
     "description": "Hold an activity-goal streak of 4 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -32882,7 +32882,7 @@
   },
   {
     "slug": "activity_streak_current_5",
-    "name": "Activity Five Day Heat",
+    "name": "Recruit Streaker",
     "description": "Hold an activity-goal streak of 5 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -32910,7 +32910,7 @@
   },
   {
     "slug": "activity_streak_current_6",
-    "name": "Activity Six Day Heat",
+    "name": "Initiate Streaker",
     "description": "Hold an activity-goal streak of 6 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -32938,7 +32938,7 @@
   },
   {
     "slug": "activity_streak_current_7",
-    "name": "Activity Week Long",
+    "name": "Apprentice Streaker",
     "description": "Hold an activity-goal streak of 7 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -32952,7 +32952,7 @@
   },
   {
     "slug": "activity_streak_current_10",
-    "name": "Activity Ten Day Streak",
+    "name": "Acolyte Streaker",
     "description": "Hold an activity-goal streak of 10 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -32980,7 +32980,7 @@
   },
   {
     "slug": "activity_streak_current_14",
-    "name": "Activity Fortnight Flow",
+    "name": "Journeyman Streaker",
     "description": "Hold an activity-goal streak of 14 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -32994,7 +32994,7 @@
   },
   {
     "slug": "activity_streak_current_21",
-    "name": "Activity Three Week Streak",
+    "name": "Adept Streaker",
     "description": "Hold an activity-goal streak of 21 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -33008,7 +33008,7 @@
   },
   {
     "slug": "activity_streak_current_28",
-    "name": "Activity Initiate Tier 11",
+    "name": "Skilled Streaker",
     "description": "Hold an activity-goal streak of 28 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -33022,7 +33022,7 @@
   },
   {
     "slug": "activity_streak_current_35",
-    "name": "Activity Apprentice Tier 12",
+    "name": "Trained Streaker",
     "description": "Hold an activity-goal streak of 35 consecutive days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -33036,7 +33036,7 @@
   },
   {
     "slug": "activity_streak_current_42",
-    "name": "Activity Journeyman Tier 13",
+    "name": "Veteran Streaker",
     "description": "Hold an activity-goal streak of 42 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33050,7 +33050,7 @@
   },
   {
     "slug": "activity_streak_current_50",
-    "name": "Activity Adept Tier 14",
+    "name": "Senior Streaker",
     "description": "Hold an activity-goal streak of 50 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33064,7 +33064,7 @@
   },
   {
     "slug": "activity_streak_current_60",
-    "name": "Activity Expert Tier 15",
+    "name": "Specialist Streaker",
     "description": "Hold an activity-goal streak of 60 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33078,7 +33078,7 @@
   },
   {
     "slug": "activity_streak_current_75",
-    "name": "Activity Veteran Tier 16",
+    "name": "Expert Streaker",
     "description": "Hold an activity-goal streak of 75 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33092,7 +33092,7 @@
   },
   {
     "slug": "activity_streak_current_90",
-    "name": "Activity Master Tier 17",
+    "name": "Master Streaker",
     "description": "Hold an activity-goal streak of 90 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33106,7 +33106,7 @@
   },
   {
     "slug": "activity_streak_current_100",
-    "name": "Activity Grandmaster Tier 18",
+    "name": "Grandmaster Streaker",
     "description": "Hold an activity-goal streak of 100 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33134,7 +33134,7 @@
   },
   {
     "slug": "activity_streak_current_120",
-    "name": "Activity Sage Tier 19",
+    "name": "Champion Streaker",
     "description": "Hold an activity-goal streak of 120 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33162,7 +33162,7 @@
   },
   {
     "slug": "activity_streak_current_150",
-    "name": "Activity Champion Tier 20",
+    "name": "Elite Streaker",
     "description": "Hold an activity-goal streak of 150 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33176,7 +33176,7 @@
   },
   {
     "slug": "activity_streak_current_180",
-    "name": "Activity Hero Tier 21",
+    "name": "Heroic Streaker",
     "description": "Hold an activity-goal streak of 180 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33204,7 +33204,7 @@
   },
   {
     "slug": "activity_streak_current_210",
-    "name": "Activity Legend Tier 22",
+    "name": "Honored Streaker",
     "description": "Hold an activity-goal streak of 210 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33246,7 +33246,7 @@
   },
   {
     "slug": "activity_streak_current_240",
-    "name": "Activity Mythic Tier 23",
+    "name": "Distinguished Streaker",
     "description": "Hold an activity-goal streak of 240 consecutive days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -33274,7 +33274,7 @@
   },
   {
     "slug": "activity_streak_current_270",
-    "name": "Activity Eternal Tier 24",
+    "name": "Renowned Streaker",
     "description": "Hold an activity-goal streak of 270 consecutive days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -33288,7 +33288,7 @@
   },
   {
     "slug": "activity_streak_current_300",
-    "name": "Activity Paragon Tier 25",
+    "name": "Storied Streaker",
     "description": "Hold an activity-goal streak of 300 consecutive days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -33302,7 +33302,7 @@
   },
   {
     "slug": "activity_streak_current_330",
-    "name": "Activity Pillar Tier 26",
+    "name": "Legendary Streaker",
     "description": "Hold an activity-goal streak of 330 consecutive days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -33316,7 +33316,7 @@
   },
   {
     "slug": "activity_streak_current_365",
-    "name": "Activity Sentinel Tier 27",
+    "name": "Mythic Streaker",
     "description": "Hold an activity-goal streak of 365 consecutive days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -33330,7 +33330,7 @@
   },
   {
     "slug": "activity_streak_current_400",
-    "name": "Activity Keeper Tier 28",
+    "name": "Ascendant Streaker",
     "description": "Hold an activity-goal streak of 400 consecutive days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -33358,7 +33358,7 @@
   },
   {
     "slug": "activity_streak_current_450",
-    "name": "Activity Warden Tier 29",
+    "name": "Transcendent Streaker",
     "description": "Hold an activity-goal streak of 450 consecutive days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -33372,7 +33372,7 @@
   },
   {
     "slug": "activity_streak_current_500",
-    "name": "Activity Custodian Tier 30",
+    "name": "Eternal Streaker",
     "description": "Hold an activity-goal streak of 500 consecutive days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -33400,7 +33400,7 @@
   },
   {
     "slug": "activity_streak_current_550",
-    "name": "Activity Steward Tier 31",
+    "name": "Cosmic Streaker",
     "description": "Hold an activity-goal streak of 550 consecutive days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -33414,7 +33414,7 @@
   },
   {
     "slug": "activity_streak_current_600",
-    "name": "Activity Patriarch Tier 32",
+    "name": "Stellar Streaker",
     "description": "Hold an activity-goal streak of 600 consecutive days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -33428,7 +33428,7 @@
   },
   {
     "slug": "activity_streak_current_700",
-    "name": "Activity Matriarch Tier 33",
+    "name": "Galactic Streaker",
     "description": "Hold an activity-goal streak of 700 consecutive days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -33442,7 +33442,7 @@
   },
   {
     "slug": "activity_streak_current_800",
-    "name": "Activity Avatar Tier 34",
+    "name": "Celestial Streaker",
     "description": "Hold an activity-goal streak of 800 consecutive days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -33498,7 +33498,7 @@
   },
   {
     "slug": "activity_streak_current_900",
-    "name": "Activity Apex Tier 35",
+    "name": "Divine Streaker",
     "description": "Hold an activity-goal streak of 900 consecutive days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -33526,7 +33526,7 @@
   },
   {
     "slug": "activity_streak_current_1000",
-    "name": "Activity Pinnacle Tier 36",
+    "name": "Primordial Streaker",
     "description": "Hold an activity-goal streak of 1000 consecutive days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -33554,7 +33554,7 @@
   },
   {
     "slug": "activity_streak_current_1100",
-    "name": "Activity Apostle Tier 37",
+    "name": "Immortal Streaker",
     "description": "Hold an activity-goal streak of 1100 consecutive days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -33568,7 +33568,7 @@
   },
   {
     "slug": "activity_streak_current_1250",
-    "name": "Activity Acolyte Tier 38",
+    "name": "Boundless Streaker",
     "description": "Hold an activity-goal streak of 1250 consecutive days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -33610,7 +33610,7 @@
   },
   {
     "slug": "activity_streak_current_1500",
-    "name": "Activity Devotee Tier 39",
+    "name": "Apex Streaker",
     "description": "Hold an activity-goal streak of 1500 consecutive days.",
     "category": "streak_activity",
     "rarity": "legendary",
@@ -33652,7 +33652,7 @@
   },
   {
     "slug": "activity_streak_current_2000",
-    "name": "Activity Disciple Tier 40",
+    "name": "Paragon Streaker",
     "description": "Hold an activity-goal streak of 2000 consecutive days.",
     "category": "streak_activity",
     "rarity": "legendary",
@@ -33932,7 +33932,7 @@
   },
   {
     "slug": "activity_streak_longest_1",
-    "name": "Best Activity Day Streak",
+    "name": "Newbie Marathoner",
     "description": "Reach a longest activity streak of 1 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -33946,7 +33946,7 @@
   },
   {
     "slug": "activity_streak_longest_2",
-    "name": "Best Activity Two Day Heat",
+    "name": "Sophomore Marathoner",
     "description": "Reach a longest activity streak of 2 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -33960,7 +33960,7 @@
   },
   {
     "slug": "activity_streak_longest_3",
-    "name": "Best Activity Three Day Heat",
+    "name": "Junior Marathoner",
     "description": "Reach a longest activity streak of 3 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -33974,7 +33974,7 @@
   },
   {
     "slug": "activity_streak_longest_4",
-    "name": "Best Activity Four Day Heat",
+    "name": "Cadet Marathoner",
     "description": "Reach a longest activity streak of 4 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -33988,7 +33988,7 @@
   },
   {
     "slug": "activity_streak_longest_5",
-    "name": "Best Activity Five Day Heat",
+    "name": "Recruit Marathoner",
     "description": "Reach a longest activity streak of 5 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -34002,7 +34002,7 @@
   },
   {
     "slug": "activity_streak_longest_6",
-    "name": "Best Activity Six Day Heat",
+    "name": "Initiate Marathoner",
     "description": "Reach a longest activity streak of 6 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -34016,7 +34016,7 @@
   },
   {
     "slug": "activity_streak_longest_7",
-    "name": "Best Activity Week Long",
+    "name": "Apprentice Marathoner",
     "description": "Reach a longest activity streak of 7 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -34030,7 +34030,7 @@
   },
   {
     "slug": "activity_streak_longest_10",
-    "name": "Best Activity Ten Day Streak",
+    "name": "Acolyte Marathoner",
     "description": "Reach a longest activity streak of 10 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -34044,7 +34044,7 @@
   },
   {
     "slug": "activity_streak_longest_14",
-    "name": "Best Activity Fortnight Flow",
+    "name": "Journeyman Marathoner",
     "description": "Reach a longest activity streak of 14 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -34058,7 +34058,7 @@
   },
   {
     "slug": "activity_streak_longest_21",
-    "name": "Best Activity Three Week Streak",
+    "name": "Adept Marathoner",
     "description": "Reach a longest activity streak of 21 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -34072,7 +34072,7 @@
   },
   {
     "slug": "activity_streak_longest_28",
-    "name": "Best Activity Initiate Tier 11",
+    "name": "Skilled Marathoner",
     "description": "Reach a longest activity streak of 28 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -34086,7 +34086,7 @@
   },
   {
     "slug": "activity_streak_longest_35",
-    "name": "Best Activity Apprentice Tier 12",
+    "name": "Trained Marathoner",
     "description": "Reach a longest activity streak of 35 days.",
     "category": "streak_activity",
     "rarity": "common",
@@ -34100,7 +34100,7 @@
   },
   {
     "slug": "activity_streak_longest_42",
-    "name": "Best Activity Journeyman Tier 13",
+    "name": "Veteran Marathoner",
     "description": "Reach a longest activity streak of 42 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34114,7 +34114,7 @@
   },
   {
     "slug": "activity_streak_longest_50",
-    "name": "Best Activity Adept Tier 14",
+    "name": "Senior Marathoner",
     "description": "Reach a longest activity streak of 50 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34128,7 +34128,7 @@
   },
   {
     "slug": "activity_streak_longest_60",
-    "name": "Best Activity Expert Tier 15",
+    "name": "Specialist Marathoner",
     "description": "Reach a longest activity streak of 60 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34142,7 +34142,7 @@
   },
   {
     "slug": "activity_streak_longest_75",
-    "name": "Best Activity Veteran Tier 16",
+    "name": "Expert Marathoner",
     "description": "Reach a longest activity streak of 75 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34156,7 +34156,7 @@
   },
   {
     "slug": "activity_streak_longest_90",
-    "name": "Best Activity Master Tier 17",
+    "name": "Master Marathoner",
     "description": "Reach a longest activity streak of 90 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34170,7 +34170,7 @@
   },
   {
     "slug": "activity_streak_longest_100",
-    "name": "Best Activity Grandmaster Tier 18",
+    "name": "Grandmaster Marathoner",
     "description": "Reach a longest activity streak of 100 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34184,7 +34184,7 @@
   },
   {
     "slug": "activity_streak_longest_120",
-    "name": "Best Activity Sage Tier 19",
+    "name": "Champion Marathoner",
     "description": "Reach a longest activity streak of 120 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34198,7 +34198,7 @@
   },
   {
     "slug": "activity_streak_longest_150",
-    "name": "Best Activity Champion Tier 20",
+    "name": "Elite Marathoner",
     "description": "Reach a longest activity streak of 150 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34212,7 +34212,7 @@
   },
   {
     "slug": "activity_streak_longest_180",
-    "name": "Best Activity Hero Tier 21",
+    "name": "Heroic Marathoner",
     "description": "Reach a longest activity streak of 180 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34226,7 +34226,7 @@
   },
   {
     "slug": "activity_streak_longest_210",
-    "name": "Best Activity Legend Tier 22",
+    "name": "Honored Marathoner",
     "description": "Reach a longest activity streak of 210 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34240,7 +34240,7 @@
   },
   {
     "slug": "activity_streak_longest_240",
-    "name": "Best Activity Mythic Tier 23",
+    "name": "Distinguished Marathoner",
     "description": "Reach a longest activity streak of 240 days.",
     "category": "streak_activity",
     "rarity": "uncommon",
@@ -34254,7 +34254,7 @@
   },
   {
     "slug": "activity_streak_longest_270",
-    "name": "Best Activity Eternal Tier 24",
+    "name": "Renowned Marathoner",
     "description": "Reach a longest activity streak of 270 days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -34268,7 +34268,7 @@
   },
   {
     "slug": "activity_streak_longest_300",
-    "name": "Best Activity Paragon Tier 25",
+    "name": "Storied Marathoner",
     "description": "Reach a longest activity streak of 300 days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -34282,7 +34282,7 @@
   },
   {
     "slug": "activity_streak_longest_330",
-    "name": "Best Activity Pillar Tier 26",
+    "name": "Legendary Marathoner",
     "description": "Reach a longest activity streak of 330 days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -34296,7 +34296,7 @@
   },
   {
     "slug": "activity_streak_longest_365",
-    "name": "Best Activity Sentinel Tier 27",
+    "name": "Mythic Marathoner",
     "description": "Reach a longest activity streak of 365 days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -34310,7 +34310,7 @@
   },
   {
     "slug": "activity_streak_longest_400",
-    "name": "Best Activity Keeper Tier 28",
+    "name": "Ascendant Marathoner",
     "description": "Reach a longest activity streak of 400 days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -34324,7 +34324,7 @@
   },
   {
     "slug": "activity_streak_longest_450",
-    "name": "Best Activity Warden Tier 29",
+    "name": "Transcendent Marathoner",
     "description": "Reach a longest activity streak of 450 days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -34338,7 +34338,7 @@
   },
   {
     "slug": "activity_streak_longest_500",
-    "name": "Best Activity Custodian Tier 30",
+    "name": "Eternal Marathoner",
     "description": "Reach a longest activity streak of 500 days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -34352,7 +34352,7 @@
   },
   {
     "slug": "activity_streak_longest_550",
-    "name": "Best Activity Steward Tier 31",
+    "name": "Cosmic Marathoner",
     "description": "Reach a longest activity streak of 550 days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -34366,7 +34366,7 @@
   },
   {
     "slug": "activity_streak_longest_600",
-    "name": "Best Activity Patriarch Tier 32",
+    "name": "Stellar Marathoner",
     "description": "Reach a longest activity streak of 600 days.",
     "category": "streak_activity",
     "rarity": "rare",
@@ -34380,7 +34380,7 @@
   },
   {
     "slug": "activity_streak_longest_700",
-    "name": "Best Activity Matriarch Tier 33",
+    "name": "Galactic Marathoner",
     "description": "Reach a longest activity streak of 700 days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -34394,7 +34394,7 @@
   },
   {
     "slug": "activity_streak_longest_800",
-    "name": "Best Activity Avatar Tier 34",
+    "name": "Celestial Marathoner",
     "description": "Reach a longest activity streak of 800 days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -34408,7 +34408,7 @@
   },
   {
     "slug": "activity_streak_longest_900",
-    "name": "Best Activity Apex Tier 35",
+    "name": "Divine Marathoner",
     "description": "Reach a longest activity streak of 900 days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -34422,7 +34422,7 @@
   },
   {
     "slug": "activity_streak_longest_1000",
-    "name": "Best Activity Pinnacle Tier 36",
+    "name": "Primordial Marathoner",
     "description": "Reach a longest activity streak of 1000 days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -34436,7 +34436,7 @@
   },
   {
     "slug": "activity_streak_longest_1100",
-    "name": "Best Activity Apostle Tier 37",
+    "name": "Immortal Marathoner",
     "description": "Reach a longest activity streak of 1100 days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -34450,7 +34450,7 @@
   },
   {
     "slug": "activity_streak_longest_1250",
-    "name": "Best Activity Acolyte Tier 38",
+    "name": "Boundless Marathoner",
     "description": "Reach a longest activity streak of 1250 days.",
     "category": "streak_activity",
     "rarity": "epic",
@@ -34464,7 +34464,7 @@
   },
   {
     "slug": "activity_streak_longest_1500",
-    "name": "Best Activity Devotee Tier 39",
+    "name": "Apex Marathoner",
     "description": "Reach a longest activity streak of 1500 days.",
     "category": "streak_activity",
     "rarity": "legendary",
@@ -34478,7 +34478,7 @@
   },
   {
     "slug": "activity_streak_longest_2000",
-    "name": "Best Activity Disciple Tier 40",
+    "name": "Paragon Marathoner",
     "description": "Reach a longest activity streak of 2000 days.",
     "category": "streak_activity",
     "rarity": "legendary",
@@ -34492,7 +34492,7 @@
   },
   {
     "slug": "water_streak_current_1",
-    "name": "Water Day Streak",
+    "name": "Newbie Hydrator",
     "description": "Hold a water-goal streak of 1 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34506,7 +34506,7 @@
   },
   {
     "slug": "water_streak_current_2",
-    "name": "Water Two Day Heat",
+    "name": "Sophomore Hydrator",
     "description": "Hold a water-goal streak of 2 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34520,7 +34520,7 @@
   },
   {
     "slug": "water_streak_current_3",
-    "name": "Water Three Day Heat",
+    "name": "Junior Hydrator",
     "description": "Hold a water-goal streak of 3 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34534,7 +34534,7 @@
   },
   {
     "slug": "water_streak_current_4",
-    "name": "Water Four Day Heat",
+    "name": "Cadet Hydrator",
     "description": "Hold a water-goal streak of 4 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34562,7 +34562,7 @@
   },
   {
     "slug": "water_streak_current_5",
-    "name": "Water Five Day Heat",
+    "name": "Recruit Hydrator",
     "description": "Hold a water-goal streak of 5 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34590,7 +34590,7 @@
   },
   {
     "slug": "water_streak_current_6",
-    "name": "Water Six Day Heat",
+    "name": "Initiate Hydrator",
     "description": "Hold a water-goal streak of 6 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34604,7 +34604,7 @@
   },
   {
     "slug": "water_streak_current_7",
-    "name": "Water Week Long",
+    "name": "Apprentice Hydrator",
     "description": "Hold a water-goal streak of 7 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34618,7 +34618,7 @@
   },
   {
     "slug": "water_streak_current_10",
-    "name": "Water Ten Day Streak",
+    "name": "Acolyte Hydrator",
     "description": "Hold a water-goal streak of 10 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34632,7 +34632,7 @@
   },
   {
     "slug": "water_streak_current_14",
-    "name": "Water Fortnight Flow",
+    "name": "Journeyman Hydrator",
     "description": "Hold a water-goal streak of 14 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34646,7 +34646,7 @@
   },
   {
     "slug": "water_streak_current_21",
-    "name": "Water Three Week Streak",
+    "name": "Adept Hydrator",
     "description": "Hold a water-goal streak of 21 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34660,7 +34660,7 @@
   },
   {
     "slug": "water_streak_current_28",
-    "name": "Water Initiate Tier 11",
+    "name": "Skilled Hydrator",
     "description": "Hold a water-goal streak of 28 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34674,7 +34674,7 @@
   },
   {
     "slug": "water_streak_current_35",
-    "name": "Water Apprentice Tier 12",
+    "name": "Trained Hydrator",
     "description": "Hold a water-goal streak of 35 consecutive days.",
     "category": "streak_water",
     "rarity": "common",
@@ -34688,7 +34688,7 @@
   },
   {
     "slug": "water_streak_current_42",
-    "name": "Water Journeyman Tier 13",
+    "name": "Veteran Hydrator",
     "description": "Hold a water-goal streak of 42 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34702,7 +34702,7 @@
   },
   {
     "slug": "water_streak_current_50",
-    "name": "Water Adept Tier 14",
+    "name": "Senior Hydrator",
     "description": "Hold a water-goal streak of 50 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34716,7 +34716,7 @@
   },
   {
     "slug": "water_streak_current_60",
-    "name": "Water Expert Tier 15",
+    "name": "Specialist Hydrator",
     "description": "Hold a water-goal streak of 60 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34730,7 +34730,7 @@
   },
   {
     "slug": "water_streak_current_75",
-    "name": "Water Veteran Tier 16",
+    "name": "Expert Hydrator",
     "description": "Hold a water-goal streak of 75 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34744,7 +34744,7 @@
   },
   {
     "slug": "water_streak_current_90",
-    "name": "Water Master Tier 17",
+    "name": "Master Hydrator",
     "description": "Hold a water-goal streak of 90 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34758,7 +34758,7 @@
   },
   {
     "slug": "water_streak_current_100",
-    "name": "Water Grandmaster Tier 18",
+    "name": "Grandmaster Hydrator",
     "description": "Hold a water-goal streak of 100 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34772,7 +34772,7 @@
   },
   {
     "slug": "water_streak_current_120",
-    "name": "Water Sage Tier 19",
+    "name": "Champion Hydrator",
     "description": "Hold a water-goal streak of 120 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34786,7 +34786,7 @@
   },
   {
     "slug": "water_streak_current_150",
-    "name": "Water Champion Tier 20",
+    "name": "Elite Hydrator",
     "description": "Hold a water-goal streak of 150 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34800,7 +34800,7 @@
   },
   {
     "slug": "water_streak_current_180",
-    "name": "Water Hero Tier 21",
+    "name": "Heroic Hydrator",
     "description": "Hold a water-goal streak of 180 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34814,7 +34814,7 @@
   },
   {
     "slug": "water_streak_current_210",
-    "name": "Water Legend Tier 22",
+    "name": "Honored Hydrator",
     "description": "Hold a water-goal streak of 210 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34828,7 +34828,7 @@
   },
   {
     "slug": "water_streak_current_240",
-    "name": "Water Mythic Tier 23",
+    "name": "Distinguished Hydrator",
     "description": "Hold a water-goal streak of 240 consecutive days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -34842,7 +34842,7 @@
   },
   {
     "slug": "water_streak_current_270",
-    "name": "Water Eternal Tier 24",
+    "name": "Renowned Hydrator",
     "description": "Hold a water-goal streak of 270 consecutive days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -34856,7 +34856,7 @@
   },
   {
     "slug": "water_streak_current_300",
-    "name": "Water Paragon Tier 25",
+    "name": "Storied Hydrator",
     "description": "Hold a water-goal streak of 300 consecutive days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -34870,7 +34870,7 @@
   },
   {
     "slug": "water_streak_current_330",
-    "name": "Water Pillar Tier 26",
+    "name": "Legendary Hydrator",
     "description": "Hold a water-goal streak of 330 consecutive days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -34898,7 +34898,7 @@
   },
   {
     "slug": "water_streak_current_365",
-    "name": "Water Sentinel Tier 27",
+    "name": "Mythic Hydrator",
     "description": "Hold a water-goal streak of 365 consecutive days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -34926,7 +34926,7 @@
   },
   {
     "slug": "water_streak_current_400",
-    "name": "Water Keeper Tier 28",
+    "name": "Ascendant Hydrator",
     "description": "Hold a water-goal streak of 400 consecutive days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -34954,7 +34954,7 @@
   },
   {
     "slug": "water_streak_current_450",
-    "name": "Water Warden Tier 29",
+    "name": "Transcendent Hydrator",
     "description": "Hold a water-goal streak of 450 consecutive days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -34968,7 +34968,7 @@
   },
   {
     "slug": "water_streak_current_500",
-    "name": "Water Custodian Tier 30",
+    "name": "Eternal Hydrator",
     "description": "Hold a water-goal streak of 500 consecutive days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -34982,7 +34982,7 @@
   },
   {
     "slug": "water_streak_current_550",
-    "name": "Water Steward Tier 31",
+    "name": "Cosmic Hydrator",
     "description": "Hold a water-goal streak of 550 consecutive days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -34996,7 +34996,7 @@
   },
   {
     "slug": "water_streak_current_600",
-    "name": "Water Patriarch Tier 32",
+    "name": "Stellar Hydrator",
     "description": "Hold a water-goal streak of 600 consecutive days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -35010,7 +35010,7 @@
   },
   {
     "slug": "water_streak_current_700",
-    "name": "Water Matriarch Tier 33",
+    "name": "Galactic Hydrator",
     "description": "Hold a water-goal streak of 700 consecutive days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35024,7 +35024,7 @@
   },
   {
     "slug": "water_streak_current_800",
-    "name": "Water Avatar Tier 34",
+    "name": "Celestial Hydrator",
     "description": "Hold a water-goal streak of 800 consecutive days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35038,7 +35038,7 @@
   },
   {
     "slug": "water_streak_current_900",
-    "name": "Water Apex Tier 35",
+    "name": "Divine Hydrator",
     "description": "Hold a water-goal streak of 900 consecutive days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35052,7 +35052,7 @@
   },
   {
     "slug": "water_streak_current_1000",
-    "name": "Water Pinnacle Tier 36",
+    "name": "Primordial Hydrator",
     "description": "Hold a water-goal streak of 1000 consecutive days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35066,7 +35066,7 @@
   },
   {
     "slug": "water_streak_current_1100",
-    "name": "Water Apostle Tier 37",
+    "name": "Immortal Hydrator",
     "description": "Hold a water-goal streak of 1100 consecutive days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35080,7 +35080,7 @@
   },
   {
     "slug": "water_streak_current_1250",
-    "name": "Water Acolyte Tier 38",
+    "name": "Boundless Hydrator",
     "description": "Hold a water-goal streak of 1250 consecutive days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35094,7 +35094,7 @@
   },
   {
     "slug": "water_streak_current_1500",
-    "name": "Water Devotee Tier 39",
+    "name": "Apex Hydrator",
     "description": "Hold a water-goal streak of 1500 consecutive days.",
     "category": "streak_water",
     "rarity": "legendary",
@@ -35108,7 +35108,7 @@
   },
   {
     "slug": "water_streak_current_2000",
-    "name": "Water Disciple Tier 40",
+    "name": "Paragon Hydrator",
     "description": "Hold a water-goal streak of 2000 consecutive days.",
     "category": "streak_water",
     "rarity": "legendary",
@@ -35304,7 +35304,7 @@
   },
   {
     "slug": "water_streak_longest_1",
-    "name": "Best Water Day Streak",
+    "name": "Newbie Aquanaut",
     "description": "Reach a longest water streak of 1 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35318,7 +35318,7 @@
   },
   {
     "slug": "water_streak_longest_2",
-    "name": "Best Water Two Day Heat",
+    "name": "Sophomore Aquanaut",
     "description": "Reach a longest water streak of 2 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35332,7 +35332,7 @@
   },
   {
     "slug": "water_streak_longest_3",
-    "name": "Best Water Three Day Heat",
+    "name": "Junior Aquanaut",
     "description": "Reach a longest water streak of 3 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35346,7 +35346,7 @@
   },
   {
     "slug": "water_streak_longest_4",
-    "name": "Best Water Four Day Heat",
+    "name": "Cadet Aquanaut",
     "description": "Reach a longest water streak of 4 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35360,7 +35360,7 @@
   },
   {
     "slug": "water_streak_longest_5",
-    "name": "Best Water Five Day Heat",
+    "name": "Recruit Aquanaut",
     "description": "Reach a longest water streak of 5 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35374,7 +35374,7 @@
   },
   {
     "slug": "water_streak_longest_6",
-    "name": "Best Water Six Day Heat",
+    "name": "Initiate Aquanaut",
     "description": "Reach a longest water streak of 6 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35388,7 +35388,7 @@
   },
   {
     "slug": "water_streak_longest_7",
-    "name": "Best Water Week Long",
+    "name": "Apprentice Aquanaut",
     "description": "Reach a longest water streak of 7 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35402,7 +35402,7 @@
   },
   {
     "slug": "water_streak_longest_10",
-    "name": "Best Water Ten Day Streak",
+    "name": "Acolyte Aquanaut",
     "description": "Reach a longest water streak of 10 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35416,7 +35416,7 @@
   },
   {
     "slug": "water_streak_longest_14",
-    "name": "Best Water Fortnight Flow",
+    "name": "Journeyman Aquanaut",
     "description": "Reach a longest water streak of 14 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35430,7 +35430,7 @@
   },
   {
     "slug": "water_streak_longest_21",
-    "name": "Best Water Three Week Streak",
+    "name": "Adept Aquanaut",
     "description": "Reach a longest water streak of 21 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35444,7 +35444,7 @@
   },
   {
     "slug": "water_streak_longest_28",
-    "name": "Best Water Initiate Tier 11",
+    "name": "Skilled Aquanaut",
     "description": "Reach a longest water streak of 28 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35458,7 +35458,7 @@
   },
   {
     "slug": "water_streak_longest_35",
-    "name": "Best Water Apprentice Tier 12",
+    "name": "Trained Aquanaut",
     "description": "Reach a longest water streak of 35 days.",
     "category": "streak_water",
     "rarity": "common",
@@ -35472,7 +35472,7 @@
   },
   {
     "slug": "water_streak_longest_42",
-    "name": "Best Water Journeyman Tier 13",
+    "name": "Veteran Aquanaut",
     "description": "Reach a longest water streak of 42 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35486,7 +35486,7 @@
   },
   {
     "slug": "water_streak_longest_50",
-    "name": "Best Water Adept Tier 14",
+    "name": "Senior Aquanaut",
     "description": "Reach a longest water streak of 50 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35500,7 +35500,7 @@
   },
   {
     "slug": "water_streak_longest_60",
-    "name": "Best Water Expert Tier 15",
+    "name": "Specialist Aquanaut",
     "description": "Reach a longest water streak of 60 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35514,7 +35514,7 @@
   },
   {
     "slug": "water_streak_longest_75",
-    "name": "Best Water Veteran Tier 16",
+    "name": "Expert Aquanaut",
     "description": "Reach a longest water streak of 75 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35528,7 +35528,7 @@
   },
   {
     "slug": "water_streak_longest_90",
-    "name": "Best Water Master Tier 17",
+    "name": "Master Aquanaut",
     "description": "Reach a longest water streak of 90 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35542,7 +35542,7 @@
   },
   {
     "slug": "water_streak_longest_100",
-    "name": "Best Water Grandmaster Tier 18",
+    "name": "Grandmaster Aquanaut",
     "description": "Reach a longest water streak of 100 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35556,7 +35556,7 @@
   },
   {
     "slug": "water_streak_longest_120",
-    "name": "Best Water Sage Tier 19",
+    "name": "Champion Aquanaut",
     "description": "Reach a longest water streak of 120 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35570,7 +35570,7 @@
   },
   {
     "slug": "water_streak_longest_150",
-    "name": "Best Water Champion Tier 20",
+    "name": "Elite Aquanaut",
     "description": "Reach a longest water streak of 150 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35584,7 +35584,7 @@
   },
   {
     "slug": "water_streak_longest_180",
-    "name": "Best Water Hero Tier 21",
+    "name": "Heroic Aquanaut",
     "description": "Reach a longest water streak of 180 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35598,7 +35598,7 @@
   },
   {
     "slug": "water_streak_longest_210",
-    "name": "Best Water Legend Tier 22",
+    "name": "Honored Aquanaut",
     "description": "Reach a longest water streak of 210 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35612,7 +35612,7 @@
   },
   {
     "slug": "water_streak_longest_240",
-    "name": "Best Water Mythic Tier 23",
+    "name": "Distinguished Aquanaut",
     "description": "Reach a longest water streak of 240 days.",
     "category": "streak_water",
     "rarity": "uncommon",
@@ -35626,7 +35626,7 @@
   },
   {
     "slug": "water_streak_longest_270",
-    "name": "Best Water Eternal Tier 24",
+    "name": "Renowned Aquanaut",
     "description": "Reach a longest water streak of 270 days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -35654,7 +35654,7 @@
   },
   {
     "slug": "water_streak_longest_300",
-    "name": "Best Water Paragon Tier 25",
+    "name": "Storied Aquanaut",
     "description": "Reach a longest water streak of 300 days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -35668,7 +35668,7 @@
   },
   {
     "slug": "water_streak_longest_330",
-    "name": "Best Water Pillar Tier 26",
+    "name": "Legendary Aquanaut",
     "description": "Reach a longest water streak of 330 days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -35682,7 +35682,7 @@
   },
   {
     "slug": "water_streak_longest_365",
-    "name": "Best Water Sentinel Tier 27",
+    "name": "Mythic Aquanaut",
     "description": "Reach a longest water streak of 365 days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -35696,7 +35696,7 @@
   },
   {
     "slug": "water_streak_longest_400",
-    "name": "Best Water Keeper Tier 28",
+    "name": "Ascendant Aquanaut",
     "description": "Reach a longest water streak of 400 days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -35710,7 +35710,7 @@
   },
   {
     "slug": "water_streak_longest_450",
-    "name": "Best Water Warden Tier 29",
+    "name": "Transcendent Aquanaut",
     "description": "Reach a longest water streak of 450 days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -35724,7 +35724,7 @@
   },
   {
     "slug": "water_streak_longest_500",
-    "name": "Best Water Custodian Tier 30",
+    "name": "Eternal Aquanaut",
     "description": "Reach a longest water streak of 500 days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -35738,7 +35738,7 @@
   },
   {
     "slug": "water_streak_longest_550",
-    "name": "Best Water Steward Tier 31",
+    "name": "Cosmic Aquanaut",
     "description": "Reach a longest water streak of 550 days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -35752,7 +35752,7 @@
   },
   {
     "slug": "water_streak_longest_600",
-    "name": "Best Water Patriarch Tier 32",
+    "name": "Stellar Aquanaut",
     "description": "Reach a longest water streak of 600 days.",
     "category": "streak_water",
     "rarity": "rare",
@@ -35766,7 +35766,7 @@
   },
   {
     "slug": "water_streak_longest_700",
-    "name": "Best Water Matriarch Tier 33",
+    "name": "Galactic Aquanaut",
     "description": "Reach a longest water streak of 700 days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35780,7 +35780,7 @@
   },
   {
     "slug": "water_streak_longest_800",
-    "name": "Best Water Avatar Tier 34",
+    "name": "Celestial Aquanaut",
     "description": "Reach a longest water streak of 800 days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35794,7 +35794,7 @@
   },
   {
     "slug": "water_streak_longest_900",
-    "name": "Best Water Apex Tier 35",
+    "name": "Divine Aquanaut",
     "description": "Reach a longest water streak of 900 days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35808,7 +35808,7 @@
   },
   {
     "slug": "water_streak_longest_1000",
-    "name": "Best Water Pinnacle Tier 36",
+    "name": "Primordial Aquanaut",
     "description": "Reach a longest water streak of 1000 days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35822,7 +35822,7 @@
   },
   {
     "slug": "water_streak_longest_1100",
-    "name": "Best Water Apostle Tier 37",
+    "name": "Immortal Aquanaut",
     "description": "Reach a longest water streak of 1100 days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35836,7 +35836,7 @@
   },
   {
     "slug": "water_streak_longest_1250",
-    "name": "Best Water Acolyte Tier 38",
+    "name": "Boundless Aquanaut",
     "description": "Reach a longest water streak of 1250 days.",
     "category": "streak_water",
     "rarity": "epic",
@@ -35850,7 +35850,7 @@
   },
   {
     "slug": "water_streak_longest_1500",
-    "name": "Best Water Devotee Tier 39",
+    "name": "Apex Aquanaut",
     "description": "Reach a longest water streak of 1500 days.",
     "category": "streak_water",
     "rarity": "legendary",
@@ -35864,7 +35864,7 @@
   },
   {
     "slug": "water_streak_longest_2000",
-    "name": "Best Water Disciple Tier 40",
+    "name": "Paragon Aquanaut",
     "description": "Reach a longest water streak of 2000 days.",
     "category": "streak_water",
     "rarity": "legendary",

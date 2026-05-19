@@ -212,6 +212,21 @@ STREAK_THRESHOLDS = [
     550, 600, 700, 800, 900, 1000, 1100, 1250, 1500, 2000,
 ]
 
+# Guild-rank progression for the streak ladders. Index N maps to threshold
+# STREAK_THRESHOLDS[N], so "Newbie" is day 1 and "Paragon" is day 2000.
+# 40 entries — one per threshold; if STREAK_THRESHOLDS grows, _pad_names
+# extends with generic tier labels.
+STREAK_RANK_NAMES = [
+    "Newbie", "Sophomore", "Junior", "Cadet", "Recruit",
+    "Initiate", "Apprentice", "Acolyte", "Journeyman", "Adept",
+    "Skilled", "Trained", "Veteran", "Senior", "Specialist",
+    "Expert", "Master", "Grandmaster", "Champion", "Elite",
+    "Heroic", "Honored", "Distinguished", "Renowned", "Storied",
+    "Legendary", "Mythic", "Ascendant", "Transcendent", "Eternal",
+    "Cosmic", "Stellar", "Galactic", "Celestial", "Divine",
+    "Primordial", "Immortal", "Boundless", "Apex", "Paragon",
+]
+
 ENTRY_COUNT_THRESHOLDS = [
     1, 2, 3, 5, 7, 10, 15, 20, 25, 30,
     40, 50, 60, 75, 90, 100, 120, 150, 180, 200,
@@ -353,17 +368,19 @@ def build_tiered() -> list[dict[str, Any]]:
         description_template="Log something on {threshold} distinct days.",
     )
 
-    streak_names_current = _pad_names(
-        ["Day Streak", "Two Day Heat", "Three Day Heat", "Four Day Heat", "Five Day Heat",
-         "Six Day Heat", "Week Long", "Ten Day Streak", "Fortnight Flow", "Three Week Streak"],
-        len(STREAK_THRESHOLDS),
-    )
+    # Streak ladders use a guild-rank progression instead of literal
+    # "Two Day Heat" labels — the popup already shows the threshold via
+    # `description`, so the title itself can be evocative rather than
+    # literal. Same rank list across all four streak categories; the
+    # noun ("Hydrator" / "Aquanaut" / "Streaker" / "Marathoner")
+    # disambiguates which streak the rank belongs to.
+    streak_ranks = _pad_names(STREAK_RANK_NAMES, len(STREAK_THRESHOLDS))
     rows += _make_tiered(
         slug_prefix="water_streak_current",
         category="streak_water",
         condition_kind="streak_water_days_current",
         thresholds=STREAK_THRESHOLDS,
-        names=[f"Water {n}" for n in streak_names_current],
+        names=[f"{r} Hydrator" for r in streak_ranks],
         description_template="Hold a water-goal streak of {threshold} consecutive days.",
     )
     rows += _make_tiered(
@@ -371,7 +388,7 @@ def build_tiered() -> list[dict[str, Any]]:
         category="streak_water",
         condition_kind="streak_water_days_longest",
         thresholds=STREAK_THRESHOLDS,
-        names=[f"Best Water {n}" for n in streak_names_current],
+        names=[f"{r} Aquanaut" for r in streak_ranks],
         description_template="Reach a longest water streak of {threshold} days.",
         sort_offset=200,
     )
@@ -380,7 +397,7 @@ def build_tiered() -> list[dict[str, Any]]:
         category="streak_activity",
         condition_kind="streak_activity_days_current",
         thresholds=STREAK_THRESHOLDS,
-        names=[f"Activity {n}" for n in streak_names_current],
+        names=[f"{r} Streaker" for r in streak_ranks],
         description_template="Hold an activity-goal streak of {threshold} consecutive days.",
     )
     rows += _make_tiered(
@@ -388,7 +405,7 @@ def build_tiered() -> list[dict[str, Any]]:
         category="streak_activity",
         condition_kind="streak_activity_days_longest",
         thresholds=STREAK_THRESHOLDS,
-        names=[f"Best Activity {n}" for n in streak_names_current],
+        names=[f"{r} Marathoner" for r in streak_ranks],
         description_template="Reach a longest activity streak of {threshold} days.",
         sort_offset=200,
     )

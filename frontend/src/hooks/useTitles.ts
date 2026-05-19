@@ -18,16 +18,21 @@ export function useTitleCategories() {
   });
 }
 
-export function useTitlesInCategory(category: string | null) {
+export type LockFilter = "all" | "unlocked" | "locked";
+
+export function useTitlesInCategory(
+  category: string | null,
+  lock: LockFilter = "all",
+) {
   return useQuery<Title[]>({
-    queryKey: ["titles", "category", category],
-    queryFn: () =>
-      apiFetch(
-        category != null
-          ? `/titles?category=${encodeURIComponent(category)}&limit=500`
-          : "/titles?limit=500",
-        TitleListSchema,
-      ),
+    queryKey: ["titles", "category", category, lock],
+    queryFn: () => {
+      const params = new URLSearchParams({ limit: "500" });
+      if (category != null) params.set("category", category);
+      if (lock === "unlocked") params.set("unlocked", "true");
+      if (lock === "locked") params.set("unlocked", "false");
+      return apiFetch(`/titles?${params.toString()}`, TitleListSchema);
+    },
     enabled: category != null,
   });
 }
@@ -56,6 +61,17 @@ export function useAcknowledgeTitle() {
   return useMutation({
     mutationFn: (titleId: string) =>
       apiPostVoid(`/titles/${titleId}/acknowledge`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      qc.invalidateQueries({ queryKey: ["titles"] });
+    },
+  });
+}
+
+export function useAcknowledgeAllTitles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiPostVoid("/titles/acknowledge-all", {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
       qc.invalidateQueries({ queryKey: ["titles"] });
