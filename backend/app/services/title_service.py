@@ -270,9 +270,21 @@ async def maybe_scan(db: AsyncSession, user: User) -> list[Title]:
 
 
 async def equipped_title(db: AsyncSession, user: User) -> Title | None:
+    """Look up the user's equipped title, ignoring soft-archived rows.
+
+    A title can get archived between equip and read — e.g. the catalog
+    was reshuffled and "Two Reads" is gone. Returning the archived row
+    would surface a boring/removed title in the UI; treating it as
+    unequipped lets the user re-pick from the live catalog. The DB row
+    on `user.equipped_title_id` is left alone (cheap, harmless) so a
+    re-introduction of the same slug restores the equip.
+    """
     if user.equipped_title_id is None:
         return None
-    stmt = select(Title).where(Title.id == user.equipped_title_id)
+    stmt = select(Title).where(
+        Title.id == user.equipped_title_id,
+        Title.archived_at.is_(None),
+    )
     return (await db.execute(stmt)).scalar_one_or_none()
 
 

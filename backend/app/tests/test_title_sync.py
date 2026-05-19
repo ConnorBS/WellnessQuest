@@ -175,10 +175,12 @@ async def test_sync_missing_file_is_noop(db, tmp_path):
 @pytest.mark.asyncio
 async def test_real_catalog_loads(db):
     """Sanity check: the committed catalog at app/data/titles_catalog.json
-    actually parses and applies. Counts vary as the catalog grows; just
-    assert >= 2,500 inserts on a fresh DB."""
+    actually parses and applies. The catalog dropped from ~2,500 generic
+    tier titles to ~500 curated + rank-backfill ones in the May 2026
+    rework; floor is set at 300 to catch a real curated regression
+    without rejecting reasonable resizes."""
     result = await sync_catalog(db)
     await db.commit()
-    assert result["inserted"] >= 2500
+    assert result["inserted"] >= 300
     assert result["updated"] == 0
     assert result["archived"] == 0

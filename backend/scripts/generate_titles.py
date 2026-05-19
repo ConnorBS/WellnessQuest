@@ -1,5 +1,6 @@
-"""Generate `backend/app/data/titles_catalog.json` from tiered milestone
-definitions + the curated content in `curated_titles.py`.
+"""Generate `backend/app/data/titles_catalog.json` from curated content
+plus a rank-progression backfill so every ladder lands at a consistent
+size.
 
 Run from `backend/`:
 
@@ -9,28 +10,233 @@ The output JSON is committed to the repo and synced into the database by
 the FastAPI lifespan hook on startup. This script never runs in prod —
 the only artifact prod consumes is the JSON file.
 
-Content rules (must be respected by anything added here or in
-`curated_titles.py`):
+Design:
+
+A user should unlock roughly **one title per day** after the onboarding
+batch, not a flurry at every milestone. Two earlier failures we're
+fixing here:
+
+1. **Multiple titles per same threshold.** The previous build had eight
+   walking titles fire in the first 80 minutes of walking and four
+   active-days titles fire on day 3. Curated content alone had 11 titles
+   at active_days=365 and 9 at active_days=100.
+
+2. **Boring auto-generated names.** Generated tier ladders produced
+   labels like "Two Reads", "Level 2", and "Veteran of the Walking" —
+   not titles you'd want to wear. Curated names ("Marvin's Mood",
+   "Walking Carpet", "Blue Pill") are the standard now.
+
+Fix shape:
+
+- Each ladder has a **cap** (e.g. active_days = 25, exercise per type = 12).
+  Curated content fills the ladder up to the cap; if curated exceeds the
+  cap, the surplus is dropped from this build (kept in `curated_titles.py`
+  for a future bigger ladder — soft-archived in the DB on next sync).
+- If curated is **under** the cap, we top up with a rank-progression
+  backfill ("Apprentice Hydrator", "Master Streaker") using
+  `RANK_NAMES`. Names are character-y enough to wear; the rank ladder
+  is the same across categories so it reads as progression.
+- After assembly, we **redistribute thresholds on a log scale** within
+  each ladder. Descriptions are regenerated to match the new threshold.
+  This guarantees one title per threshold and spreads them across
+  years.
+
+Content rules (must be respected here and in `curated_titles.py`):
 
 - No belittling. No promoting unhealthy living.
-- No politics / religion / history references — keep it fictional, cultural,
-  and current.
-- Avoid verbatim trademarked phrases or full song lyrics; use evocative
-  paraphrases.
+- No politics / religion / history references — fictional, cultural,
+  current only.
+- Avoid verbatim trademarked phrases / song lyrics; paraphrase.
 """
 
 from __future__ import annotations
 
 import json
+import re
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 from scripts.curated_titles import CURATED_ENTRIES
 
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+# Guild-rank progression — reused everywhere a ladder needs more entries
+# than curated provides. Index N is the Nth-rank tier.
+RANK_NAMES = [
+    "Newbie", "Sophomore", "Junior", "Cadet", "Recruit",
+    "Initiate", "Apprentice", "Acolyte", "Journeyman", "Adept",
+    "Skilled", "Trained", "Veteran", "Senior", "Specialist",
+    "Expert", "Master", "Grandmaster", "Champion", "Elite",
+    "Heroic", "Honored", "Distinguished", "Renowned", "Storied",
+    "Legendary", "Mythic", "Ascendant", "Transcendent", "Eternal",
+    "Cosmic", "Stellar", "Galactic", "Celestial", "Divine",
+    "Primordial", "Immortal", "Boundless", "Apex", "Paragon",
+]
+
+# Each ladder has a target size. Curated fills the ladder up to this
+# number; backfill makes up the difference. Curated past the cap is
+# dropped from this build to keep the unlock cadence around ~1/day.
+LADDER_TARGETS: dict[str, int] = {
+    "active_days": 25,
+    "login_days": 20,
+    "lifetime_water_ml": 18,
+    "lifetime_active_minutes": 18,
+    "streak_water_days_current": 18,
+    "streak_water_days_longest": 15,
+    "streak_activity_days_current": 18,
+    "streak_activity_days_longest": 15,
+    "water_entry_count": 18,
+    "activity_entry_count": 18,
+    "food_entry_count": 18,
+    "habit_checkin_count": 20,
+    "weight_logs_count": 10,
+    "bp_logs_count": 10,
+    "level": 20,
+    "xp_total": 15,
+}
+EXERCISE_TYPE_TARGET = 12
+
+# Maps each tracked condition_kind to the category its ladder lives in.
+# Used to materialize ladders that have zero curated content (e.g.
+# weight_logs_count starts with no curated rows but the ladder still
+# needs to exist).
+LADDER_CATEGORY: dict[str, str] = {
+    "active_days": "active_days",
+    "login_days": "login_days",
+    "lifetime_water_ml": "lifetime_water",
+    "lifetime_active_minutes": "lifetime_activity",
+    "streak_water_days_current": "streak_water",
+    "streak_water_days_longest": "streak_water",
+    "streak_activity_days_current": "streak_activity",
+    "streak_activity_days_longest": "streak_activity",
+    "water_entry_count": "entry_count",
+    "activity_entry_count": "entry_count",
+    "food_entry_count": "entry_count",
+    "habit_checkin_count": "habit",
+    "weight_logs_count": "weight_milestone",
+    "bp_logs_count": "bp_milestone",
+    "level": "level",
+    "xp_total": "level",
+}
+
+# Per-ladder noun used in backfill names: "Apprentice Hydrator",
+# "Master Streaker", etc. Character-y enough to wear, generic enough
+# to scale across 40 ranks.
+LADDER_NOUN: dict[str, str] = {
+    "active_days": "Day-Walker",
+    "login_days": "Returner",
+    "lifetime_water_ml": "Hydration Sage",
+    "lifetime_active_minutes": "Iron Mover",
+    "streak_water_days_current": "Hydrator",
+    "streak_water_days_longest": "Aquanaut",
+    "streak_activity_days_current": "Streaker",
+    "streak_activity_days_longest": "Marathoner",
+    "water_entry_count": "Aqua-Logger",
+    "activity_entry_count": "Sweat-Logger",
+    "food_entry_count": "Meal Tracker",
+    "habit_checkin_count": "Habit-Keeper",
+    "weight_logs_count": "Scale-Keeper",
+    "bp_logs_count": "Pressure-Reader",
+    "level": "Adventurer",
+    "xp_total": "XP Hoarder",
+}
+
+# Exercise types we ship backfill for, even when no curated content
+# exists. Free-text exercises outside this list won't get titles — that
+# matches the current condition_kind semantics where exercise_type is a
+# fixed string lookup.
+EXERCISE_NOUN: dict[str, str] = {
+    "Walking": "Stroller",
+    "Running": "Runner",
+    "Cycling": "Cyclist",
+    "Cardio": "Cardio Knight",
+    "Stretching": "Stretcher",
+    "Strength": "Lifter",
+    "Yoga": "Yogi",
+    "Pilates": "Core-Forger",
+    "Swimming": "Swimmer",
+    "HIIT": "Interval Hero",
+    "Rowing": "Rower",
+    "Climbing": "Climber",
+    "Hiking": "Trailblazer",
+    "Dance": "Dancer",
+    "Boxing": "Boxer",
+    "Martial Arts": "Martial Artist",
+    "Skating": "Skater",
+    "Skiing": "Skier",
+    "Surfing": "Surfer",
+    "Tennis": "Tennis Ace",
+    "Soccer": "Soccer Pro",
+    "Basketball": "Hooper",
+    "Volleyball": "Spiker",
+    "Gardening": "Gardener",
+    "Cleaning": "Tidy Titan",
+}
+
+# Each ladder has a (lo, hi) log-scale threshold range. The sparse log
+# spread guarantees one title per threshold and pushes the top tier out
+# years.
+LADDER_RANGE: dict[str, tuple[int, int]] = {
+    "active_days": (7, 10_000),
+    "login_days": (7, 10_000),
+    "lifetime_water_ml": (5_000, 200_000_000),
+    "lifetime_active_minutes": (60, 2_000_000),
+    "streak_water_days_current": (1, 5_000),
+    "streak_water_days_longest": (1, 5_000),
+    "streak_activity_days_current": (1, 5_000),
+    "streak_activity_days_longest": (1, 5_000),
+    "water_entry_count": (10, 100_000),
+    "activity_entry_count": (10, 100_000),
+    "food_entry_count": (10, 100_000),
+    "habit_checkin_count": (10, 100_000),
+    "weight_logs_count": (10, 5_000),
+    "bp_logs_count": (10, 5_000),
+    "level": (5, 100),
+    "xp_total": (1_000, 10_000_000),
+    "exercise_type_minutes": (30, 50_000),
+}
+
+DESCRIPTION_TEMPLATES: dict[str, str] = {
+    "active_days": "Log something on {threshold:,} distinct days.",
+    "login_days": "Sign in on {threshold:,} distinct days.",
+    "lifetime_water_ml": "Log {threshold:,} ml of water in total.",
+    "lifetime_active_minutes": "Log {threshold:,} minutes of activity in total.",
+    "streak_water_days_current": "Hold a water-goal streak of {threshold:,} consecutive days.",
+    "streak_water_days_longest": "Reach a longest water streak of {threshold:,} days.",
+    "streak_activity_days_current": "Hold an activity-goal streak of {threshold:,} consecutive days.",
+    "streak_activity_days_longest": "Reach a longest activity streak of {threshold:,} days.",
+    "water_entry_count": "Record {threshold:,} water entries.",
+    "activity_entry_count": "Record {threshold:,} activity entries.",
+    "food_entry_count": "Record {threshold:,} food entries.",
+    "habit_checkin_count": "Complete {threshold:,} habit check-ins.",
+    "weight_logs_count": "Log {threshold:,} weight entries.",
+    "bp_logs_count": "Log {threshold:,} blood pressure readings.",
+    "level": "Reach level {threshold}.",
+    "xp_total": "Accumulate {threshold:,} XP total.",
+    "exercise_type_minutes": "Log {minutes:,} minutes of {exercise_type}.",
+}
+
+OPT_OUT_GROUP_FOR_KIND: dict[str, str] = {
+    "weight_logs_count": "weight_loss",
+    "bp_logs_count": "bp",
+}
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _slug(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+
 
 def _rarity_for_index(i: int, n: int) -> str:
-    """Map a tier index (0..n-1) to a rarity bucket so the tier ladder feels
-    like increasing prestige rather than a flat list."""
+    if n <= 1:
+        return "common"
     pct = (i + 1) / n
     if pct >= 0.96:
         return "legendary"
@@ -43,499 +249,315 @@ def _rarity_for_index(i: int, n: int) -> str:
     return "common"
 
 
-# --- name banks (mostly straight milestone vibes; some pop culture flavor) ---
-
-WATER_NAMES = [
-    "First Sip", "Quick Quench", "Half Cup", "Top of the Glass", "Glass Cleared",
-    "First Cup Done", "Thirst Tackled", "Pint Pioneer", "Liquid Lap", "Half Litre Hero",
-    "Litre Logged", "Two-Up", "Three's the Charm", "Hydration Habit", "Pint Pro",
-    "Five-Liter Foundation", "Pitcher Filler", "Steady Hydrator", "Aqua Apprentice", "Daily Driver",
-    "Watering Wing", "Wellspring", "Quench Quartermaster", "Tidal Apprentice", "10L Camel",
-    "Aqua-Adept", "Stream Strider", "Brook Walker", "Creek Keeper", "Fountain Friend",
-    "20L Hydromancer", "Hydrosmith", "Bottle Knight", "Glass Half Full", "Spring Singer",
-    "30L Initiate", "Pool Wader", "Aqueduct Apprentice", "Cistern Captain", "Spring Steward",
-    "50L Sage", "Niagara Initiate", "Cascade Cadet", "Hydration Hero", "Drink Driver",
-    "75L Devotee", "Wave Walker", "Tide Tracker", "Estuary Explorer", "River Reader",
-    "100L Reservoir", "Watershed Warden", "Loch Wanderer", "Lake Lurker", "Cataract Climber",
-    "150L Aquanaut", "Stream Sentinel", "Brook Baron", "Creek Conqueror", "Fountain Forger",
-    "200L Hydroknight", "Wave Wright", "Tide Tactician", "Surge Strategist", "Current Conductor",
-    "300L Tsunami-in-Training", "Wave Worker", "Tide Lord", "Surge Master", "Mariner of Mugs",
-    "500L Aquifer", "Hydro-Hero", "Aquatic Ace", "Submarine Sipper", "Deep-Sea Drinker",
-    "750L Tsunami Tactician", "Surge Sovereign", "Wave Warden", "Storm Sipper", "Squall Squad",
-    "1000L (One Cubic Meter) Camel", "Ton-Pourer", "Reservoir Regent", "Aqua Architect", "Hydrolord",
-    "1500L Sea-Strider", "Ocean Apprentice", "Bay Boss", "Gulf Guardian", "Cove Commander",
-    "2000L Hydro-Magus", "Tide Touched", "Surge Sealed", "Current Crowned", "Pressure Tamer",
-    "3000L Watercaller", "Squall Sage", "Storm Sage", "Drizzle Druid", "Mist Master",
-    "5000L Aqua-Avatar", "Hydrosaint", "Liquid Legend", "Sea of Stories", "Bottomless Brigadier",
-]
-
-ACTIVITY_NAMES = [
-    "First Steps", "Warm-Up", "Five Min Friend", "Ten Min Trekker", "Quarter-Hour Hero",
-    "Twenty-Minute Mover", "Half-Hour Honoree", "Forty-Five Famous", "First Hour Done", "Steady Mover",
-    "Two-Hour Adept", "Triple Threat", "Four Hours In", "Five-Hour Sprinter", "Half-Day Hustler",
-    "10-Hour Athlete", "Workout Wing", "12-Hour Tracker", "Active Apprentice", "Movement Magus",
-    "20-Hour Engine", "Quarter-Day Done", "30-Hour Hauler", "Constant Cardio", "Marathon-in-Training",
-    "Full Day Active", "60-Hour Sustainer", "Three-Day Mover", "100-Hour Veteran", "Four-Day Drift",
-    "150-Hour Heart", "Six-Day Sweeper", "200-Hour Mover", "Eight-Day Engine", "300-Hour Stalwart",
-    "12-Day Equivalent", "500-Hour Athlete", "Three-Week Total", "750-Hour Adept", "1000-Hour Hero",
-    "Six-Week Total", "1500-Hour Tower", "Two-Month Mover", "2000-Hour Eternal", "Three-Month Engine",
-    "Movement Maestro", "Cardio Captain", "Stride Sage", "Step Sovereign", "Pace Patriarch",
-    "Active Architect", "Move Marshal", "Pace Pirate", "Action Anchor", "Athleta Ace",
-    "Tireless Tracker", "Energy Engineer", "Active Avatar", "Tireless Templar", "Endurance Enthusiast",
-    "Stride Strategist", "Movement Mage", "Cardio Cleric", "Pace Pioneer", "Endurance Engineer",
-    "Action Archon", "Movement Mystic", "Endurance Elite", "Active Astrolabe", "Tireless Titan",
-    "Eternal Engine", "Forever Foot", "Eon Endurer", "Iron Anchor", "Active Almanac",
-    "Endurance Eternity", "Tireless Tower", "Active Atlas", "Eternal Ember", "Boundless Body",
-    "Active Apex", "Endurance Eclipse", "Forever Forward", "Eternal Engineer", "Boundless Beat",
-    "Active Avatar (Higher Plane)", "Eternal Echo", "Endurance Empire", "Cardio Constellation", "Pace Paragon",
-    "Endurance Enchanter", "Active Alchemist", "Tireless Theurge", "Boundless Body II", "Active Astral",
-    "Endurance Era", "Boundless Beacon", "Active Astronaut", "Tireless Trailblazer", "Endurance Emperor",
-    "Active Apotheosis", "Boundless Body III", "Endurance Eclipse II", "Active Aurora", "Tireless Cosmos",
-]
-
-LOGIN_DAY_NAMES = [
-    "Day One", "Day Two", "Day Three", "Four Day Visitor", "Five Day Streak Hopeful",
-    "Six Day Reg", "Seven Day Friend", "Ten Day Tracker", "Two-Week Visitor", "Three Week Returnee",
-    "Month Marker", "Six Week Friend", "Two-Month Member", "Three-Month Member", "Hundred Day Hero",
-    "Four-Month Member", "Half-Year Mover", "Eight-Month Stalwart", "Three-Hundred-Days Strong", "Year One",
-    "Year-and-a-Half", "Two-Year Tracker", "Hundredth Login", "500 Days Strong", "750 Login Sage",
-    "Thousand Day Tracker", "Eternal Login", "Forever Friend", "Time Traveler", "Daily Companion",
-    "Constant Caller", "Routine Reigner", "Visitor of Vigil", "Loyal Logger", "Reliable Returnee",
-    "Steady Showup", "Habitual Hello", "Consistent Companion", "Tracker Titan", "Login Legend",
-    "Ledger Lord", "Diary Don", "Reliable Resident", "Constant Compeer", "Logging Local",
-    "Frequent Flyer", "Persistent Pilgrim", "Eternal Entrant", "Loyal Lumens", "Returnee Royalty",
-    "Member of Memory", "Decade Devotee", "Cycle Sentinel", "Calendar Captain", "Diary Day",
-    "Day-Counter", "Habit Holder", "Routine Regent", "Steady Strider", "Constant Compass",
-    "Forever Found", "Daily Devotion", "Lifelong Local", "Eternal Echo", "Returnee of Records",
-    "Ledger Lord II", "Diary Don II", "Daily Devotion II", "Forever Found II", "Eternal Echo II",
-    "Loyal Lumens II", "Day-Counter II", "Habit Holder II", "Routine Regent II", "Steady Strider II",
-]
-
-ACTIVE_DAY_NAMES = [
-    "First Action", "Two Active Days", "Three Active", "Four Active", "Five Day Achiever",
-    "Six Day Doer", "Seven Day Diligent", "Ten Active Days", "Two-Week Doer", "Three-Week Worker",
-    "Month of Motion", "Six-Week Worker", "Two-Month Mover", "Hundred Active", "Four-Month Mover",
-    "Half-Year Motion", "Eight-Month Action", "Year of Action", "500 Active Days", "Year-and-a-Half Active",
-    "Two-Year Mover", "Thousand Days Active", "Forever Active", "Eternal Engine", "Steady Sun",
-    "Daily Driver", "Routine Runner", "Habit Hero", "Action Anchor", "Constant Captain",
-    "Persistent Pioneer", "Reliable Reveler", "Active Auditor", "Daily Designate", "Routine Regent",
-    "Habit Hero II", "Action Anchor II", "Constant Captain II", "Persistent Pioneer II", "Reliable Reveler II",
-    "Active Auditor II", "Daily Designate II", "Routine Regent II", "Habit Hero III", "Action Anchor III",
-    "Constant Captain III", "Persistent Pioneer III", "Reliable Reveler III", "Active Auditor III", "Routine Regent III",
-    "Daily Devotee", "Habit Heart", "Routine Regulator", "Action Architect", "Constant Cleric",
-    "Persistent Paladin", "Reliable Ranger", "Active Aegis", "Daily Druid", "Routine Reverent",
-    "Habit Herald", "Action Adept", "Constant Cantor", "Persistent Patron", "Reliable Reaver",
-    "Active Acolyte", "Daily Daimon", "Routine Reactor", "Habit Hierarch", "Action Apex",
-    "Constant Crown", "Persistent Pinnacle", "Reliable Regalia", "Active Avatar", "Daily Diadem",
-]
+def _ladder_key(t: dict[str, Any]) -> tuple[str, str, str]:
+    """Group titles into the ladder they compete on. Exercise-type titles
+    are per (category, kind, exercise_type) — each exercise gets its own
+    independent ladder. Everything else is per (category, kind)."""
+    params = t.get("condition_params") or {}
+    if t["condition_kind"] == "exercise_type_minutes":
+        return (t["category"], t["condition_kind"], str(params.get("exercise_type", "")))
+    return (t["category"], t["condition_kind"], "")
 
 
-def _make_tiered(
+def _original_threshold(t: dict[str, Any]) -> int:
+    params = t.get("condition_params") or {}
+    if "minutes" in params:
+        return int(params.get("minutes", 0))
+    return int(params.get("threshold", 0))
+
+
+def _log_spread(n: int, lo: int, hi: int) -> list[int]:
+    """Logarithmically space n integers from lo..hi (inclusive). Strictly
+    increasing — collapses on small ranges by bumping each value to
+    `prev + 1` to avoid threshold collisions."""
+    if n <= 0:
+        return []
+    if n == 1:
+        return [lo]
+    if hi <= lo:
+        return [lo + i for i in range(n)]
+    ratio = (hi / lo) ** (1 / (n - 1))
+    out = [int(round(lo * (ratio ** i))) for i in range(n)]
+    for i in range(1, len(out)):
+        if out[i] <= out[i - 1]:
+            out[i] = out[i - 1] + 1
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Backfill
+# ---------------------------------------------------------------------------
+
+
+def _make_backfill_row(
     *,
-    slug_prefix: str,
+    slug: str,
+    name: str,
     category: str,
     condition_kind: str,
-    thresholds: list[int],
-    names: list[str],
-    description_template: str,
-    opt_out_group: str | None = None,
-    sort_offset: int = 0,
-) -> list[dict[str, Any]]:
-    """Build tiered milestone titles from parallel `thresholds` and `names`.
+    rank_index: int,
+    total: int,
+    exercise_type: str | None = None,
+) -> dict[str, Any]:
+    params: dict[str, Any] = {"threshold": 0}
+    if exercise_type is not None:
+        params = {"exercise_type": exercise_type, "minutes": 0}
+    return {
+        "slug": slug,
+        "name": name,
+        "description": "",  # filled by _redistribute
+        "category": category,
+        "rarity": _rarity_for_index(rank_index, total),
+        "condition_kind": condition_kind,
+        "condition_params": params,
+        "opt_out_group": OPT_OUT_GROUP_FOR_KIND.get(condition_kind),
+        "is_secret": False,
+        "sort_order": rank_index,
+    }
 
-    Names are recycled (with suffixes) if there are more thresholds than names.
-    The total tier count is `min(len(thresholds), len(names))` to keep the
-    intent clear — slugs are stable across runs as long as the threshold and
-    prefix are unchanged.
-    """
+
+def _backfill_ladder(
+    *,
+    category: str,
+    condition_kind: str,
+    start_index: int,
+    target: int,
+    noun: str,
+    slug_prefix: str,
+    used_slugs: set[str],
+    exercise_type: str | None = None,
+) -> list[dict[str, Any]]:
+    """Generate rank-progression rows from `start_index` up to `target`.
+    `start_index` is how many curated titles already occupy the bottom of
+    the ladder — the backfill picks ranks from there so the curator's
+    iconic low-tier titles aren't overlapped by "Newbie X" labels."""
     rows: list[dict[str, Any]] = []
-    n = len(thresholds)
-    for i, threshold in enumerate(thresholds):
-        name = names[i] if i < len(names) else f"{names[-1]} +{i - len(names) + 1}"
+    for i in range(start_index, target):
+        rank = RANK_NAMES[i % len(RANK_NAMES)]
+        name = f"{rank} {noun}"
+        slug = f"{slug_prefix}_bf_{i}"
+        # Defensive: avoid slug collisions in pathological cases (e.g.
+        # someone hand-wrote a curated slug matching our format).
+        attempt = 0
+        original_slug = slug
+        while slug in used_slugs:
+            attempt += 1
+            slug = f"{original_slug}_{attempt}"
+        used_slugs.add(slug)
         rows.append(
-            {
-                "slug": f"{slug_prefix}_{threshold}",
-                "name": name,
-                "description": description_template.format(threshold=threshold),
-                "category": category,
-                "rarity": _rarity_for_index(i, n),
-                "condition_kind": condition_kind,
-                "condition_params": {"threshold": threshold},
-                "opt_out_group": opt_out_group,
-                "is_secret": False,
-                "sort_order": sort_offset + i,
-            }
+            _make_backfill_row(
+                slug=slug,
+                name=name,
+                category=category,
+                condition_kind=condition_kind,
+                rank_index=i,
+                total=target,
+                exercise_type=exercise_type,
+            )
         )
     return rows
 
 
-WATER_LIFETIME_THRESHOLDS = [
-    250, 500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6500,
-    8000, 10_000, 12_000, 15_000, 18_000, 21_000, 25_000, 30_000, 35_000, 40_000,
-    50_000, 60_000, 75_000, 90_000, 100_000, 120_000, 150_000, 175_000, 200_000, 230_000,
-    250_000, 300_000, 350_000, 400_000, 450_000, 500_000, 600_000, 700_000, 800_000, 900_000,
-    1_000_000, 1_200_000, 1_500_000, 1_800_000, 2_000_000, 2_500_000, 3_000_000, 3_500_000, 4_000_000, 4_500_000,
-    5_000_000, 5_500_000, 6_000_000, 6_500_000, 7_000_000, 7_500_000, 8_000_000, 8_500_000, 9_000_000, 9_500_000,
-    10_000_000, 11_000_000, 12_500_000, 14_000_000, 15_500_000, 17_000_000, 18_500_000, 20_000_000, 22_000_000, 24_000_000,
-    26_000_000, 28_000_000, 30_000_000, 33_000_000, 36_000_000, 40_000_000, 45_000_000, 50_000_000, 55_000_000, 60_000_000,
-    65_000_000, 70_000_000, 75_000_000, 80_000_000, 85_000_000, 90_000_000, 95_000_000, 100_000_000, 110_000_000, 125_000_000,
-    140_000_000, 160_000_000, 180_000_000, 200_000_000, 225_000_000, 250_000_000, 275_000_000, 300_000_000, 350_000_000, 400_000_000,
-]
-ACTIVITY_LIFETIME_THRESHOLDS = [
-    5, 10, 15, 20, 30, 45, 60, 90, 120, 150,
-    180, 240, 300, 360, 420, 480, 600, 720, 840, 1000,
-    1200, 1500, 1800, 2100, 2400, 2700, 3000, 3500, 4000, 4500,
-    5000, 6000, 7000, 8000, 9000, 10_000, 12_000, 14_000, 16_000, 18_000,
-    20_000, 23_000, 26_000, 30_000, 35_000, 40_000, 45_000, 50_000, 55_000, 60_000,
-    65_000, 70_000, 75_000, 80_000, 85_000, 90_000, 95_000, 100_000, 110_000, 125_000,
-    140_000, 160_000, 180_000, 200_000, 225_000, 250_000, 275_000, 300_000, 325_000, 350_000,
-    375_000, 400_000, 425_000, 450_000, 475_000, 500_000, 550_000, 600_000, 650_000, 700_000,
-    750_000, 800_000, 850_000, 900_000, 950_000, 1_000_000, 1_100_000, 1_200_000, 1_300_000, 1_400_000,
-    1_500_000, 1_700_000, 1_900_000, 2_100_000, 2_300_000, 2_500_000, 2_750_000, 3_000_000, 3_500_000, 4_000_000,
-]
-LOGIN_DAY_THRESHOLDS = [
-    1, 2, 3, 4, 5, 6, 7, 10, 14, 21,
-    30, 42, 60, 90, 100, 120, 150, 200, 250, 300,
-    365, 450, 500, 550, 600, 650, 730, 800, 900, 1000,
-    1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000,
-    2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000,
-    3100, 3200, 3300, 3400, 3500, 3650, 3800, 4000, 4200, 4400,
-    4600, 4800, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500,
-    9000, 9500, 10_000, 12_000, 15_000,
-]
-ACTIVE_DAY_THRESHOLDS = LOGIN_DAY_THRESHOLDS  # same ladder structure
-
-STREAK_THRESHOLDS = [
-    1, 2, 3, 4, 5, 6, 7, 10, 14, 21,
-    28, 35, 42, 50, 60, 75, 90, 100, 120, 150,
-    180, 210, 240, 270, 300, 330, 365, 400, 450, 500,
-    550, 600, 700, 800, 900, 1000, 1100, 1250, 1500, 2000,
-]
-
-# Guild-rank progression for the streak ladders. Index N maps to threshold
-# STREAK_THRESHOLDS[N], so "Newbie" is day 1 and "Paragon" is day 2000.
-# 40 entries — one per threshold; if STREAK_THRESHOLDS grows, _pad_names
-# extends with generic tier labels.
-STREAK_RANK_NAMES = [
-    "Newbie", "Sophomore", "Junior", "Cadet", "Recruit",
-    "Initiate", "Apprentice", "Acolyte", "Journeyman", "Adept",
-    "Skilled", "Trained", "Veteran", "Senior", "Specialist",
-    "Expert", "Master", "Grandmaster", "Champion", "Elite",
-    "Heroic", "Honored", "Distinguished", "Renowned", "Storied",
-    "Legendary", "Mythic", "Ascendant", "Transcendent", "Eternal",
-    "Cosmic", "Stellar", "Galactic", "Celestial", "Divine",
-    "Primordial", "Immortal", "Boundless", "Apex", "Paragon",
-]
-
-ENTRY_COUNT_THRESHOLDS = [
-    1, 2, 3, 5, 7, 10, 15, 20, 25, 30,
-    40, 50, 60, 75, 90, 100, 120, 150, 180, 200,
-    250, 300, 400, 500, 600, 750, 900, 1000, 1200, 1500,
-    1800, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7500, 9000,
-    10_000, 12_000, 15_000, 18_000, 20_000, 25_000, 30_000, 40_000, 50_000, 75_000,
-    100_000, 125_000, 150_000, 175_000, 200_000, 250_000, 300_000, 400_000, 500_000, 750_000,
-]
-
-WEIGHT_LOG_THRESHOLDS = [
-    1, 2, 3, 5, 7, 10, 15, 20, 30, 50,
-    75, 100, 150, 200, 300, 500, 750, 1000, 1500, 2500,
-]
-BP_LOG_THRESHOLDS = WEIGHT_LOG_THRESHOLDS
-
-LEVEL_THRESHOLDS = list(range(2, 102))  # 100 levels
-XP_THRESHOLDS = [
-    50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000,
-    4000, 5000, 7500, 10_000, 12_500, 15_000, 20_000, 25_000, 30_000, 40_000,
-    50_000, 65_000, 80_000, 100_000, 125_000, 150_000, 200_000, 250_000, 300_000, 400_000,
-    500_000, 650_000, 800_000, 1_000_000, 1_250_000, 1_500_000, 2_000_000, 2_500_000, 3_000_000, 4_000_000,
-    5_000_000, 6_500_000, 8_000_000, 10_000_000, 12_500_000, 15_000_000, 20_000_000, 25_000_000, 30_000_000, 40_000_000,
-]
-
-EXERCISE_TYPES = [
-    "Walking", "Running", "Cycling", "Cardio", "Stretching",
-    "Strength", "Yoga", "Pilates", "Swimming", "HIIT",
-    "Rowing", "Climbing", "Hiking", "Dance", "Boxing",
-    "Martial Arts", "Skating", "Skiing", "Surfing", "Tennis",
-    "Soccer", "Basketball", "Volleyball", "Gardening", "Cleaning",
-]
-EXERCISE_TYPE_TIERS = [
-    5, 10, 15, 20, 30, 45, 60, 90, 120, 180,
-    240, 300, 400, 500, 650, 800, 1000, 1250, 1500, 2000,
-    2500, 3000, 4000, 5000, 6500, 8000, 10_000, 12_500, 15_000, 20_000,
-    25_000, 30_000, 40_000, 50_000, 75_000,
-]
-
-GENERIC_NAME_BANK = [
-    "Initiate", "Apprentice", "Journeyman", "Adept", "Expert",
-    "Veteran", "Master", "Grandmaster", "Sage", "Champion",
-    "Hero", "Legend", "Mythic", "Eternal", "Paragon",
-    "Pillar", "Sentinel", "Keeper", "Warden", "Custodian",
-    "Steward", "Patriarch", "Matriarch", "Avatar", "Apex",
-    "Pinnacle", "Apostle", "Acolyte", "Devotee", "Disciple",
-    "Marshal", "Captain", "Commander", "General", "Admiral",
-    "Knight", "Squire", "Page", "Herald", "Crusader",
-    "Wanderer", "Pilgrim", "Voyager", "Explorer", "Navigator",
-    "Pioneer", "Trailblazer", "Frontiersman", "Surveyor", "Cartographer",
-    "Archmage", "Sorcerer", "Witch", "Warlock", "Enchanter",
-    "Druid", "Shaman", "Mystic", "Oracle", "Diviner",
-    "Phantom", "Specter", "Wraith", "Shade", "Echo",
-    "Ember", "Spark", "Flame", "Cinder", "Blaze",
-    "Tide", "Wave", "Surge", "Current", "Eddy",
-    "Stone", "Pebble", "Boulder", "Mountain", "Mesa",
-    "Cosmic", "Stellar", "Astral", "Celestial", "Lunar",
-    "Solar", "Aurora", "Comet", "Nebula", "Galaxy",
-    "Quantum", "Photon", "Tachyon", "Plasma", "Singular",
-    "Eldritch", "Arcane", "Mythical", "Fabled", "Storied",
-    "Endless", "Boundless", "Limitless", "Infinite", "Forever",
-]
+# ---------------------------------------------------------------------------
+# Redistribute
+# ---------------------------------------------------------------------------
 
 
-def _make_exercise_type_titles() -> list[dict[str, Any]]:
-    """One title per (exercise_type, tier_minutes). 25 types × 20 tiers = 500."""
-    rows: list[dict[str, Any]] = []
-    n = len(EXERCISE_TYPE_TIERS)
-    for type_idx, ex_type in enumerate(EXERCISE_TYPES):
-        for tier_idx, minutes in enumerate(EXERCISE_TYPE_TIERS):
-            name = (
-                f"{GENERIC_NAME_BANK[(type_idx * 7 + tier_idx) % len(GENERIC_NAME_BANK)]}"
-                f" of the {ex_type}"
+def _redistribute(all_titles: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Spread each ladder's titles across its log-scale range. Within a
+    ladder, the original threshold order is preserved (so the curator's
+    intent of "Captain's Log unlocks before Live Long" survives), but
+    the actual numbers respaced so titles don't pile up at the bottom.
+
+    Descriptions are regenerated to match the new threshold. Rarity is
+    left alone — that's a curator decision tied to the title's name.
+
+    Onboarding and `signup` are exempt; those need to fire on the first
+    action, not at some redistributed milestone."""
+    by_ladder: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    for t in all_titles:
+        by_ladder[_ladder_key(t)].append(t)
+
+    out: list[dict[str, Any]] = []
+    for (category, kind, ex_type), titles in by_ladder.items():
+        if category == "onboarding" or kind == "signup":
+            out.extend(titles)
+            continue
+        if kind not in LADDER_RANGE:
+            out.extend(titles)
+            continue
+
+        # Curated titles (with real thresholds) take the bottom of the
+        # ladder; backfill ranks (threshold=0) sort to the top. The
+        # 10^12 sentinel for threshold==0 forces backfill last regardless
+        # of how high curated thresholds went.
+        titles.sort(
+            key=lambda t: (
+                _original_threshold(t) if _original_threshold(t) > 0 else 10**12,
+                t.get("sort_order", 0),
+                t["name"],
             )
-            rows.append(
-                {
-                    "slug": f"ex_{ex_type.lower().replace(' ', '_')}_{minutes}",
-                    "name": name,
-                    "description": f"Log {minutes} minutes of {ex_type}.",
-                    "category": "exercise_type",
-                    "rarity": _rarity_for_index(tier_idx, n),
-                    "condition_kind": "exercise_type_minutes",
-                    "condition_params": {"exercise_type": ex_type, "minutes": minutes},
-                    "opt_out_group": None,
-                    "is_secret": False,
-                    "sort_order": type_idx * 100 + tier_idx,
-                }
-            )
-    return rows
+        )
 
+        lo, hi = LADDER_RANGE[kind]
+        new_thresholds = _log_spread(len(titles), lo, hi)
 
-def _pad_names(names: list[str], target_len: int) -> list[str]:
-    """Repeat the GENERIC_NAME_BANK with a tier suffix to extend a name list."""
-    if len(names) >= target_len:
-        return names[:target_len]
-    out = list(names)
-    bank = GENERIC_NAME_BANK
-    n_pad = target_len - len(names)
-    for i in range(n_pad):
-        out.append(f"{bank[i % len(bank)]} Tier {len(names) + i + 1}")
+        for slot, (t, th) in enumerate(zip(titles, new_thresholds, strict=True)):
+            new_params = dict(t.get("condition_params") or {})
+            if kind == "exercise_type_minutes":
+                new_params["minutes"] = th
+            else:
+                new_params["threshold"] = th
+            t["condition_params"] = new_params
+
+            tmpl = DESCRIPTION_TEMPLATES.get(kind)
+            if tmpl:
+                if kind == "exercise_type_minutes":
+                    t["description"] = tmpl.format(
+                        minutes=th, exercise_type=ex_type
+                    )
+                else:
+                    t["description"] = tmpl.format(threshold=th)
+
+            t["sort_order"] = slot
+        out.extend(titles)
     return out
 
 
-def build_tiered() -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
+# ---------------------------------------------------------------------------
+# Build
+# ---------------------------------------------------------------------------
 
-    rows += _make_tiered(
-        slug_prefix="water_lifetime",
-        category="lifetime_water",
-        condition_kind="lifetime_water_ml",
-        thresholds=WATER_LIFETIME_THRESHOLDS,
-        names=_pad_names(WATER_NAMES, len(WATER_LIFETIME_THRESHOLDS)),
-        description_template="Log {threshold:,} ml of water in total.",
-    )
 
-    rows += _make_tiered(
-        slug_prefix="activity_lifetime",
-        category="lifetime_activity",
-        condition_kind="lifetime_active_minutes",
-        thresholds=ACTIVITY_LIFETIME_THRESHOLDS,
-        names=_pad_names(ACTIVITY_NAMES, len(ACTIVITY_LIFETIME_THRESHOLDS)),
-        description_template="Log {threshold:,} minutes of activity in total.",
-    )
+def _target_for(category: str, kind: str, ex_type: str) -> int:
+    if kind == "exercise_type_minutes":
+        return EXERCISE_TYPE_TARGET
+    return LADDER_TARGETS.get(kind, 0)
 
-    rows += _make_tiered(
-        slug_prefix="login_days",
-        category="login_days",
-        condition_kind="login_days",
-        thresholds=LOGIN_DAY_THRESHOLDS,
-        names=_pad_names(LOGIN_DAY_NAMES, len(LOGIN_DAY_THRESHOLDS)),
-        description_template="Sign in on {threshold} distinct days.",
-    )
 
-    rows += _make_tiered(
-        slug_prefix="active_days",
-        category="active_days",
-        condition_kind="active_days",
-        thresholds=ACTIVE_DAY_THRESHOLDS,
-        names=_pad_names(ACTIVE_DAY_NAMES, len(ACTIVE_DAY_THRESHOLDS)),
-        description_template="Log something on {threshold} distinct days.",
-    )
+def _slug_prefix_for(category: str, kind: str, ex_type: str) -> str:
+    if kind == "exercise_type_minutes":
+        return f"ex_{_slug(ex_type)}"
+    return f"{category}_{kind}"
 
-    # Streak ladders use a guild-rank progression instead of literal
-    # "Two Day Heat" labels — the popup already shows the threshold via
-    # `description`, so the title itself can be evocative rather than
-    # literal. Same rank list across all four streak categories; the
-    # noun ("Hydrator" / "Aquanaut" / "Streaker" / "Marathoner")
-    # disambiguates which streak the rank belongs to.
-    streak_ranks = _pad_names(STREAK_RANK_NAMES, len(STREAK_THRESHOLDS))
-    rows += _make_tiered(
-        slug_prefix="water_streak_current",
-        category="streak_water",
-        condition_kind="streak_water_days_current",
-        thresholds=STREAK_THRESHOLDS,
-        names=[f"{r} Hydrator" for r in streak_ranks],
-        description_template="Hold a water-goal streak of {threshold} consecutive days.",
-    )
-    rows += _make_tiered(
-        slug_prefix="water_streak_longest",
-        category="streak_water",
-        condition_kind="streak_water_days_longest",
-        thresholds=STREAK_THRESHOLDS,
-        names=[f"{r} Aquanaut" for r in streak_ranks],
-        description_template="Reach a longest water streak of {threshold} days.",
-        sort_offset=200,
-    )
-    rows += _make_tiered(
-        slug_prefix="activity_streak_current",
-        category="streak_activity",
-        condition_kind="streak_activity_days_current",
-        thresholds=STREAK_THRESHOLDS,
-        names=[f"{r} Streaker" for r in streak_ranks],
-        description_template="Hold an activity-goal streak of {threshold} consecutive days.",
-    )
-    rows += _make_tiered(
-        slug_prefix="activity_streak_longest",
-        category="streak_activity",
-        condition_kind="streak_activity_days_longest",
-        thresholds=STREAK_THRESHOLDS,
-        names=[f"{r} Marathoner" for r in streak_ranks],
-        description_template="Reach a longest activity streak of {threshold} days.",
-        sort_offset=200,
-    )
 
-    rows += _make_tiered(
-        slug_prefix="water_entries",
-        category="entry_count",
-        condition_kind="water_entry_count",
-        thresholds=ENTRY_COUNT_THRESHOLDS,
-        names=_pad_names(
-            ["First Log", "Two-fer", "Three-Log", "Hand of Five", "Decade",
-             "Twenty Logs", "Fifty Logs", "Hundred Logs"],
-            len(ENTRY_COUNT_THRESHOLDS),
-        ),
-        description_template="Record {threshold:,} water entries.",
-        sort_offset=0,
-    )
-    rows += _make_tiered(
-        slug_prefix="activity_entries",
-        category="entry_count",
-        condition_kind="activity_entry_count",
-        thresholds=ENTRY_COUNT_THRESHOLDS,
-        names=_pad_names(
-            ["First Move", "Pair of Moves", "Three Moves", "Hand of Five Moves", "Decade of Moves"],
-            len(ENTRY_COUNT_THRESHOLDS),
-        ),
-        description_template="Record {threshold:,} activity entries.",
-        sort_offset=100,
-    )
-    rows += _make_tiered(
-        slug_prefix="food_entries",
-        category="entry_count",
-        condition_kind="food_entry_count",
-        thresholds=ENTRY_COUNT_THRESHOLDS,
-        names=_pad_names(
-            ["First Meal Logged", "Two Meals", "Three Meals", "Hand of Five Meals", "Decade of Meals"],
-            len(ENTRY_COUNT_THRESHOLDS),
-        ),
-        description_template="Record {threshold:,} food entries.",
-        sort_offset=200,
-    )
-    rows += _make_tiered(
-        slug_prefix="habit_checkins",
-        category="habit",
-        condition_kind="habit_checkin_count",
-        thresholds=ENTRY_COUNT_THRESHOLDS,
-        names=_pad_names(
-            ["First Habit Done", "Two Habit Days", "Three Habit Days", "Hand of Five Habit Days",
-             "Decade of Habit Days"],
-            len(ENTRY_COUNT_THRESHOLDS),
-        ),
-        description_template="Complete {threshold:,} habit check-ins.",
-    )
+def _noun_for(category: str, kind: str, ex_type: str) -> str:
+    if kind == "exercise_type_minutes":
+        return EXERCISE_NOUN.get(ex_type, "Athlete")
+    return LADDER_NOUN.get(kind, "Adept")
 
-    rows += _make_tiered(
-        slug_prefix="weight_logs",
-        category="weight_milestone",
-        condition_kind="weight_logs_count",
-        thresholds=WEIGHT_LOG_THRESHOLDS,
-        names=_pad_names(
-            ["First Weigh-In", "Two on the Scale", "Three on the Scale", "Hand of Five Weigh-Ins",
-             "Decade of Weigh-Ins"],
-            len(WEIGHT_LOG_THRESHOLDS),
-        ),
-        description_template="Log {threshold} weight entries.",
-        opt_out_group="weight_loss",
-    )
-    rows += _make_tiered(
-        slug_prefix="bp_logs",
-        category="bp_milestone",
-        condition_kind="bp_logs_count",
-        thresholds=BP_LOG_THRESHOLDS,
-        names=_pad_names(
-            ["First BP Read", "Two Reads", "Three Reads", "Hand of Five Reads",
-             "Decade of Reads"],
-            len(BP_LOG_THRESHOLDS),
-        ),
-        description_template="Log {threshold} blood pressure readings.",
-        opt_out_group="bp",
-    )
 
-    rows += _make_tiered(
-        slug_prefix="level",
-        category="level",
-        condition_kind="level",
-        thresholds=LEVEL_THRESHOLDS,
-        names=_pad_names(
-            ["Level 2", "Level 3", "Level 4", "Level 5", "Level 6",
-             "Level 7", "Level 8", "Level 9", "Level 10", "Level 11"],
-            len(LEVEL_THRESHOLDS),
-        ),
-        description_template="Reach level {threshold}.",
-    )
-    rows += _make_tiered(
-        slug_prefix="xp_total",
-        category="level",
-        condition_kind="xp_total",
-        thresholds=XP_THRESHOLDS,
-        names=_pad_names(
-            ["First 50 XP", "Hundred XP", "200 XP", "300 XP", "Half-K XP",
-             "750 XP", "Kilo-XP", "1.5k XP", "2k XP", "3k XP"],
-            len(XP_THRESHOLDS),
-        ),
-        description_template="Accumulate {threshold:,} XP total.",
-        sort_offset=200,
-    )
+def _opt_out_for(kind: str) -> str | None:
+    return OPT_OUT_GROUP_FOR_KIND.get(kind)
 
-    rows += _make_exercise_type_titles()
 
-    return rows
+def build_all() -> list[dict[str, Any]]:
+    """Cap each curated ladder to its target, then backfill thinner ladders
+    with rank-progression titles. Add full backfill ladders for the
+    canonical exercise types that have no curated content, and for any
+    ladder declared in LADDER_TARGETS that has zero curated rows."""
+    # Group curated by ladder
+    by_ladder: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    for entry in CURATED_ENTRIES:
+        by_ladder[_ladder_key(entry)].append(dict(entry))
+
+    # Make sure every ladder we want to ship exists, even with zero
+    # curated content. Otherwise pure-backfill ladders (e.g. weight_logs)
+    # never enter the main loop and get silently dropped.
+    for kind, category in LADDER_CATEGORY.items():
+        by_ladder.setdefault((category, kind, ""), [])
+
+    used_slugs: set[str] = set()
+    result: list[dict[str, Any]] = []
+
+    for ladder_key, titles in by_ladder.items():
+        category, kind, ex_type = ladder_key
+
+        if category == "onboarding":
+            for t in titles:
+                used_slugs.add(t["slug"])
+                result.append(t)
+            continue
+
+        target = _target_for(category, kind, ex_type)
+        if target <= 0:
+            for t in titles:
+                used_slugs.add(t["slug"])
+                result.append(t)
+            continue
+
+        titles.sort(
+            key=lambda t: (
+                _original_threshold(t),
+                t.get("sort_order", 0),
+                t["name"],
+            )
+        )
+        capped = titles[:target]
+        for t in capped:
+            used_slugs.add(t["slug"])
+            result.append(t)
+
+        if len(capped) < target:
+            result.extend(
+                _backfill_ladder(
+                    category=category,
+                    condition_kind=kind,
+                    start_index=len(capped),
+                    target=target,
+                    noun=_noun_for(category, kind, ex_type),
+                    slug_prefix=_slug_prefix_for(category, kind, ex_type),
+                    used_slugs=used_slugs,
+                    exercise_type=ex_type
+                    if kind == "exercise_type_minutes"
+                    else None,
+                )
+            )
+
+    # Add ladders for exercise types with no curated content
+    curated_ex_types = {
+        ex_type for (cat, kind, ex_type) in by_ladder
+        if kind == "exercise_type_minutes" and ex_type
+    }
+    for ex_type in EXERCISE_NOUN:
+        if ex_type in curated_ex_types:
+            continue
+        result.extend(
+            _backfill_ladder(
+                category="exercise_type",
+                condition_kind="exercise_type_minutes",
+                start_index=0,
+                target=EXERCISE_TYPE_TARGET,
+                noun=EXERCISE_NOUN[ex_type],
+                slug_prefix=f"ex_{_slug(ex_type)}",
+                used_slugs=used_slugs,
+                exercise_type=ex_type,
+            )
+        )
+
+    return result
 
 
 def main() -> None:
-    tiered = build_tiered()
-    curated = list(CURATED_ENTRIES)
-    all_titles = tiered + curated
+    all_titles = build_all()
 
-    seen_slugs: set[str] = set()
+    # Sanity check: no duplicate slugs
+    seen: set[str] = set()
     for t in all_titles:
-        if t["slug"] in seen_slugs:
+        if t["slug"] in seen:
             raise SystemExit(f"duplicate slug: {t['slug']}")
-        seen_slugs.add(t["slug"])
+        seen.add(t["slug"])
 
-    all_titles.sort(key=lambda t: (t["category"], t.get("sort_order", 0), t["slug"]))
+    all_titles = _redistribute(all_titles)
+    all_titles.sort(
+        key=lambda t: (t["category"], t.get("sort_order", 0), t["slug"])
+    )
 
-    target = 2500
-    if len(all_titles) < target:
+    floor = 300
+    if len(all_titles) < floor:
         raise SystemExit(
-            f"Need at least {target} titles, got {len(all_titles)}. "
-            "Add more tiers or curated entries."
+            f"Catalog dropped below {floor} titles (got {len(all_titles)}). "
+            "Check `curated_titles.py` and the LADDER_TARGETS configuration."
         )
 
     out_path = (
@@ -543,9 +565,15 @@ def main() -> None:
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(all_titles, indent=2) + "\n", encoding="utf-8")
+
+    curated_count = sum(
+        1 for t in all_titles if not t["slug"].rsplit("_bf_", 1)[-1].isdigit()
+        or "_bf_" not in t["slug"]
+    )
+    backfill_count = len(all_titles) - curated_count
     print(
         f"Wrote {len(all_titles)} titles to {out_path} "
-        f"(tiered={len(tiered)}, curated={len(curated)})"
+        f"(curated≈{curated_count}, backfill≈{backfill_count})"
     )
 
 
