@@ -41,9 +41,31 @@ admin API below.
 | GET | `/me` | — | `MeOut` |
 | PATCH | `/me` | `MePatchIn` | `MeOut` |
 
-`MeOut`: `{ id, email, display_name, role, xp_total, level, timezone, show_weight_card, show_bp_card, weight_unit, must_change_password, disabled }`. `disabled` is meaningful on `/admin/users` listings; it's always `false` on `/me` (a disabled user can't authenticate to call it).
+`MeOut`: `{ id, email, display_name, role, xp_total, level, timezone, show_weight_card, show_bp_card, weight_unit, must_change_password, disabled, equipped_title, title_hidden, weight_titles_opt_out, bp_titles_opt_out, pending_title_unlocks }`. `disabled` is meaningful on `/admin/users` listings; it's always `false` on `/me` (a disabled user can't authenticate to call it).
 
-`MePatchIn`: `{ show_weight_card?, show_bp_card?, weight_unit? }` (where `weight_unit` is `"kg"` or `"lb"`).
+`MePatchIn`: `{ show_weight_card?, show_bp_card?, weight_unit?, title_hidden?, weight_titles_opt_out?, bp_titles_opt_out? }` (where `weight_unit` is `"kg"` or `"lb"`).
+
+`equipped_title` (nullable) and entries in `pending_title_unlocks` are `TitleSummary` shapes: `{ id, slug, name, rarity, category }`.
+
+`GET /me` triggers a lazy title eligibility scan when `titles_last_scan_at` is older than 24h (or never set). Newly-unlocked titles surface in `pending_title_unlocks` (capped at 5 at a time) and remain there until acknowledged via `POST /titles/{id}/acknowledge`.
+
+## Titles
+
+The title catalog is shipped as code (synced from `app/data/titles_catalog.json` at FastAPI startup) and unlocked per-user when conditions are met. New unlocks are detected lazily on `GET /me` when the user's `titles_last_scan_at` is missing or older than 24h, and on user creation via `bootstrap_user_assets`. The scan groups titles by `condition_kind` and runs one aggregate query per kind regardless of catalog size.
+
+| Method | Path | Body | Returns |
+|---|---|---|---|
+| GET | `/titles/categories` | — | `CategorySummary[]` |
+| GET | `/titles?category=&limit=&offset=` | — | `TitleOut[]` |
+| GET | `/titles/unlocked?limit=` | — | `TitleOut[]` ordered by unlock time desc |
+| POST | `/titles/{title_id}/acknowledge` | — | 204 (dismisses the pending-unlock animation) |
+| PATCH | `/titles/equipped` | `{ title_id }` (null clears) | `MeOut`; 400 if the user hasn't unlocked the title |
+
+`TitleOut`: `{ id, slug, name, description, category, rarity, is_secret, sort_order, unlocked, unlocked_at, acknowledged_at }`.
+
+`CategorySummary`: `{ category, total, unlocked }`. `total` excludes archived rows, titles in groups the user has opted out of, and secret titles the user hasn't unlocked.
+
+Catalog browse omits secret titles the user hasn't unlocked and titles in opted-out groups (`weight_loss`, `bp`).
 
 ## Water
 

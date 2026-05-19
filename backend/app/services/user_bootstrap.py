@@ -16,6 +16,7 @@ from app.models.goal import Goal
 from app.models.habit import Habit
 from app.models.user import User
 from app.models.water_preset import WaterPreset
+from app.services import title_service
 from app.services.goal_service import (
     DEFAULT_ACTIVE_MINUTES_PER_DAY,
     DEFAULT_WATER_ML_PER_DAY,
@@ -140,3 +141,6 @@ async def bootstrap_user_assets(db: AsyncSession, user: User) -> None:
     await _seed_default_water_presets(db, user)
     await _seed_default_activity_presets(db, user)
     await _seed_default_habits(db, user)
+    # Grant the Newbie title (and any other immediately-eligible titles
+    # the catalog already includes). No-op when the catalog is empty.
+    await title_service.scan_user(db, user)

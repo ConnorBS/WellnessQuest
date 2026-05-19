@@ -9,6 +9,9 @@ interface MePatch {
   show_weight_card?: boolean;
   show_bp_card?: boolean;
   weight_unit?: "kg" | "lb";
+  title_hidden?: boolean;
+  weight_titles_opt_out?: boolean;
+  bp_titles_opt_out?: boolean;
 }
 
 export function useUpdateMe() {
@@ -19,6 +22,7 @@ export function useUpdateMe() {
       qc.setQueryData(["me"], data);
       qc.invalidateQueries({ queryKey: ["weight"] });
       qc.invalidateQueries({ queryKey: ["bp"] });
+      qc.invalidateQueries({ queryKey: ["titles"] });
     },
   });
 }
