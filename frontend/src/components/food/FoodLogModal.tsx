@@ -65,8 +65,15 @@ export function FoodLogModal({ onClose }: Props) {
   // selected.serving_g. The legacy gram-amount input is now a collapsible
   // override for foods without a serving size or volumetric items.
   const [servings, setServings] = useState<number>(1);
-  const [overrideGrams, setOverrideGrams] = useState<number | "">("");
-  const [showGramOverride, setShowGramOverride] = useState(false);
+  // The gram-weight of ONE serving. Editable: OFF's value is just a default,
+  // and labels often disagree (e.g. preset says 320g but the user only ate
+  // half the tub). Total grams logged = servings × servingG. When this is
+  // null, the product has no serving size from OFF and we fall back to a
+  // raw-grams input below.
+  const [servingG, setServingG] = useState<number | "">("");
+  // Raw-grams escape hatch for foods where "1 serving" is meaningless (bulk
+  // items, foods without a serving size, "I ate half of what was in the pan").
+  const [rawGrams, setRawGrams] = useState<number | "">("");
   // Manual-mode kcal/macros for foods without OFF nutrition data.
   const [overrideKcal, setOverrideKcal] = useState<number | "">("");
   const [overrideProtein, setOverrideProtein] = useState<number | "">("");
@@ -112,8 +119,8 @@ export function FoodLogModal({ onClose }: Props) {
   function selectHit(hit: FoodSearchHit) {
     setSelected(hit);
     setServings(1);
-    setOverrideGrams("");
-    setShowGramOverride(!hit.serving_g); // foods without a serving size fall back to grams immediately
+    setServingG(hit.serving_g ?? "");
+    setRawGrams(hit.serving_g ? "" : 100);
     setOverrideKcal("");
     setOverrideProtein("");
     setOverrideCarbs("");
@@ -142,19 +149,23 @@ export function FoodLogModal({ onClose }: Props) {
     [scanImageUrl],
   );
 
+  // Whether the product has a meaningful "1 serving" definition (from OFF or
+  // user input). Foods without one drop the servings field and use rawGrams.
+  const hasServingBasis = servingG !== "" && Number(servingG) > 0;
+
   const computed = useMemo(() => {
     if (!selected) return null;
     const native: FoodUnit = selected.unit ?? DEFAULT_NATIVE_UNIT;
-    // Resolve "how many grams (or mL) of the product am I logging?"
-    //   - if the user overrode grams, use that.
-    //   - else if the product has a serving size, multiply by servings count.
-    //   - else fall back to 100 (per-100 nutriment basis — preserves old behaviour
-    //     for foods without serving info).
+    // Total amount in native units. Two paths:
+    //   - serving-based: total = servings × servingG (the COMMON path; both
+    //     fields are independently editable so the user can dial "2.5
+    //     servings of 320 g" or "1 serving of 50 g" without toggling modes).
+    //   - raw grams: a single number, for foods with no serving definition.
     let nativeAmount: number;
-    if (showGramOverride && overrideGrams !== "") {
-      nativeAmount = Number(overrideGrams);
-    } else if (selected.serving_g) {
-      nativeAmount = selected.serving_g * servings;
+    if (hasServingBasis) {
+      nativeAmount = Number(servingG) * servings;
+    } else if (rawGrams !== "") {
+      nativeAmount = Number(rawGrams);
     } else {
       nativeAmount = 100;
     }
@@ -200,7 +211,7 @@ export function FoodLogModal({ onClose }: Props) {
       fat_g: scale(fPer100),
       nutrients,
     };
-  }, [selected, servings, overrideGrams, showGramOverride]);
+  }, [selected, servings, servingG, rawGrams, hasServingBasis]);
 
   // When OFF returned no per-100 nutriments, we fall back to whatever the user
   // typed in the override fields. Leaving them blank is valid — it logs the
@@ -237,8 +248,11 @@ export function FoodLogModal({ onClose }: Props) {
         protein_g: finalProtein,
         carbs_g: finalCarbs,
         fat_g: finalFat,
-        servings: showGramOverride ? null : servings,
-        serving_g: selected.serving_g ?? null,
+        // Snapshot what "1 serving" meant at log time. The user may have
+        // edited servingG away from OFF's default — record what they actually
+        // logged against so the entry-edit flow scales correctly later.
+        servings: hasServingBasis ? servings : null,
+        serving_g: hasServingBasis ? Number(servingG) : null,
         serving_label: selected.serving_label ?? null,
         nutrients:
           computed.hasNutritionData && Object.keys(computed.nutrients).length
@@ -630,101 +644,137 @@ export function FoodLogModal({ onClose }: Props) {
                   ? (() => {
                       const servingUnitLabel =
                         selected.unit === "ml" ? "mL" : "g";
+                      const totalAmount = computed?.nativeAmount ?? 0;
                       return (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          {selected.serving_g ? (
-                            <label>
-                              <span
+                          {hasServingBasis ? (
+                            <>
+                              <div
                                 style={{
-                                  display: "block",
-                                  fontSize: 12,
-                                  color: "#94a3b8",
-                                  marginBottom: 4,
+                                  display: "grid",
+                                  gridTemplateColumns: "1fr 1fr",
+                                  gap: 8,
                                 }}
                               >
-                                Servings
-                              </span>
-                              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                                <button
-                                  type="button"
-                                  onClick={() => setServings((s) => Math.max(0.25, +(s - 0.5).toFixed(2)))}
-                                  style={stepperBtn}
-                                  aria-label="Half a serving less"
-                                >
-                                  −
-                                </button>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  step={0.25}
-                                  value={servings}
-                                  onChange={(e) =>
-                                    setServings(Math.max(0, Number(e.target.value) || 0))
-                                  }
-                                  style={{ ...inputStyle, flex: 1, textAlign: "center" }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setServings((s) => +(s + 0.5).toFixed(2))}
-                                  style={stepperBtn}
-                                  aria-label="Half a serving more"
-                                >
-                                  +
-                                </button>
+                                <label>
+                                  <span style={fieldLabel}>Servings</span>
+                                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setServings((s) =>
+                                          Math.max(0.25, +(s - 0.5).toFixed(2)),
+                                        )
+                                      }
+                                      style={stepperBtn}
+                                      aria-label="Half a serving less"
+                                    >
+                                      −
+                                    </button>
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      step={0.25}
+                                      value={servings}
+                                      onChange={(e) =>
+                                        setServings(Math.max(0, Number(e.target.value) || 0))
+                                      }
+                                      style={{ ...inputStyle, flex: 1, textAlign: "center" }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setServings((s) => +(s + 0.5).toFixed(2))
+                                      }
+                                      style={stepperBtn}
+                                      aria-label="Half a serving more"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </label>
+                                <label>
+                                  <span style={fieldLabel}>
+                                    1 serving = ({servingUnitLabel})
+                                  </span>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    step={0.1}
+                                    value={servingG}
+                                    onChange={(e) =>
+                                      setServingG(
+                                        e.target.value === "" ? "" : Number(e.target.value),
+                                      )
+                                    }
+                                    placeholder={
+                                      selected.serving_g
+                                        ? String(selected.serving_g)
+                                        : "100"
+                                    }
+                                    style={inputStyle}
+                                  />
+                                </label>
                               </div>
                               <span
                                 style={{
                                   fontSize: 11,
                                   color: "#64748b",
                                   display: "block",
-                                  marginTop: 4,
                                 }}
                               >
-                                1 serving ={" "}
-                                {selected.serving_label ??
-                                  `${selected.serving_g} ${servingUnitLabel}`}
-                                {selected.serving_label && selected.serving_g
-                                  ? ` (${selected.serving_g} ${servingUnitLabel})`
+                                Logging {fmtAmount(totalAmount)} {servingUnitLabel}
+                                {selected.serving_label
+                                  ? ` · OFF says 1 serving = ${selected.serving_label}`
                                   : ""}
                               </span>
-                            </label>
-                          ) : null}
-
-                          <button
-                            type="button"
-                            onClick={() => setShowGramOverride((v) => !v)}
-                            style={linkBtn}
-                          >
-                            {showGramOverride
-                              ? "Use servings instead"
-                              : `Use exact ${servingUnitLabel} instead`}
-                          </button>
-
-                          {showGramOverride ? (
-                            <label>
-                              <span style={fieldLabel}>
-                                Amount ({servingUnitLabel})
-                              </span>
-                              <input
-                                type="number"
-                                min={0}
-                                step={1}
-                                max={5000}
-                                value={overrideGrams}
-                                onChange={(e) =>
-                                  setOverrideGrams(
-                                    e.target.value === "" ? "" : Number(e.target.value),
-                                  )
-                                }
-                                placeholder={
-                                  selected.serving_g
-                                    ? String(selected.serving_g)
-                                    : "100"
-                                }
-                                style={inputStyle}
-                              />
-                            </label>
-                          ) : null}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setServingG("");
+                                  setRawGrams(Math.round(totalAmount) || 100);
+                                }}
+                                style={linkBtn}
+                              >
+                                No serving — log by {servingUnitLabel} only
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <label>
+                                <span style={fieldLabel}>
+                                  Amount ({servingUnitLabel})
+                                </span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  step={1}
+                                  max={5000}
+                                  value={rawGrams}
+                                  onChange={(e) =>
+                                    setRawGrams(
+                                      e.target.value === "" ? "" : Number(e.target.value),
+                                    )
+                                  }
+                                  placeholder="100"
+                                  style={inputStyle}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setServingG(
+                                    selected.serving_g ?? (rawGrams === "" ? 100 : Number(rawGrams)),
+                                  );
+                                  setRawGrams("");
+                                  setServings(1);
+                                }}
+                                style={linkBtn}
+                              >
+                                Use servings instead
+                              </button>
+                            </>
+                          )}
 
                           {computed?.hasNutritionData ? (
                             <>
@@ -982,6 +1032,12 @@ function SaveAsPresetCheckbox({
 function fmt(v: number | null | undefined): string {
   if (v == null) return "—";
   return v >= 10 ? `${Math.round(v)}g` : `${v.toFixed(1)}g`;
+}
+
+function fmtAmount(v: number): string {
+  if (v === 0) return "0";
+  if (v < 10) return v.toFixed(1).replace(/\.0$/, "");
+  return String(Math.round(v));
 }
 
 function perServing(
