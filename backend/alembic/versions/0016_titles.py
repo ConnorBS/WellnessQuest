@@ -1,7 +1,7 @@
 """titles + user_titles + per-user title columns on users
 
-Revision ID: 0015_titles
-Revises: 0014_blood_pressure
+Revision ID: 0016_titles
+Revises: 0015_food_full_nutrients
 Create Date: 2026-05-19 00:00:00
 
 Schema only. The 2,500-row title catalog is shipped as JSON and synced into
@@ -16,8 +16,8 @@ from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
-revision: str = "0015_titles"
-down_revision: str | None = "0014_blood_pressure"
+revision: str = "0016_titles"
+down_revision: str | None = "0015_food_full_nutrients"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
