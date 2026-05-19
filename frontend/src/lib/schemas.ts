@@ -1,5 +1,38 @@
 import { z } from "zod";
 
+export const TitleSummarySchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string(),
+  name: z.string(),
+  rarity: z.string(),
+  category: z.string(),
+});
+export type TitleSummary = z.infer<typeof TitleSummarySchema>;
+
+export const TitleSchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string(),
+  name: z.string(),
+  description: z.string(),
+  category: z.string(),
+  rarity: z.string(),
+  is_secret: z.boolean(),
+  sort_order: z.number().int(),
+  unlocked: z.boolean(),
+  unlocked_at: z.string().nullable(),
+  acknowledged_at: z.string().nullable(),
+});
+export type Title = z.infer<typeof TitleSchema>;
+export const TitleListSchema = z.array(TitleSchema);
+
+export const CategorySummarySchema = z.object({
+  category: z.string(),
+  total: z.number().int(),
+  unlocked: z.number().int(),
+});
+export type CategorySummary = z.infer<typeof CategorySummarySchema>;
+export const CategorySummaryListSchema = z.array(CategorySummarySchema);
+
 export const MeSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
@@ -13,6 +46,11 @@ export const MeSchema = z.object({
   weight_unit: z.string(),
   must_change_password: z.boolean(),
   disabled: z.boolean(),
+  equipped_title: TitleSummarySchema.nullable(),
+  title_hidden: z.boolean(),
+  weight_titles_opt_out: z.boolean(),
+  bp_titles_opt_out: z.boolean(),
+  pending_title_unlocks: z.array(TitleSummarySchema),
 });
 export type Me = z.infer<typeof MeSchema>;
 

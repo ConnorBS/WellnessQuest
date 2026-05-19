@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { DayHeader } from "@/components/DayHeader";
+import { TitleUnlockModal } from "@/components/TitleUnlockModal";
 import { VersionFooter } from "@/components/VersionFooter";
 import { useSwipe } from "@/hooks/useSwipe";
 import { useMe } from "@/hooks/useMe";
@@ -106,6 +107,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <MainBody pathname={pathname}>{children}</MainBody>
         <VersionFooter />
       </div>
+      <TitleUnlockModal pending={me.pending_title_unlocks} />
     </DayProvider>
   );
 }

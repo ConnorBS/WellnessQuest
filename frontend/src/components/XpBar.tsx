@@ -7,6 +7,14 @@ function thresholdFor(level: number): number {
   return (100 * level * (level - 1)) / 2;
 }
 
+const RARITY_COLORS: Record<string, string> = {
+  common: "#94a3b8",
+  uncommon: "#4ade80",
+  rare: "#60a5fa",
+  epic: "#c084fc",
+  legendary: "#fbbf24",
+};
+
 export function XpBar() {
   const { data } = useMe();
   if (!data) return null;
@@ -15,8 +23,24 @@ export function XpBar() {
   const upper = thresholdFor(data.level + 1);
   const span = Math.max(1, upper - lower);
   const pct = Math.min(100, Math.round(((current - lower) / span) * 100));
+  const title = !data.title_hidden ? data.equipped_title : null;
+  const titleColor = title ? RARITY_COLORS[title.rarity] ?? "#cbd5e1" : null;
   return (
     <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-4">
+      {title && (
+        <div
+          data-testid="equipped-title"
+          style={{
+            fontSize: 13,
+            fontWeight: 500,
+            color: titleColor ?? undefined,
+            marginBottom: 4,
+            letterSpacing: 0.2,
+          }}
+        >
+          {title.name}
+        </div>
+      )}
       <div className="flex items-baseline justify-between">
         <h2 className="text-base font-semibold">
           Lv. {data.level}{" "}

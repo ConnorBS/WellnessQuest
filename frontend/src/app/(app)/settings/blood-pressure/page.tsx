@@ -262,6 +262,25 @@ export default function BPSettingsPage() {
           The /blood-pressure page is always available from the top nav, regardless of this setting.
         </p>
       </section>
+
+      <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+        <h2 className="text-lg font-semibold" style={{ marginBottom: 12 }}>
+          Achievements
+        </h2>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={me.bp_titles_opt_out}
+            disabled={updateMe.isPending}
+            onChange={(e) => updateMe.mutate({ bp_titles_opt_out: e.target.checked })}
+          />
+          Opt out of blood pressure titles
+        </label>
+        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+          Hides titles tied to blood pressure milestones. You can turn this
+          back on any time.
+        </p>
+      </section>
     </>
   );
 }
