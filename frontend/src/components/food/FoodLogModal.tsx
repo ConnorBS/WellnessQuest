@@ -7,6 +7,7 @@ import { useFoodBarcode } from "@/hooks/useFoodBarcode";
 import { useCreateFoodPreset } from "@/hooks/useFoodPresets";
 import { useFoodSearch } from "@/hooks/useFoodSearch";
 import { ApiError } from "@/lib/api";
+import { resolvePortion, type IngredientUnit } from "@/lib/food/portionMath";
 import type {
   FoodSearchHit,
   FoodUnit,
@@ -21,6 +22,7 @@ import { BarcodeScanner } from "@/components/food/BarcodeScanner";
 import { NutrientPanel as NutrientPanelView } from "@/components/food/NutrientPanel";
 import { NutritionLabelScanner } from "@/components/food/NutritionLabelScanner";
 import { ParsedLabelReview, type ReviewedLabel } from "@/components/food/ParsedLabelReview";
+import { RecipeTab } from "@/components/food/RecipeTab";
 
 // What unit set to show in the picker when OFF couldn't tell us the product's
 // native unit. We default to solid (g/oz) — most packaged foods are mass-labelled.
@@ -56,7 +58,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Mode = "search" | "manual" | "scan-review";
+type Mode = "search" | "manual" | "recipes" | "scan-review";
 
 export function FoodLogModal({ onClose }: Props) {
   const [mode, setMode] = useState<Mode>("search");
@@ -120,9 +122,11 @@ export function FoodLogModal({ onClose }: Props) {
     setScanError(null);
     barcodeLookup.mutate(code, {
       onSuccess: (hit) => {
-        // Drop into the same hit-selection flow as a text search result; this
-        // seeds the grams input from serving size and shows the macro preview.
-        selectHit(hit);
+        // Barcode bypasses the search-result list (the user never sees a
+        // name + brand line above the detail panel), so expand the full
+        // nutrient panel by default — that's the "drop down of nutrition"
+        // operators expect to see after a scan.
+        selectHit(hit, { expandNutrients: true });
       },
       onError: (err) => {
         const body = err instanceof ApiError ? (err.body as { detail?: string } | null) : null;
@@ -131,7 +135,10 @@ export function FoodLogModal({ onClose }: Props) {
     });
   }
 
-  function selectHit(hit: FoodSearchHit) {
+  function selectHit(
+    hit: FoodSearchHit,
+    opts: { expandNutrients?: boolean } = {},
+  ) {
     setSelected(hit);
     setServings(1);
     setServingG(hit.serving_g ?? "");
@@ -140,6 +147,7 @@ export function FoodLogModal({ onClose }: Props) {
     setOverrideProtein("");
     setOverrideCarbs("");
     setOverrideFat("");
+    if (opts.expandNutrients) setExpandNutrients(true);
   }
 
   function onLabelScanned(parsed: LabelScanOut, file: File) {
@@ -170,62 +178,21 @@ export function FoodLogModal({ onClose }: Props) {
 
   const computed = useMemo(() => {
     if (!selected) return null;
-    const native: FoodUnit = selected.unit ?? DEFAULT_NATIVE_UNIT;
-    // Total amount in native units. Two paths:
-    //   - serving-based: total = servings × servingG (the COMMON path; both
-    //     fields are independently editable so the user can dial "2.5
-    //     servings of 320 g" or "1 serving of 50 g" without toggling modes).
-    //   - raw grams: a single number, for foods with no serving definition.
-    let nativeAmount: number;
-    if (hasServingBasis) {
-      nativeAmount = Number(servingG) * servings;
-    } else if (rawGrams !== "") {
-      nativeAmount = Number(rawGrams);
-    } else {
-      nativeAmount = 100;
-    }
-    if (!Number.isFinite(nativeAmount) || nativeAmount < 0) nativeAmount = 0;
-    const factor = nativeAmount / 100;
-    const kcalPer100 =
-      native === "ml"
-        ? selected.kcal_per_100ml ?? selected.kcal_per_100g
-        : selected.kcal_per_100g ?? selected.kcal_per_100ml;
-    const pPer100 =
-      native === "ml"
-        ? selected.protein_per_100ml ?? selected.protein_per_100g
-        : selected.protein_per_100g ?? selected.protein_per_100ml;
-    const cPer100 =
-      native === "ml"
-        ? selected.carbs_per_100ml ?? selected.carbs_per_100g
-        : selected.carbs_per_100g ?? selected.carbs_per_100ml;
-    const fPer100 =
-      native === "ml"
-        ? selected.fat_per_100ml ?? selected.fat_per_100g
-        : selected.fat_per_100g ?? selected.fat_per_100ml;
-    const scale = (v: number | null | undefined) =>
-      v == null ? null : Math.round(v * factor * 10) / 10;
-
-    // Extended nutrients (the Canadian panel) — scale OFF's per-100g panel by
-    // the same factor. OFF rarely returns vitamins, but sat-fat / fibre /
-    // sodium / cholesterol are commonly present.
-    const nutPer100 = selected.nutrients_per_100g ?? {};
-    const nutrients: NutrientPanel = {};
-    for (const [key, v] of Object.entries(nutPer100)) {
-      const scaled = v * factor;
-      (nutrients as Record<string, number>)[key] =
-        Math.round(scaled * 1000) / 1000;
-    }
-
-    return {
-      hasNutritionData: kcalPer100 != null,
-      nativeAmount,
-      nativeUnit: native,
-      kcal: kcalPer100 != null ? Math.round(kcalPer100 * factor) : null,
-      protein_g: scale(pPer100),
-      carbs_g: scale(cPer100),
-      fat_g: scale(fPer100),
-      nutrients,
-    };
+    // Pick a spec for the shared portion math: serving-based when the user
+    // has a serving-g, raw-amount when they're logging by g/mL only.
+    const nativeUnit: FoodUnit = selected.unit ?? DEFAULT_NATIVE_UNIT;
+    const spec = hasServingBasis
+      ? {
+          quantity: servings,
+          unit: "serving" as IngredientUnit,
+          servingG: Number(servingG),
+        }
+      : {
+          quantity: rawGrams === "" ? 100 : Number(rawGrams),
+          unit: nativeUnit as IngredientUnit,
+          servingG: null,
+        };
+    return resolvePortion(selected, spec);
   }, [selected, servings, servingG, rawGrams, hasServingBasis]);
 
   // When OFF returned no per-100 nutriments, we fall back to whatever the user
@@ -493,14 +460,23 @@ export function FoodLogModal({ onClose }: Props) {
               >
                 Manual
               </button>
+              <button
+                type="button"
+                onClick={() => setMode("recipes")}
+                style={tabStyle(mode === "recipes")}
+              >
+                Recipes
+              </button>
             </div>
 
-            <div style={{ marginBottom: 12 }}>
-              <NutritionLabelScanner
-                onScanned={onLabelScanned}
-                label="Scan a nutrition label"
-              />
-            </div>
+            {mode !== "recipes" ? (
+              <div style={{ marginBottom: 12 }}>
+                <NutritionLabelScanner
+                  onScanned={onLabelScanned}
+                  label="Scan a nutrition label"
+                />
+              </div>
+            ) : null}
 
             <label style={{ display: "block", marginBottom: 12 }}>
               <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
@@ -519,7 +495,9 @@ export function FoodLogModal({ onClose }: Props) {
               </select>
             </label>
 
-            {mode === "search" ? (
+            {mode === "recipes" ? (
+              <RecipeTab meal={meal} onLogged={onClose} />
+            ) : mode === "search" ? (
               <>
                 <label style={{ display: "block", marginBottom: 8 }}>
                   <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
@@ -662,6 +640,21 @@ export function FoodLogModal({ onClose }: Props) {
                       const totalAmount = computed?.nativeAmount ?? 0;
                       return (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <div style={selectedHeaderStyle}>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0" }}>
+                              {selected.name}
+                            </div>
+                            {selected.brand ? (
+                              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
+                                {selected.brand}
+                              </div>
+                            ) : null}
+                            {selected.serving_label ? (
+                              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                                OFF serving: {selected.serving_label}
+                              </div>
+                            ) : null}
+                          </div>
                           {hasServingBasis ? (
                             <>
                               <div
@@ -1109,6 +1102,13 @@ const linkBtn: React.CSSProperties = {
   border: "none",
   cursor: "pointer",
   padding: 0,
+};
+
+const selectedHeaderStyle: React.CSSProperties = {
+  padding: "8px 10px",
+  background: "#0b1220",
+  border: "1px solid #1e293b",
+  borderRadius: 6,
 };
 
 function primaryBtnStyleFor(disabled: boolean): React.CSSProperties {
