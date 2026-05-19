@@ -89,6 +89,14 @@ def _ocr(raw: bytes) -> str:
     if img.mode != "L":
         img = img.convert("L")
 
+    # Phone photos of packaged labels are commonly rotated 90° or 180° from
+    # upright — EXIF orientation handles screen-rotation, but a label
+    # photographed across the long axis of a box has no EXIF hint. Ask
+    # Tesseract's orientation+script detection (OSD) what to do. OSD is
+    # cheap and degrades gracefully when the image has too little text to
+    # decide.
+    img = _auto_orient(img, pytesseract)
+
     # Bilingual layout — Tesseract switches between languages per word when
     # both are configured. PSM 6 = "uniform block of text", which matches a
     # Nutrition Facts panel better than the default automatic page seg.
@@ -103,3 +111,24 @@ def _ocr(raw: bytes) -> str:
         return ""
     except Exception:  # noqa: BLE001 - last-chance to keep the request alive
         return ""
+
+
+def _auto_orient(img: Image.Image, pytesseract: object) -> Image.Image:
+    """Rotate `img` to upright using Tesseract OSD. Returns the original
+    when OSD can't decide (low confidence, too little text, missing osd
+    traineddata)."""
+    try:
+        osd = pytesseract.image_to_osd(img, output_type=pytesseract.Output.DICT)  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001 - OSD often raises on text-sparse images
+        return img
+    # `rotate` in the OSD result is the angle (in degrees) the image needs
+    # to be rotated COUNTER-CLOCKWISE to be upright. Confidence below ~1.0
+    # is unreliable; below that, leave the image alone.
+    try:
+        confidence = float(osd.get("orientation_conf", 0))
+        rotate_by = int(osd.get("rotate", 0)) % 360
+    except (TypeError, ValueError):
+        return img
+    if confidence < 1.0 or rotate_by == 0:
+        return img
+    return img.rotate(-rotate_by, expand=True)

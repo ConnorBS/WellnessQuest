@@ -137,11 +137,13 @@ _UNIT_SCALE: dict[tuple[str, str], float] = {
 #   "vitamin a 0 mcg rae 0 %"
 #   "iron 7.5 mg 42 %"
 #   "folate 60 mcg dfe 15 %"
+# Tesseract very often reads "g" as "q" on noisy photos ("Sugars 2 q"). We
+# accept `q` as an alias and let the unit-scale table treat it as grams.
 _ROW_RE = re.compile(
     r"""
     (?P<amount>\d+(?:[.,]\d+)?)        # 120, 7.5, 0,5
     \s*
-    (?P<unit>mcg|μg|ug|µg|mg|g|kcal|cal)\b
+    (?P<unit>mcg|μg|ug|µg|mg|g|q|kcal|cal)\b
     """,
     re.IGNORECASE | re.VERBOSE,
 )
@@ -256,6 +258,8 @@ def _extract_amount_for_key(line_norm: str, key: str) -> float | None:
         unit = m.group("unit").lower().replace("μ", "u").replace("µ", "u")
         if unit in {"kcal", "cal"}:
             continue
+        if unit == "q":  # OCR confuses lowercase g and q; treat as grams
+            unit = "g"
         scale = _UNIT_SCALE.get((key, unit))
         if scale is None:
             # Reasonable fallback: store amount as-is. This catches OCR

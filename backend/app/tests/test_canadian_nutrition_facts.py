@@ -207,3 +207,13 @@ def test_kcal_must_be_realistic():
     """Garbage 6-digit OCR numbers shouldn't become calorie values."""
     r = parse("Calories 999999\n")
     assert r.kcal is None
+
+
+def test_handles_ocr_q_as_g():
+    """Tesseract often reads lowercase 'g' as 'q' on phone photos
+    ("Sugars 2 q"). The parser must treat it as grams so we don't drop
+    macronutrient rows on real-world scans."""
+    r = parse("Sugars 2 q\nFibre 5 q\nSodium 120 mg\n")
+    assert r.nutrients.sugars_g == 2.0
+    assert r.nutrients.fibre_g == 5.0
+    assert r.nutrients.sodium_mg == 120.0
