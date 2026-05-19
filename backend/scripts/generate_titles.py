@@ -64,40 +64,58 @@ from scripts.curated_titles import CURATED_ENTRIES
 # ---------------------------------------------------------------------------
 
 # Guild-rank progression — reused everywhere a ladder needs more entries
-# than curated provides. Index N is the Nth-rank tier.
+# than curated provides. Index N is the Nth-rank tier. Extended to 60 so
+# most ladders fit one full pass without recycling.
 RANK_NAMES = [
+    # Foundations (0-9)
     "Newbie", "Sophomore", "Junior", "Cadet", "Recruit",
     "Initiate", "Apprentice", "Acolyte", "Journeyman", "Adept",
+    # Skilled (10-19)
     "Skilled", "Trained", "Veteran", "Senior", "Specialist",
     "Expert", "Master", "Grandmaster", "Champion", "Elite",
+    # Honored (20-29)
     "Heroic", "Honored", "Distinguished", "Renowned", "Storied",
     "Legendary", "Mythic", "Ascendant", "Transcendent", "Eternal",
+    # Cosmic (30-39)
     "Cosmic", "Stellar", "Galactic", "Celestial", "Divine",
     "Primordial", "Immortal", "Boundless", "Apex", "Paragon",
+    # Beyond (40-49)
+    "Aeonic", "Empyrean", "Astral", "Sovereign", "Imperial",
+    "Regnant", "Supreme", "Ultimate", "Omega", "Singular",
+    # Outer realm (50-59)
+    "Eldritch", "Mythical", "Fabled", "Ancient", "Primal",
+    "Hallowed", "Anointed", "Crowned", "Enshrined", "Apotheotic",
 ]
+RANK_PHASE_SIZE = len(RANK_NAMES)
 
 # Each ladder has a target size. Curated fills the ladder up to this
 # number; backfill makes up the difference. Curated past the cap is
-# dropped from this build to keep the unlock cadence around ~1/day.
+# dropped from this build (kept in `curated_titles.py` for a future
+# bigger ladder — soft-archived in the DB on next sync).
+#
+# Targets are sized so the full catalog hits ~3,000 titles, pacing out
+# to roughly 2 unlocks/day over four years for a typical user
+# (accounting for the fact that a user only progresses through a
+# handful of exercise types, not all 25).
 LADDER_TARGETS: dict[str, int] = {
-    "active_days": 25,
-    "login_days": 20,
-    "lifetime_water_ml": 18,
-    "lifetime_active_minutes": 18,
-    "streak_water_days_current": 18,
-    "streak_water_days_longest": 15,
-    "streak_activity_days_current": 18,
-    "streak_activity_days_longest": 15,
-    "water_entry_count": 18,
-    "activity_entry_count": 18,
-    "food_entry_count": 18,
-    "habit_checkin_count": 20,
-    "weight_logs_count": 10,
-    "bp_logs_count": 10,
-    "level": 20,
-    "xp_total": 15,
+    "active_days": 160,
+    "login_days": 150,
+    "lifetime_water_ml": 100,
+    "lifetime_active_minutes": 100,
+    "streak_water_days_current": 100,
+    "streak_water_days_longest": 80,
+    "streak_activity_days_current": 100,
+    "streak_activity_days_longest": 80,
+    "water_entry_count": 100,
+    "activity_entry_count": 100,
+    "food_entry_count": 100,
+    "habit_checkin_count": 150,
+    "weight_logs_count": 50,
+    "bp_logs_count": 50,
+    "level": 100,
+    "xp_total": 80,
 }
-EXERCISE_TYPE_TARGET = 12
+EXERCISE_TYPE_TARGET = 55
 
 # Maps each tracked condition_kind to the category its ladder lives in.
 # Used to materialize ladders that have zero curated content (e.g.
@@ -122,26 +140,29 @@ LADDER_CATEGORY: dict[str, str] = {
     "xp_total": "level",
 }
 
-# Per-ladder noun used in backfill names: "Apprentice Hydrator",
-# "Master Streaker", etc. Character-y enough to wear, generic enough
-# to scale across 40 ranks.
-LADDER_NOUN: dict[str, str] = {
-    "active_days": "Day-Walker",
-    "login_days": "Returner",
-    "lifetime_water_ml": "Hydration Sage",
-    "lifetime_active_minutes": "Iron Mover",
-    "streak_water_days_current": "Hydrator",
-    "streak_water_days_longest": "Aquanaut",
-    "streak_activity_days_current": "Streaker",
-    "streak_activity_days_longest": "Marathoner",
-    "water_entry_count": "Aqua-Logger",
-    "activity_entry_count": "Sweat-Logger",
-    "food_entry_count": "Meal Tracker",
-    "habit_checkin_count": "Habit-Keeper",
-    "weight_logs_count": "Scale-Keeper",
-    "bp_logs_count": "Pressure-Reader",
-    "level": "Adventurer",
-    "xp_total": "XP Hoarder",
+# Per-ladder noun phases used in backfill names. Slot `k` uses
+# `nouns[k // RANK_PHASE_SIZE]` so a 150-title ladder cycles cleanly
+# through 60 ranks × 3 nouns ("Newbie Day-Walker" → "Apotheotic
+# Day-Walker" → "Newbie Time-Strider" → …). Each list needs enough
+# entries to cover the ladder's target divided by RANK_PHASE_SIZE,
+# rounded up.
+LADDER_NOUNS: dict[str, list[str]] = {
+    "active_days": ["Day-Walker", "Time-Strider", "Eon-Marker"],
+    "login_days": ["Returner", "Loyal Caller", "Eternal Visitor"],
+    "lifetime_water_ml": ["Hydration Sage", "Tide-Caller", "Ocean's Heir"],
+    "lifetime_active_minutes": ["Iron Mover", "Endurance Adept", "Tireless Titan"],
+    "streak_water_days_current": ["Hydrator", "Wave-Rider", "Tidewalker"],
+    "streak_water_days_longest": ["Aquanaut", "Deep-Diver", "Tide Lord"],
+    "streak_activity_days_current": ["Streaker", "Pace-Setter", "Eternal Engine"],
+    "streak_activity_days_longest": ["Marathoner", "Iron Strider", "Forever Mover"],
+    "water_entry_count": ["Aqua-Logger", "Drop-Counter", "River-Recorder"],
+    "activity_entry_count": ["Sweat-Logger", "Move-Counter", "Effort Archivist"],
+    "food_entry_count": ["Meal Tracker", "Calorie Scribe", "Sustenance Sage"],
+    "habit_checkin_count": ["Habit-Keeper", "Ritual-Maker", "Daily Devoter"],
+    "weight_logs_count": ["Scale-Keeper", "Mass-Marker"],
+    "bp_logs_count": ["Pressure-Reader", "Pulse-Keeper"],
+    "level": ["Adventurer", "Wayfarer", "Pathfinder"],
+    "xp_total": ["XP Hoarder", "Point Plunderer"],
 }
 
 # Exercise types we ship backfill for, even when no curated content
@@ -176,27 +197,29 @@ EXERCISE_NOUN: dict[str, str] = {
     "Cleaning": "Tidy Titan",
 }
 
-# Each ladder has a (lo, hi) log-scale threshold range. The sparse log
-# spread guarantees one title per threshold and pushes the top tier out
-# years.
+# Each ladder has a (lo, hi) log-scale threshold range. Picked so the
+# bottom tier fires after a real engagement (not on first session) and
+# the top tier lives in the long tail past year 4 — a typical user
+# clears ~60-70% of each ladder in four years, leaving the rest for
+# power users.
 LADDER_RANGE: dict[str, tuple[int, int]] = {
-    "active_days": (7, 10_000),
-    "login_days": (7, 10_000),
-    "lifetime_water_ml": (5_000, 200_000_000),
-    "lifetime_active_minutes": (60, 2_000_000),
-    "streak_water_days_current": (1, 5_000),
-    "streak_water_days_longest": (1, 5_000),
-    "streak_activity_days_current": (1, 5_000),
-    "streak_activity_days_longest": (1, 5_000),
-    "water_entry_count": (10, 100_000),
-    "activity_entry_count": (10, 100_000),
-    "food_entry_count": (10, 100_000),
-    "habit_checkin_count": (10, 100_000),
-    "weight_logs_count": (10, 5_000),
-    "bp_logs_count": (10, 5_000),
-    "level": (5, 100),
-    "xp_total": (1_000, 10_000_000),
-    "exercise_type_minutes": (30, 50_000),
+    "active_days": (1, 30_000),
+    "login_days": (1, 30_000),
+    "lifetime_water_ml": (500, 1_000_000_000),
+    "lifetime_active_minutes": (30, 10_000_000),
+    "streak_water_days_current": (1, 10_000),
+    "streak_water_days_longest": (1, 10_000),
+    "streak_activity_days_current": (1, 10_000),
+    "streak_activity_days_longest": (1, 10_000),
+    "water_entry_count": (5, 500_000),
+    "activity_entry_count": (5, 500_000),
+    "food_entry_count": (5, 500_000),
+    "habit_checkin_count": (5, 500_000),
+    "weight_logs_count": (5, 20_000),
+    "bp_logs_count": (5, 20_000),
+    "level": (3, 100),
+    "xp_total": (500, 100_000_000),
+    "exercise_type_minutes": (15, 200_000),
 }
 
 DESCRIPTION_TEMPLATES: dict[str, str] = {
@@ -316,13 +339,27 @@ def _make_backfill_row(
     }
 
 
+def _name_for_slot(slot: int, nouns: list[str]) -> str:
+    """Compose a backfill name from rank + noun phase. Slot `k` uses
+    `RANK_NAMES[k % RANK_PHASE_SIZE]` paired with `nouns[k // RANK_PHASE_SIZE]`,
+    so each (rank, noun) combination is unique. Long ladders cycle
+    cleanly: 0-59 use noun[0], 60-119 use noun[1], etc."""
+    rank = RANK_NAMES[slot % RANK_PHASE_SIZE]
+    phase = slot // RANK_PHASE_SIZE
+    if phase >= len(nouns):
+        # Defensive fallback — config error; cap at the last noun and
+        # tag with the phase index so duplicates are visible.
+        return f"{rank} {nouns[-1]} {phase + 1}"
+    return f"{rank} {nouns[phase]}"
+
+
 def _backfill_ladder(
     *,
     category: str,
     condition_kind: str,
     start_index: int,
     target: int,
-    noun: str,
+    nouns: list[str],
     slug_prefix: str,
     used_slugs: set[str],
     exercise_type: str | None = None,
@@ -333,8 +370,7 @@ def _backfill_ladder(
     iconic low-tier titles aren't overlapped by "Newbie X" labels."""
     rows: list[dict[str, Any]] = []
     for i in range(start_index, target):
-        rank = RANK_NAMES[i % len(RANK_NAMES)]
-        name = f"{rank} {noun}"
+        name = _name_for_slot(i, nouns)
         slug = f"{slug_prefix}_bf_{i}"
         # Defensive: avoid slug collisions in pathological cases (e.g.
         # someone hand-wrote a curated slug matching our format).
@@ -441,10 +477,10 @@ def _slug_prefix_for(category: str, kind: str, ex_type: str) -> str:
     return f"{category}_{kind}"
 
 
-def _noun_for(category: str, kind: str, ex_type: str) -> str:
+def _nouns_for(category: str, kind: str, ex_type: str) -> list[str]:
     if kind == "exercise_type_minutes":
-        return EXERCISE_NOUN.get(ex_type, "Athlete")
-    return LADDER_NOUN.get(kind, "Adept")
+        return [EXERCISE_NOUN.get(ex_type, "Athlete")]
+    return LADDER_NOUNS.get(kind, ["Adept"])
 
 
 def _opt_out_for(kind: str) -> str | None:
@@ -505,7 +541,7 @@ def build_all() -> list[dict[str, Any]]:
                     condition_kind=kind,
                     start_index=len(capped),
                     target=target,
-                    noun=_noun_for(category, kind, ex_type),
+                    nouns=_nouns_for(category, kind, ex_type),
                     slug_prefix=_slug_prefix_for(category, kind, ex_type),
                     used_slugs=used_slugs,
                     exercise_type=ex_type
@@ -528,7 +564,7 @@ def build_all() -> list[dict[str, Any]]:
                 condition_kind="exercise_type_minutes",
                 start_index=0,
                 target=EXERCISE_TYPE_TARGET,
-                noun=EXERCISE_NOUN[ex_type],
+                nouns=[EXERCISE_NOUN[ex_type]],
                 slug_prefix=f"ex_{_slug(ex_type)}",
                 used_slugs=used_slugs,
                 exercise_type=ex_type,
