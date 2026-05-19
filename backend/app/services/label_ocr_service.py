@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import io
+from typing import Any
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
@@ -77,11 +78,11 @@ def _ocr(raw: bytes) -> str:
         return ""
 
     try:
-        img = Image.open(io.BytesIO(raw))
+        opened = Image.open(io.BytesIO(raw))
     except (UnidentifiedImageError, OSError) as exc:
         raise LabelOcrError("invalid_image") from exc
 
-    img = ImageOps.exif_transpose(img) or img
+    img: Image.Image = ImageOps.exif_transpose(opened) or opened
     # Tesseract works best on grayscale with high contrast. Stick to the
     # simple, robust pipeline; deskew + adaptive threshold via OpenCV is a
     # second-pass improvement we can layer on later if accuracy is too low
@@ -113,12 +114,12 @@ def _ocr(raw: bytes) -> str:
         return ""
 
 
-def _auto_orient(img: Image.Image, pytesseract: object) -> Image.Image:
+def _auto_orient(img: Image.Image, pytesseract: Any) -> Image.Image:
     """Rotate `img` to upright using Tesseract OSD. Returns the original
     when OSD can't decide (low confidence, too little text, missing osd
     traineddata)."""
     try:
-        osd = pytesseract.image_to_osd(img, output_type=pytesseract.Output.DICT)  # type: ignore[attr-defined]
+        osd = pytesseract.image_to_osd(img, output_type=pytesseract.Output.DICT)
     except Exception:  # noqa: BLE001 - OSD often raises on text-sparse images
         return img
     # `rotate` in the OSD result is the angle (in degrees) the image needs

@@ -11,6 +11,7 @@ just whitelist the key here and in `schemas.food.NutrientPanel`.
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from decimal import Decimal
 from typing import Literal
 
@@ -87,12 +88,18 @@ CANADIAN_DV: dict[str, float] = {
 }
 
 
-def compute_dv_percent(totals: dict[str, float | Decimal | None]) -> dict[str, float]:
+def compute_dv_percent(
+    totals: Mapping[str, float | Decimal | None],
+) -> dict[str, float]:
     """Return % of Health Canada DV per nutrient. Missing/None values yield 0.
 
     `saturated_trans_g` (combined) is auto-derived from `saturated_fat_g` +
     `trans_fat_g` when the combined value isn't supplied directly — labels
     quote DV against the sum, not the individual lines.
+
+    Accepts a `Mapping` rather than a `dict` so callers can pass any
+    `dict[str, float]` (which would otherwise fail invariance — dict's value
+    type is invariant in mypy strict mode).
     """
     out: dict[str, float] = {}
     sat = totals.get("saturated_fat_g")

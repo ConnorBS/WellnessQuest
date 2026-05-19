@@ -62,7 +62,7 @@ disallow_untyped_decorators = false
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["jose.*", "argon2.*", "factory.*", "slowapi.*"]
+module = ["jose.*", "argon2.*", "factory.*", "slowapi.*", "pytesseract.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
