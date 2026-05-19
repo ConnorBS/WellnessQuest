@@ -5,7 +5,7 @@ import re
 from typing import Any, Literal
 
 import httpx
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app.providers.food.base import FoodItem, FoodProvider, food_providers
 from app.telemetry.logger import get_logger
@@ -54,7 +54,22 @@ class OpenFoodFactsProvider(FoodProvider):
                     query=query,
                 )
                 products = await self._sal_search(client, query, limit)
-        return [self._map(p) for p in products if p.get("code")]
+        items: list[FoodItem] = []
+        for p in products:
+            if not p.get("code"):
+                continue
+            try:
+                items.append(self._map(p))
+            except ValidationError as exc:
+                # One bad product (unexpected field type from OFF) shouldn't
+                # tank the whole search. Log and skip so the user still sees
+                # the other hits.
+                log.warning(
+                    "off_map_validation_failed",
+                    code=p.get("code"),
+                    errors=str(exc),
+                )
+        return items
 
     async def _cgi_search(
         self, client: httpx.AsyncClient, query: str, limit: int
@@ -123,7 +138,8 @@ class OpenFoodFactsProvider(FoodProvider):
 
     @staticmethod
     def _map(p: dict[str, Any]) -> FoodItem:
-        nutr = p.get("nutriments", {}) or {}
+        nutr_raw = p.get("nutriments")
+        nutr: dict[str, Any] = nutr_raw if isinstance(nutr_raw, dict) else {}
 
         def _opt_f(key: str) -> float | None:
             v = nutr.get(key)
@@ -139,7 +155,20 @@ class OpenFoodFactsProvider(FoodProvider):
             except (TypeError, ValueError):
                 return None
 
-        serving_size = p.get("serving_size")
+        def _opt_s(key: str) -> str | None:
+            # OFF occasionally returns string fields as a dict (multilingual
+            # hash like {"en": "..."}) or a list ("brands" can arrive as a
+            # tag array on some endpoints). Reject anything that isn't a
+            # non-empty string rather than handing the wrong type to Pydantic.
+            v = p.get(key)
+            return v.strip() or None if isinstance(v, str) else None
+
+        serving_label_raw = p.get("serving_size")
+        serving_label = (
+            serving_label_raw.strip() or None
+            if isinstance(serving_label_raw, str)
+            else None
+        )
         kcal_g = _opt_f("energy-kcal_100g")
         kcal_ml = _opt_f("energy-kcal_100ml")
         unit = _detect_unit(p, has_ml_nutriments=kcal_ml is not None)
@@ -199,14 +228,10 @@ class OpenFoodFactsProvider(FoodProvider):
         return FoodItem(
             source="openfoodfacts",
             source_id=str(p.get("code", "")),
-            name=p.get("product_name") or p.get("generic_name") or "Unknown",
-            brand=p.get("brands"),
+            name=_opt_s("product_name") or _opt_s("generic_name") or "Unknown",
+            brand=_opt_s("brands"),
             serving_g=_opt_top_f("serving_quantity"),
-            serving_label=(
-                serving_size.strip()
-                if isinstance(serving_size, str) and serving_size.strip()
-                else None
-            ),
+            serving_label=serving_label,
             unit=unit,
             kcal_per_100g=kcal_g,
             protein_per_100g=_opt_f("proteins_100g"),
