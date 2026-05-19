@@ -9,6 +9,7 @@ from app.api.v1 import (
     blood_pressure,
     food,
     food_presets,
+    food_recipes,
     ha,
     habits,
     integrations,
@@ -34,6 +35,7 @@ api_v1.include_router(activity.router)
 api_v1.include_router(activity_presets.router)
 api_v1.include_router(food.router)
 api_v1.include_router(food_presets.router)
+api_v1.include_router(food_recipes.router)
 api_v1.include_router(habits.router)
 api_v1.include_router(weight.router)
 api_v1.include_router(blood_pressure.router)

@@ -61,6 +61,10 @@ class OpenFoodFactsProvider(FoodProvider):
     ) -> list[dict[str, Any]]:
         # action=process + search_simple=1 are required for the legacy cgi search to
         # actually execute the query rather than return the search form HTML.
+        # `lc=en` picks the English localized name (`product_name_en`) when
+        # present and biases ranking; `cc=ca` weights the Canadian product
+        # catalogue. Neither is a hard filter — non-English products still
+        # appear in the long tail.
         params: dict[str, str | int] = {
             "action": "process",
             "search_simple": 1,
@@ -68,6 +72,8 @@ class OpenFoodFactsProvider(FoodProvider):
             "json": 1,
             "page_size": min(limit, 50),
             "fields": _FIELDS,
+            "lc": "en",
+            "cc": "ca",
         }
         data = await _get_json_with_retry(
             client,
@@ -80,10 +86,15 @@ class OpenFoodFactsProvider(FoodProvider):
     async def _sal_search(
         self, client: httpx.AsyncClient, query: str, limit: int
     ) -> list[dict[str, Any]]:
+        # Search-a-licious uses different parameter names than the legacy
+        # cgi endpoint — `langs` (plural, ISO-639-1) and `countries_tags`
+        # (lowercase country slug) — for the same purpose.
         params: dict[str, str | int] = {
             "q": query,
             "page_size": min(limit, 50),
             "fields": _FIELDS,
+            "langs": "en",
+            "countries_tags": "canada",
         }
         data = await _get_json_with_retry(
             client,
@@ -94,11 +105,15 @@ class OpenFoodFactsProvider(FoodProvider):
         return list(hits) if isinstance(hits, list) else []
 
     async def by_barcode(self, code: str) -> FoodItem | None:
+        # `lc=en` controls which `product_name_<lang>` localization OFF
+        # returns as the primary `product_name`. Bilingual Canadian
+        # products (most packaged goods on shelves) return the English
+        # name here instead of French.
         url = f"{self.config['base_url']}/api/v2/product/{code}.json"
         async with httpx.AsyncClient(
             headers={"User-Agent": self.config["user_agent"]}, timeout=8.0
         ) as client:
-            resp = await client.get(url)
+            resp = await client.get(url, params={"lc": "en", "cc": "ca"})
             if resp.status_code != 200:
                 return None
             data = resp.json()

@@ -9,6 +9,8 @@ from app.models.blood_pressure_target import BloodPressureTarget
 from app.models.error_log import ErrorLog
 from app.models.food_entry import FoodEntry
 from app.models.food_preset import FoodPreset
+from app.models.food_recipe import FoodRecipe
+from app.models.food_recipe_ingredient import FoodRecipeIngredient
 from app.models.goal import Goal
 from app.models.habit import Habit
 from app.models.habit_checkin import HabitCheckin
@@ -36,6 +38,8 @@ __all__ = [
     "ErrorLog",
     "FoodEntry",
     "FoodPreset",
+    "FoodRecipe",
+    "FoodRecipeIngredient",
     "Goal",
     "Habit",
     "HabitCheckin",

@@ -398,6 +398,64 @@ export type FoodPreset = z.infer<typeof FoodPresetSchema>;
 
 export const FoodPresetListSchema = z.array(FoodPresetSchema);
 
+export const IngredientUnitSchema = z.enum(["g", "ml", "serving"]);
+export type IngredientUnit = z.infer<typeof IngredientUnitSchema>;
+
+export const FoodRecipeIngredientSchema = z.object({
+  id: z.string().uuid(),
+  position: z.number().int(),
+  name: z.string(),
+  brand: z.string().nullable().optional(),
+  provider: z.string().nullable().optional(),
+  provider_id: z.string().nullable().optional(),
+  quantity: z.coerce.number(),
+  unit: IngredientUnitSchema,
+  serving_g: z.coerce.number().nullable().optional(),
+  serving_label: z.string().nullable().optional(),
+  kcal: z.number().int(),
+  protein_g: z.coerce.number().nullable().optional(),
+  carbs_g: z.coerce.number().nullable().optional(),
+  fat_g: z.coerce.number().nullable().optional(),
+  nutrients: z.record(z.string(), z.number()).nullable().optional(),
+});
+export type FoodRecipeIngredient = z.infer<typeof FoodRecipeIngredientSchema>;
+
+export const FoodRecipeSchema = z.object({
+  id: z.string().uuid(),
+  label: z.string(),
+  brand: z.string().nullable().optional(),
+  yields_servings: z.coerce.number(),
+  serving_label: z.string().nullable().optional(),
+  total_kcal: z.number().int(),
+  total_protein_g: z.coerce.number().nullable().optional(),
+  total_carbs_g: z.coerce.number().nullable().optional(),
+  total_fat_g: z.coerce.number().nullable().optional(),
+  total_nutrients: z.record(z.string(), z.number()).nullable().optional(),
+  meal_type: MealTypeSchema.nullable().optional(),
+  sort_order: z.number().int(),
+  ingredients: z.array(FoodRecipeIngredientSchema),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+export type FoodRecipe = z.infer<typeof FoodRecipeSchema>;
+
+export const FoodRecipeListItemSchema = z.object({
+  id: z.string().uuid(),
+  label: z.string(),
+  brand: z.string().nullable().optional(),
+  yields_servings: z.coerce.number(),
+  serving_label: z.string().nullable().optional(),
+  total_kcal: z.number().int(),
+  total_protein_g: z.coerce.number().nullable().optional(),
+  total_carbs_g: z.coerce.number().nullable().optional(),
+  total_fat_g: z.coerce.number().nullable().optional(),
+  total_nutrients: z.record(z.string(), z.number()).nullable().optional(),
+  meal_type: MealTypeSchema.nullable().optional(),
+  sort_order: z.number().int(),
+});
+export type FoodRecipeListItem = z.infer<typeof FoodRecipeListItemSchema>;
+export const FoodRecipeListSchema = z.array(FoodRecipeListItemSchema);
+
 export const FoodUnitSchema = z.enum(["g", "ml"]);
 export type FoodUnit = z.infer<typeof FoodUnitSchema>;
 
