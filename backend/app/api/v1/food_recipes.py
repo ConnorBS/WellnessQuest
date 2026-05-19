@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import current_user, get_db
 from app.models.food_recipe import FoodRecipe
+from app.models.food_recipe_ingredient import FoodRecipeIngredient
 from app.models.user import User
 from app.schemas.food import FoodAddOut, FoodEntryOut
 from app.schemas.food_recipe import (
@@ -22,7 +23,7 @@ from app.telemetry.recorder import audit
 router = APIRouter(prefix="/food/recipes", tags=["food"])
 
 
-def _ingredient_out(i) -> RecipeIngredientOut:
+def _ingredient_out(i: FoodRecipeIngredient) -> RecipeIngredientOut:
     return RecipeIngredientOut(
         id=i.id,
         position=i.position,

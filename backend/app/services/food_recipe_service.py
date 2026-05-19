@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete, select
@@ -11,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.food_recipe import FoodRecipe
 from app.models.food_recipe_ingredient import FoodRecipeIngredient
 from app.models.user import User
-from app.schemas.food_recipe import RecipeIn
+from app.schemas.food_recipe import RecipeIn, RecipeIngredientIn
 from app.services import food_service
 from app.services.time_utils import utcnow
 
@@ -21,7 +22,7 @@ from app.services.time_utils import utcnow
 _FOOD_ENTRY_KCAL_MAX = 20000
 
 
-def _ingredient_to_row(ing, position: int) -> FoodRecipeIngredient:
+def _ingredient_to_row(ing: RecipeIngredientIn, position: int) -> FoodRecipeIngredient:
     """Map a `RecipeIngredientIn` into a SQLAlchemy row at `position`."""
     return FoodRecipeIngredient(
         position=position,
@@ -52,7 +53,7 @@ def _sum_decimal(
     return sum((v for v in values if v is not None), Decimal(0))
 
 
-def _merge_nutrients(blobs: list[dict | None]) -> dict[str, float] | None:
+def _merge_nutrients(blobs: list[dict[str, Any] | None]) -> dict[str, float] | None:
     """Sum JSONB nutrient blobs key-by-key. Missing key in a blob means
     "no data for this nutrient on this ingredient" (skip), not zero. Same
     semantics as `food_service.nutrient_totals()`."""
@@ -173,7 +174,7 @@ def _scale_decimal(value: Decimal | None, factor: Decimal) -> Decimal | None:
 
 
 def _scale_nutrients(
-    blob: dict | None, factor: Decimal
+    blob: dict[str, Any] | None, factor: Decimal
 ) -> dict[str, float] | None:
     if not blob:
         return None
