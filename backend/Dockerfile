@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
       build-essential libpq-dev curl \
+      tesseract-ocr tesseract-ocr-eng tesseract-ocr-fra tesseract-ocr-osd \
     && rm -rf /var/lib/apt/lists/*
 COPY pyproject.toml ./
 RUN pip install --upgrade pip && pip install .

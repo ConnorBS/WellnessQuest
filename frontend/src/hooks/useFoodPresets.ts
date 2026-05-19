@@ -7,9 +7,16 @@ import {
   FoodPresetListSchema,
   FoodPresetSchema,
   type FoodPreset,
+  type NutrientPanel,
 } from "@/lib/schemas";
 
-type PresetInput = Omit<FoodPreset, "id">;
+// The server's `FoodPreset.nutrients` is a non-null `Record<string, number>` —
+// it strips nulls before persisting. On the INPUT side we accept both the
+// stored shape AND the editable `NutrientPanel` (nullable fields) so the
+// preset form and the OFF-derived flow can share one mutation.
+type PresetInput = Omit<FoodPreset, "id" | "nutrients"> & {
+  nutrients?: NutrientPanel | Record<string, number> | null;
+};
 
 export function useFoodPresets() {
   return useQuery({
@@ -30,7 +37,7 @@ export function useCreateFoodPreset() {
 export function useUpdateFoodPreset() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...input }: FoodPreset) =>
+    mutationFn: ({ id, ...input }: { id: string } & PresetInput) =>
       apiPatch(`/food/presets/${id}`, FoodPresetSchema, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["food-presets"] }),
   });

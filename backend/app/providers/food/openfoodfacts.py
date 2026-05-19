@@ -128,6 +128,59 @@ class OpenFoodFactsProvider(FoodProvider):
         kcal_g = _opt_f("energy-kcal_100g")
         kcal_ml = _opt_f("energy-kcal_100ml")
         unit = _detect_unit(p, has_ml_nutriments=kcal_ml is not None)
+
+        # Extended panel from OFF's nutriments dict, when available. OFF uses
+        # SI base units everywhere: grams for solids, milligrams for minerals
+        # except sodium (g — converted), vitamins typically in mg/µg as
+        # appropriate. We normalize to the same key set the rest of the app
+        # uses; missing fields are simply omitted from the dict.
+        ext: dict[str, float] = {}
+
+        def _put(key: str, val: float | None) -> None:
+            if val is not None:
+                ext[key] = round(val, 4)
+
+        # Fats — OFF returns saturated and trans in grams.
+        _put("saturated_fat_g", _opt_f("saturated-fat_100g"))
+        _put("trans_fat_g", _opt_f("trans-fat_100g"))
+        # Sugars / fibre — fibre key is "fiber" in OFF (US spelling).
+        _put("sugars_g", _opt_f("sugars_100g"))
+        _put("fibre_g", _opt_f("fiber_100g"))
+        # Cholesterol — OFF stores in grams; convert to mg.
+        chol_g = _opt_f("cholesterol_100g")
+        _put("cholesterol_mg", chol_g * 1000 if chol_g is not None else None)
+        # Sodium — OFF stores in grams; convert to mg.
+        sodium_g = _opt_f("sodium_100g")
+        _put("sodium_mg", sodium_g * 1000 if sodium_g is not None else None)
+        # Potassium / Calcium / Iron — OFF in grams.
+        for off_key, our_key in (
+            ("potassium_100g", "potassium_mg"),
+            ("calcium_100g", "calcium_mg"),
+            ("iron_100g", "iron_mg"),
+            ("magnesium_100g", "magnesium_mg"),
+            ("phosphorus_100g", "phosphorus_mg"),
+            ("zinc_100g", "zinc_mg"),
+        ):
+            raw = _opt_f(off_key)
+            _put(our_key, raw * 1000 if raw is not None else None)
+        # Vitamins — OFF in grams for vit C / E / niacin / B-vits etc.
+        for off_key, our_key, scale in (
+            ("vitamin-a_100g", "vit_a_mcg_rae", 1_000_000),
+            ("vitamin-c_100g", "vit_c_mg", 1000),
+            ("vitamin-d_100g", "vit_d_mcg", 1_000_000),
+            ("vitamin-e_100g", "vit_e_mg", 1000),
+            ("vitamin-k_100g", "vit_k_mcg", 1_000_000),
+            ("vitamin-b1_100g", "thiamin_mg", 1000),
+            ("vitamin-b2_100g", "riboflavin_mg", 1000),
+            ("vitamin-pp_100g", "niacin_mg", 1000),
+            ("vitamin-b6_100g", "vit_b6_mg", 1000),
+            ("vitamin-b9_100g", "folate_mcg_dfe", 1_000_000),
+            ("vitamin-b12_100g", "vit_b12_mcg", 1_000_000),
+            ("pantothenic-acid_100g", "pantothenate_mg", 1000),
+        ):
+            raw = _opt_f(off_key)
+            _put(our_key, raw * scale if raw is not None else None)
+
         return FoodItem(
             source="openfoodfacts",
             source_id=str(p.get("code", "")),
@@ -148,6 +201,7 @@ class OpenFoodFactsProvider(FoodProvider):
             protein_per_100ml=_opt_f("proteins_100ml"),
             carbs_per_100ml=_opt_f("carbohydrates_100ml"),
             fat_per_100ml=_opt_f("fat_100ml"),
+            nutrients_per_100g=ext or None,
         )
 
 

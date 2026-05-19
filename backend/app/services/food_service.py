@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -9,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.food_entry import FoodEntry
 from app.models.user import User
+from app.schemas.food import FoodEntryPatch
 from app.services import events, goal_service, xp_service
 from app.services.time_utils import day_bounds_for_user, day_for_user, utcnow
 
@@ -70,6 +72,30 @@ async def macro_totals(
     return Decimal(row[0]), Decimal(row[1]), Decimal(row[2])
 
 
+async def nutrient_totals(
+    db: AsyncSession, *, user: User, for_date: date | None = None
+) -> dict[str, float]:
+    """Sum every JSONB nutrient blob for the day.
+
+    Doing this in Python is fine — entries per day are O(10s), not millions.
+    A JSONB-aggregate SQL approach would be neater but harder to read and
+    couples us tightly to Postgres-specific JSON functions.
+    """
+    entries = await list_today(db, user=user, for_date=for_date)
+    totals: dict[str, float] = {}
+    for entry in entries:
+        blob = entry.nutrients
+        if not blob:
+            continue
+        for key, raw in blob.items():
+            try:
+                val = float(raw)
+            except (TypeError, ValueError):
+                continue
+            totals[key] = totals.get(key, 0.0) + val
+    return {k: round(v, 2) for k, v in totals.items()}
+
+
 async def list_today(
     db: AsyncSession, *, user: User, for_date: date | None = None
 ) -> list[FoodEntry]:
@@ -100,6 +126,10 @@ async def add(
     protein_g: Decimal | None = None,
     carbs_g: Decimal | None = None,
     fat_g: Decimal | None = None,
+    servings: Decimal | None = None,
+    serving_g: Decimal | None = None,
+    serving_label: str | None = None,
+    nutrients: dict[str, float] | None = None,
     meal_type: str | None = None,
     provider: str | None = None,
     provider_id: str | None = None,
@@ -118,6 +148,10 @@ async def add(
         protein_g=protein_g,
         carbs_g=carbs_g,
         fat_g=fat_g,
+        servings=servings,
+        serving_g=serving_g,
+        serving_label=(serving_label.strip() or None) if serving_label else None,
+        nutrients=nutrients or None,
         meal_type=meal_type,
         source=source,
         provider=provider,
@@ -179,6 +213,47 @@ async def _get_by_client_id(
         over_target=total > target_kcal,
         newly_exceeded=False,
     )
+
+
+async def update_entry(
+    db: AsyncSession,
+    *,
+    user: User,
+    entry_id: int,
+    patch: FoodEntryPatch,
+) -> FoodEntry | None:
+    """Apply a partial update to a food entry. Returns None when not found.
+
+    Does NOT re-fire `food.target_exceeded` — that event fires on first
+    crossing only (per CLAUDE.md). Editing kcal upward to push the day over
+    is intentional behaviour: the user is correcting history, not crossing
+    a threshold via a new log.
+    """
+    stmt = select(FoodEntry).where(
+        FoodEntry.id == entry_id, FoodEntry.user_id == user.id
+    )
+    entry = (await db.execute(stmt)).scalar_one_or_none()
+    if entry is None:
+        return None
+
+    data = patch.model_dump(exclude_unset=True)
+    nutrients_payload: dict[str, float] | None | Any = data.pop("nutrients", "__unset__")
+    for field, value in data.items():
+        if field in {"name", "brand", "serving_label"} and isinstance(value, str):
+            stripped = value.strip()
+            setattr(entry, field, stripped or None)
+        else:
+            setattr(entry, field, value)
+    if nutrients_payload != "__unset__":
+        # Pydantic gave us a NutrientPanel.model_dump(); collapse None keys to
+        # keep stored JSON compact and avoid sum-on-read confusion.
+        if nutrients_payload is None:
+            entry.nutrients = None
+        else:
+            kept = {k: v for k, v in nutrients_payload.items() if v is not None}
+            entry.nutrients = kept or None
+    await db.flush()
+    return entry
 
 
 async def recent_distinct(

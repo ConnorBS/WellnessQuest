@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 
+import { useDailyValues } from "@/hooks/useDailyValues";
 import { useFoodPresets } from "@/hooks/useFoodPresets";
 import { useFoodToday } from "@/hooks/useFoodToday";
 import { useRecentFood } from "@/hooks/useRecentFood";
+import { KEY_NUTRIENTS, dvBarColor } from "@/lib/canadianDV";
 import { QuickAddFoodButton } from "@/components/QuickAddFoodButton";
 import { QuickAddRecentButton } from "@/components/QuickAddRecentButton";
 
 export function FoodCard() {
   const { data, isLoading } = useFoodToday();
+  const { data: dv } = useDailyValues();
   const presets = useFoodPresets();
   const recent = useRecentFood(6);
   const total = data?.total_kcal ?? 0;
@@ -58,6 +61,52 @@ export function FoodCard() {
           ? `Over by ${total - target} kcal`
           : `${remaining} kcal remaining today`}
       </p>
+      {data ? (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 6,
+            marginBottom: 12,
+          }}
+          aria-label="Key Daily Value chips"
+        >
+          {KEY_NUTRIENTS.map((key) => {
+            const meta = dv.meta[key];
+            const pctV = data.dv_percent[key] ?? 0;
+            if (!meta) return null;
+            const color = dvBarColor(meta.kind, pctV);
+            return (
+              <span
+                key={key}
+                title={`${meta.label} — ${Math.round(pctV)}% of DV`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: "#0b1220",
+                  border: "1px solid #1e293b",
+                  borderRadius: 999,
+                  padding: "2px 10px",
+                  fontSize: 11,
+                  color: "#cbd5e1",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 999,
+                    background: color,
+                  }}
+                />
+                {meta.label} · {Math.round(pctV)}%
+              </span>
+            );
+          })}
+        </div>
+      ) : null}
       {presets.data && presets.data.length > 0 ? (
         <div
           className="grid gap-2"
