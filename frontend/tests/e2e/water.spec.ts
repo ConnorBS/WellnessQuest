@@ -20,6 +20,14 @@ async function adminLogin() {
 test.beforeEach(async ({ context }) => {
   // Pre-seed local storage so the (app) layout auth-guard doesn't redirect to /login
   const access = await adminLogin();
+  // The admin user's bootstrap unlocked the onboarding titles ("Newbie" +
+  // first-action set), so /me returns a non-empty `pending_title_unlocks`.
+  // Without acknowledging them, the TitleUnlockModal opens on the first
+  // protected route and its fixed-position overlay intercepts every click.
+  const ackCtx = await request.newContext({
+    extraHTTPHeaders: { Authorization: `Bearer ${access}` },
+  });
+  await ackCtx.post(`${API}/titles/acknowledge-all`, { data: {} });
   await context.addInitScript((token) => {
     window.localStorage.setItem("wq.access", token);
     window.localStorage.setItem("wq.refresh", "noop");
