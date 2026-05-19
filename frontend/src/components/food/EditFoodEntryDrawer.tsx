@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useUpdateFood } from "@/hooks/useUpdateFood";
 import type { FoodEntry, MealType } from "@/lib/schemas";
+import { useSnapBack } from "@/lib/useSnapBack";
 
 interface Props {
   entry: FoodEntry;
@@ -42,6 +43,15 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
   // Direct kcal/macro edits — we expose these only when there's no
   // serving_g snapshot, otherwise the scaling does the work.
   const [kcalDraft, setKcalDraft] = useState<number | "">(entry.kcal);
+  // Snap-back: blur-empty restores the last valid number so the user never
+  // sees a blank required field that looks like nothing will get saved.
+  const servingsSnap = useSnapBack(
+    servings,
+    (v) => setServings(typeof v === "number" ? v : initialServings),
+    initialServings,
+  );
+  const servingGSnap = useSnapBack(servingG, setServingG, initialServingG ?? 100);
+  const kcalSnap = useSnapBack(kcalDraft, setKcalDraft, entry.kcal);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -214,7 +224,8 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
                   min={0}
                   step={0.25}
                   value={servings}
-                  onChange={(e) => setServings(Math.max(0, Number(e.target.value) || 0))}
+                  onChange={(e) => servingsSnap.onChange(e.target.value)}
+                  onBlur={servingsSnap.onBlur}
                   style={{ ...inputStyle, flex: 1, textAlign: "center" }}
                 />
                 <button
@@ -237,9 +248,8 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
                 min={0}
                 step={0.1}
                 value={servingG}
-                onChange={(e) =>
-                  setServingG(e.target.value === "" ? "" : Number(e.target.value))
-                }
+                onChange={(e) => servingGSnap.onChange(e.target.value)}
+                onBlur={servingGSnap.onBlur}
                 style={inputStyle}
               />
             </label>
@@ -255,9 +265,8 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
               min={0}
               max={20000}
               value={kcalDraft}
-              onChange={(e) =>
-                setKcalDraft(e.target.value === "" ? "" : Number(e.target.value))
-              }
+              onChange={(e) => kcalSnap.onChange(e.target.value)}
+              onBlur={kcalSnap.onBlur}
               style={inputStyle}
             />
           </label>

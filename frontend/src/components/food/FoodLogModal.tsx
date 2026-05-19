@@ -14,6 +14,7 @@ import type {
   MealType,
   NutrientPanel,
 } from "@/lib/schemas";
+import { useSnapBack } from "@/lib/useSnapBack";
 import { uuidv4 } from "@/lib/uuid";
 
 import { BarcodeScanner } from "@/components/food/BarcodeScanner";
@@ -92,6 +93,20 @@ export function FoodLogModal({ onClose }: Props) {
   const [scanResult, setScanResult] = useState<LabelScanOut | null>(null);
   const [scanImageUrl, setScanImageUrl] = useState<string | null>(null);
   const [expandNutrients, setExpandNutrients] = useState(false);
+  // Snap-back wrappers for the three inputs that decide what gets logged.
+  // Empty/zero on blur restores the user's most recent valid number, so a
+  // grayed-out placeholder never leaves you wondering if anything will save.
+  const servingsSnap = useSnapBack(
+    servings,
+    (v) => setServings(typeof v === "number" ? v : 1),
+    1,
+  );
+  const servingGSnap = useSnapBack(
+    servingG,
+    setServingG,
+    selected?.serving_g ?? 100,
+  );
+  const rawGramsSnap = useSnapBack(rawGrams, setRawGrams, 100);
   const addFood = useAddFood();
   const createPreset = useCreateFoodPreset();
   const barcodeLookup = useFoodBarcode();
@@ -676,9 +691,8 @@ export function FoodLogModal({ onClose }: Props) {
                                       min={0}
                                       step={0.25}
                                       value={servings}
-                                      onChange={(e) =>
-                                        setServings(Math.max(0, Number(e.target.value) || 0))
-                                      }
+                                      onChange={(e) => servingsSnap.onChange(e.target.value)}
+                                      onBlur={servingsSnap.onBlur}
                                       style={{ ...inputStyle, flex: 1, textAlign: "center" }}
                                     />
                                     <button
@@ -702,16 +716,8 @@ export function FoodLogModal({ onClose }: Props) {
                                     min={0}
                                     step={0.1}
                                     value={servingG}
-                                    onChange={(e) =>
-                                      setServingG(
-                                        e.target.value === "" ? "" : Number(e.target.value),
-                                      )
-                                    }
-                                    placeholder={
-                                      selected.serving_g
-                                        ? String(selected.serving_g)
-                                        : "100"
-                                    }
+                                    onChange={(e) => servingGSnap.onChange(e.target.value)}
+                                    onBlur={servingGSnap.onBlur}
                                     style={inputStyle}
                                   />
                                 </label>
@@ -751,12 +757,8 @@ export function FoodLogModal({ onClose }: Props) {
                                   step={1}
                                   max={5000}
                                   value={rawGrams}
-                                  onChange={(e) =>
-                                    setRawGrams(
-                                      e.target.value === "" ? "" : Number(e.target.value),
-                                    )
-                                  }
-                                  placeholder="100"
+                                  onChange={(e) => rawGramsSnap.onChange(e.target.value)}
+                                  onBlur={rawGramsSnap.onBlur}
                                   style={inputStyle}
                                 />
                               </label>
