@@ -512,6 +512,12 @@ export function FoodLogModal({ onClose }: Props) {
                         setSearch(e.target.value);
                         setSelected(null);
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && search.trim().length >= 2) {
+                          e.preventDefault();
+                          refetch();
+                        }
+                      }}
                       style={{ ...inputStyle, flex: 1 }}
                     />
                     <button

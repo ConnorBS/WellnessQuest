@@ -314,7 +314,9 @@ async def scan_label(
 @router.get("/search", response_model=FoodSearchOut)
 async def food_search(
     q: str = Query(..., min_length=2, max_length=120),
-    limit: int = Query(default=20, ge=1, le=50),
+    # 50 is OFF's per-page ceiling for both the cgi search and Search-a-licious.
+    # Asking for more would require pagination, which isn't worth the UX cost.
+    limit: int = Query(default=50, ge=1, le=50),
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ) -> FoodSearchOut:
