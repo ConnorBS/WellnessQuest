@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import date
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, status
+from fastapi import UploadFile as FastAPIUploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import current_user, get_db
@@ -11,18 +12,24 @@ from app.models.food_entry import FoodEntry
 from app.models.user import User
 from app.providers.food import food_providers
 from app.schemas.food import (
+    DailyValuesOut,
     FoodAddIn,
     FoodAddOut,
     FoodEntryOut,
+    FoodEntryPatch,
     FoodGoalOut,
     FoodGoalUpdate,
     FoodMacroTotals,
+    FoodPatchOut,
     FoodRecentEntry,
     FoodSearchHit,
     FoodSearchOut,
     FoodTodayOut,
+    LabelScanOut,
+    daily_values_out,
 )
-from app.services import food_service, goal_service
+from app.services import canadian_dv, food_service, goal_service, label_ocr_service
+from app.services.label_ocr_service import LabelOcrError
 from app.services.time_utils import day_for_user
 from app.telemetry.logger import get_logger
 from app.telemetry.recorder import audit, capture_error
@@ -41,6 +48,10 @@ def _entry_out(e: FoodEntry) -> FoodEntryOut:
         protein_g=e.protein_g,
         carbs_g=e.carbs_g,
         fat_g=e.fat_g,
+        servings=e.servings,
+        serving_g=e.serving_g,
+        serving_label=e.serving_label,
+        nutrients=e.nutrients,
         meal_type=e.meal_type,
         source=e.source,
         provider=e.provider,
@@ -48,6 +59,18 @@ def _entry_out(e: FoodEntry) -> FoodEntryOut:
         occurred_at=e.occurred_at,
         client_id=e.client_id,
     )
+
+
+@router.get("/daily-values", response_model=DailyValuesOut)
+async def get_daily_values(
+    _user: User = Depends(current_user),
+) -> DailyValuesOut:
+    """Health Canada Daily Values + nutrient classification map.
+
+    Static — the frontend caches indefinitely. Authenticated so the endpoint
+    isn't a free DV mirror, not because the data is sensitive.
+    """
+    return daily_values_out()
 
 
 @router.patch("/goal", response_model=FoodGoalOut)
@@ -81,9 +104,21 @@ async def food_today(
     goal = await goal_service.get_or_create_default_food(db, user_id=user.id)
     total = await food_service.total_today(db, user=user, for_date=day)
     protein, carbs, fat = await food_service.macro_totals(db, user=user, for_date=day)
+    nutrients_total = await food_service.nutrient_totals(db, user=user, for_date=day)
     entries = await food_service.list_today(db, user=user, for_date=day)
     target_kcal = int(goal.target)
     pct = min(999, round((total / target_kcal) * 100)) if target_kcal else 0
+    # Build the full inputs to compute_dv_percent — macros (typed columns)
+    # plus the JSONB nutrients sums plus kcal so the frontend can also
+    # render the kcal DV consistently with everything else.
+    dv_inputs: dict[str, float] = {
+        "kcal": float(total),
+        "protein_g": float(protein),
+        "carbs_g": float(carbs),
+        "fat_g": float(fat),
+        **nutrients_total,
+    }
+    dv_percent = canadian_dv.compute_dv_percent(dv_inputs)
     return FoodTodayOut(
         date=day.isoformat(),
         total_kcal=total,
@@ -92,6 +127,8 @@ async def food_today(
         over_target=total > target_kcal,
         remaining_kcal=target_kcal - total,
         macros=FoodMacroTotals(protein_g=protein, carbs_g=carbs, fat_g=fat),
+        nutrients_total=nutrients_total,
+        dv_percent=dv_percent,
         entries=[_entry_out(e) for e in entries],
     )
 
@@ -111,6 +148,10 @@ async def add_food(
         protein_g=payload.protein_g,
         carbs_g=payload.carbs_g,
         fat_g=payload.fat_g,
+        servings=payload.servings,
+        serving_g=payload.serving_g,
+        serving_label=payload.serving_label,
+        nutrients=payload.nutrients.to_storage_dict() if payload.nutrients else None,
         meal_type=payload.meal_type,
         provider=payload.provider,
         provider_id=payload.provider_id,
@@ -133,6 +174,7 @@ async def add_food(
             "client_id": payload.client_id,
             "provider": payload.provider,
             "provider_id": payload.provider_id,
+            "servings": str(payload.servings) if payload.servings is not None else None,
         },
     )
     return FoodAddOut(
@@ -141,6 +183,38 @@ async def add_food(
         target_kcal=result.target_kcal,
         xp_delta=result.xp_delta,
         over_target=result.over_target,
+    )
+
+
+@router.patch("/{entry_id}", response_model=FoodPatchOut)
+async def update_food(
+    entry_id: int,
+    payload: FoodEntryPatch,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> FoodPatchOut:
+    entry = await food_service.update_entry(db, user=user, entry_id=entry_id, patch=payload)
+    if entry is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
+    goal = await goal_service.get_or_create_default_food(db, user_id=user.id)
+    total = await food_service.total_today(db, user=user)
+    target_kcal = int(goal.target)
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="food.update",
+        user_id=user.id,
+        target_type="food_entry",
+        target_id=str(entry.id),
+        meta={
+            "fields": list(payload.model_dump(exclude_unset=True).keys()),
+        },
+    )
+    return FoodPatchOut(
+        entry=_entry_out(entry),
+        total_kcal=total,
+        target_kcal=target_kcal,
+        over_target=total > target_kcal,
     )
 
 
@@ -179,6 +253,10 @@ async def food_recent(
             protein_g=r.protein_g,
             carbs_g=r.carbs_g,
             fat_g=r.fat_g,
+            servings=r.servings,
+            serving_g=r.serving_g,
+            serving_label=r.serving_label,
+            nutrients=r.nutrients,
             meal_type=r.meal_type,
             provider=r.provider,
             provider_id=r.provider_id,
@@ -186,6 +264,51 @@ async def food_recent(
         )
         for r in rows
     ]
+
+
+@router.post("/scan-label", response_model=LabelScanOut)
+async def scan_label(
+    file: FastAPIUploadFile = File(...),
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> LabelScanOut:
+    """OCR a Canadian Nutrition Facts panel from a photo.
+
+    Returns the parsed fields without creating any preset or entry — the UI
+    drives a confirmation/edit screen and calls POST /food or POST
+    /food/presets when the user is happy.
+    """
+    raw = await file.read()
+    try:
+        parsed = await label_ocr_service.scan(
+            raw=raw,
+            content_type=file.content_type or "application/octet-stream",
+        )
+    except LabelOcrError as exc:
+        await capture_error(
+            db,
+            source="food.scan_label",
+            level="warning",
+            message=str(exc),
+            context={"content_type": file.content_type, "size": len(raw)},
+            user_id=user.id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="food.scan_label",
+        user_id=user.id,
+        meta={
+            "size_bytes": len(raw),
+            "fields_found": sum(
+                1 for v in parsed.nutrients.model_dump().values() if v is not None
+            ),
+        },
+    )
+    return parsed
 
 
 @router.get("/search", response_model=FoodSearchOut)
@@ -262,6 +385,7 @@ async def food_search(
             protein_per_100ml=it.protein_per_100ml,
             carbs_per_100ml=it.carbs_per_100ml,
             fat_per_100ml=it.fat_per_100ml,
+            nutrients_per_100g=it.nutrients_per_100g,
         )
         for it in items
     ]
@@ -319,4 +443,5 @@ async def food_barcode(
         protein_per_100ml=item.protein_per_100ml,
         carbs_per_100ml=item.carbs_per_100ml,
         fat_per_100ml=item.fat_per_100ml,
+        nutrients_per_100g=item.nutrients_per_100g,
     )

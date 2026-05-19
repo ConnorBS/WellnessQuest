@@ -190,3 +190,202 @@ async def test_food_presets_crud(client, db, unique_email):
         f"/api/v1/food/presets/{preset['id']}", headers=_auth(access)
     )
     assert r.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_food_servings_and_nutrients_roundtrip(client, db, unique_email):
+    """A log POST that includes servings/serving_g/nutrients must persist
+    those fields, return them on /food/today, and contribute to nutrients_total
+    and dv_percent."""
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    payload = {
+        "name": "Oatmeal Crisp",
+        "brand": "Quaker",
+        "kcal": 230,
+        "protein_g": 6.0,
+        "carbs_g": 46.0,
+        "fat_g": 4.0,
+        "servings": 2.0,
+        "serving_g": 58.0,
+        "serving_label": "1 cup",
+        "nutrients": {
+            "saturated_fat_g": 1.0,
+            "trans_fat_g": 0.0,
+            "fibre_g": 10.0,
+            "sugars_g": 26.0,
+            "sodium_mg": 240.0,
+            "iron_mg": 15.0,
+            "vit_b6_mg": 0.7,
+        },
+        "meal_type": "breakfast",
+        "client_id": "scan-1",
+    }
+    r = await client.post("/api/v1/food", headers=_auth(access), json=payload)
+    assert r.status_code == 201, r.text
+    body = r.json()
+    e = body["entry"]
+    assert float(e["servings"]) == 2.0
+    assert float(e["serving_g"]) == 58.0
+    assert e["serving_label"] == "1 cup"
+    assert e["nutrients"]["fibre_g"] == 10.0
+    assert e["nutrients"]["vit_b6_mg"] == 0.7
+
+    r = await client.get("/api/v1/food/today", headers=_auth(access))
+    body = r.json()
+    assert body["nutrients_total"]["fibre_g"] == 10.0
+    assert body["nutrients_total"]["sodium_mg"] == 240.0
+    # 10g fibre vs Health Canada DV 28g = 35.7% (rounded)
+    assert body["dv_percent"]["fibre_g"] == pytest.approx(35.7, abs=0.5)
+    # 240 mg sodium / 2300 mg DV ~= 10.4%
+    assert body["dv_percent"]["sodium_mg"] == pytest.approx(10.4, abs=0.5)
+    # kcal DV: 230 / 2000 = 11.5%
+    assert body["dv_percent"]["kcal"] == pytest.approx(11.5, abs=0.5)
+
+
+@pytest.mark.asyncio
+async def test_food_dv_combines_saturated_and_trans(client, db, unique_email):
+    """DV is computed against the COMBINED saturated+trans value per Health
+    Canada — the parser sums them when the combined key isn't supplied."""
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.post(
+        "/api/v1/food",
+        headers=_auth(access),
+        json={
+            "name": "Margarine",
+            "kcal": 100,
+            "nutrients": {"saturated_fat_g": 4.0, "trans_fat_g": 2.0},
+            "client_id": "sat-1",
+        },
+    )
+    assert r.status_code == 201, r.text
+    r = await client.get("/api/v1/food/today", headers=_auth(access))
+    body = r.json()
+    # 4 + 2 = 6g of combined sat+trans; DV is 20g → 30%
+    assert body["dv_percent"]["saturated_trans_g"] == pytest.approx(30.0, abs=0.5)
+
+
+@pytest.mark.asyncio
+async def test_food_patch_entry(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.post(
+        "/api/v1/food",
+        headers=_auth(access),
+        json={
+            "name": "Cereal",
+            "kcal": 230,
+            "servings": 1.0,
+            "serving_g": 58.0,
+            "meal_type": "breakfast",
+            "client_id": "p1",
+        },
+    )
+    assert r.status_code == 201
+    entry_id = r.json()["entry"]["id"]
+
+    # Edit: bump to 2 servings, double kcal, change meal type
+    r = await client.patch(
+        f"/api/v1/food/{entry_id}",
+        headers=_auth(access),
+        json={"servings": 2.0, "kcal": 460, "meal_type": "lunch"},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["entry"]["kcal"] == 460
+    assert float(body["entry"]["servings"]) == 2.0
+    assert body["entry"]["meal_type"] == "lunch"
+    assert body["total_kcal"] == 460
+
+    # PATCH against unknown id is 404
+    r = await client.patch(
+        "/api/v1/food/999999",
+        headers=_auth(access),
+        json={"kcal": 100},
+    )
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_food_patch_rejects_unknown_nutrient(client, db, unique_email):
+    """The NutrientPanel whitelist must reject extra keys so the JSONB blob
+    doesn't accumulate typos / garbage."""
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.post(
+        "/api/v1/food",
+        headers=_auth(access),
+        json={"name": "X", "kcal": 100, "client_id": "n1"},
+    )
+    entry_id = r.json()["entry"]["id"]
+
+    r = await client.patch(
+        f"/api/v1/food/{entry_id}",
+        headers=_auth(access),
+        json={"nutrients": {"unobtanium_mg": 1.0}},
+    )
+    assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_food_daily_values_endpoint(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.get("/api/v1/food/daily-values", headers=_auth(access))
+    assert r.status_code == 200
+    body = r.json()
+    # Spot-check Health Canada Schedule K numbers used on every label.
+    assert body["values"]["fibre_g"] == 28
+    assert body["values"]["sodium_mg"] == 2300
+    assert body["values"]["vit_d_mcg"] == 20
+    assert body["meta"]["sodium_mg"]["kind"] == "limit"
+    assert body["meta"]["fibre_g"]["kind"] == "encourage"
+    assert body["meta"]["protein_g"]["kind"] == "macro"
+
+
+@pytest.mark.asyncio
+async def test_food_scan_label_returns_parsed_panel(client, db, unique_email, tmp_path):
+    """The scan endpoint must accept an image and return a structured
+    LabelScanOut. Tesseract may or may not be installed in test env — when
+    not installed, the service returns empty raw_text with blank nutrients
+    (the UI surfaces a manual fallback)."""
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    # Generate a synthetic 1x1 white PNG so the multipart upload validates.
+    from PIL import Image
+
+    img_path = tmp_path / "label.png"
+    Image.new("RGB", (10, 10), color="white").save(img_path)
+
+    with img_path.open("rb") as f:
+        r = await client.post(
+            "/api/v1/food/scan-label",
+            headers=_auth(access),
+            files={"file": ("label.png", f, "image/png")},
+        )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert "raw_text" in body
+    assert "nutrients" in body
+    assert body["language"] in {"en", "fr", "mixed"}
+
+
+@pytest.mark.asyncio
+async def test_food_scan_label_rejects_non_image(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.post(
+        "/api/v1/food/scan-label",
+        headers=_auth(access),
+        files={"file": ("doc.txt", b"hello", "text/plain")},
+    )
+    assert r.status_code == 400
+    assert "unsupported_content_type" in r.json()["detail"]

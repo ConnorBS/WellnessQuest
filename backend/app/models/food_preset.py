@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import (
     CheckConstraint,
@@ -14,14 +15,20 @@ from sqlalchemy import (
     String,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 
 
 class FoodPreset(Base):
-    """User-defined quick-add foods. May reference an Open Food Facts product."""
+    """User-defined quick-add foods. May reference an Open Food Facts product.
+
+    Stores per-serving kcal/macros/nutrients plus the serving definition itself
+    (`serving_g` + `serving_label`) so logging "2 servings" only needs the
+    multiplier — the structural fields and the nutrient JSON are collapsed once
+    at preset creation (whether from OFF, manual entry, or label OCR).
+    """
 
     __tablename__ = "food_presets"
     __table_args__ = (
@@ -46,6 +53,10 @@ class FoodPreset(Base):
             "icon_kind IN ('builtin','upload','none')",
             name="ck_food_presets_icon_kind",
         ),
+        CheckConstraint(
+            "serving_g IS NULL OR (serving_g >= 0 AND serving_g <= 100000)",
+            name="ck_food_presets_serving_g_range",
+        ),
         Index("ix_food_presets_user_sort", "user_id", "sort_order"),
     )
 
@@ -63,6 +74,9 @@ class FoodPreset(Base):
     protein_g: Mapped[Decimal | None] = mapped_column(Numeric(7, 2), nullable=True)
     carbs_g: Mapped[Decimal | None] = mapped_column(Numeric(7, 2), nullable=True)
     fat_g: Mapped[Decimal | None] = mapped_column(Numeric(7, 2), nullable=True)
+    serving_g: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)
+    serving_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    nutrients: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     meal_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
     provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
     provider_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
