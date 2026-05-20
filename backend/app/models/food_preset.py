@@ -57,6 +57,10 @@ class FoodPreset(Base):
             "serving_g IS NULL OR (serving_g >= 0 AND serving_g <= 100000)",
             name="ck_food_presets_serving_g_range",
         ),
+        CheckConstraint(
+            "unit IS NULL OR unit IN ('g','ml')",
+            name="ck_food_presets_unit",
+        ),
         Index("ix_food_presets_user_sort", "user_id", "sort_order"),
     )
 
@@ -76,6 +80,8 @@ class FoodPreset(Base):
     fat_g: Mapped[Decimal | None] = mapped_column(Numeric(7, 2), nullable=True)
     serving_g: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)
     serving_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # NULL = "g" for back-compat with rows written before the column existed.
+    unit: Mapped[str | None] = mapped_column(String(2), nullable=True)
     nutrients: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     meal_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
     provider: Mapped[str | None] = mapped_column(String(32), nullable=True)

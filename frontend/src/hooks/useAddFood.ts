@@ -9,6 +9,7 @@ import {
   FoodAddOutSchema,
   FoodEntry,
   FoodToday,
+  type FoodUnit,
   type MealType,
   type NutrientPanel,
 } from "@/lib/schemas";
@@ -23,6 +24,7 @@ export type AddFoodArgs = {
   servings?: number | null;
   serving_g?: number | null;
   serving_label?: string | null;
+  unit?: FoodUnit | null;
   nutrients?: NutrientPanel | null;
   meal_type?: MealType | null;
   provider?: string | null;
@@ -62,6 +64,7 @@ export function useAddFood() {
           servings: args.servings ?? null,
           serving_g: args.serving_g ?? null,
           serving_label: args.serving_label ?? null,
+          unit: args.unit ?? null,
           nutrients: stripNullsFromNutrients(args.nutrients),
           meal_type: args.meal_type ?? null,
           source: "pwa",

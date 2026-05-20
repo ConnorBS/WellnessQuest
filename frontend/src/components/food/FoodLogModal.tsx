@@ -87,6 +87,7 @@ export function FoodLogModal({ onClose }: Props) {
   const [manualProtein, setManualProtein] = useState<number | "">("");
   const [manualCarbs, setManualCarbs] = useState<number | "">("");
   const [manualFat, setManualFat] = useState<number | "">("");
+  const [manualUnit, setManualUnit] = useState<FoodUnit>("g");
   const [search, setSearch] = useState("");
   const [saveAsPreset, setSaveAsPreset] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -236,6 +237,7 @@ export function FoodLogModal({ onClose }: Props) {
         servings: hasServingBasis ? servings : null,
         serving_g: hasServingBasis ? Number(servingG) : null,
         serving_label: selected.serving_label ?? null,
+        unit: selected.unit ?? null,
         nutrients:
           computed.hasNutritionData && Object.keys(computed.nutrients).length
             ? computed.nutrients
@@ -270,6 +272,7 @@ export function FoodLogModal({ onClose }: Props) {
               fat_g: presetFat ?? finalFat,
               serving_g: selected.serving_g ?? null,
               serving_label: selected.serving_label ?? null,
+              unit: selected.unit ?? null,
               nutrients: Object.keys(presetNutrients).length ? presetNutrients : null,
               meal_type: meal,
               provider: selected.provider,
@@ -298,6 +301,7 @@ export function FoodLogModal({ onClose }: Props) {
         protein_g: protein,
         carbs_g: carbs,
         fat_g: fat,
+        unit: manualUnit,
         meal_type: meal,
         client_id: uuidv4(),
       },
@@ -313,6 +317,7 @@ export function FoodLogModal({ onClose }: Props) {
               fat_g: fat,
               serving_g: null,
               serving_label: null,
+              unit: manualUnit,
               nutrients: null,
               meal_type: meal,
               provider: null,
@@ -341,6 +346,7 @@ export function FoodLogModal({ onClose }: Props) {
         fat_g: values.fat_g,
         serving_g: values.serving_g,
         serving_label: values.serving_label,
+        unit: values.unit,
         nutrients: emptyToNull(values.nutrients),
         meal_type: values.meal_type,
         provider: null,
@@ -366,6 +372,7 @@ export function FoodLogModal({ onClose }: Props) {
               servings: 1,
               serving_g: values.serving_g,
               serving_label: values.serving_label,
+              unit: values.unit,
               nutrients: emptyToNull(values.nutrients),
               meal_type: values.meal_type,
               client_id: uuidv4(),
@@ -921,19 +928,32 @@ export function FoodLogModal({ onClose }: Props) {
                     style={inputStyle}
                   />
                 </label>
-                <label>
-                  <span style={fieldLabel}>Calories (kcal)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={20000}
-                    value={manualKcal}
-                    onChange={(e) =>
-                      setManualKcal(e.target.value === "" ? "" : Number(e.target.value))
-                    }
-                    style={inputStyle}
-                  />
-                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 8 }}>
+                  <label>
+                    <span style={fieldLabel}>Calories (kcal)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={20000}
+                      value={manualKcal}
+                      onChange={(e) =>
+                        setManualKcal(e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                      style={inputStyle}
+                    />
+                  </label>
+                  <label>
+                    <span style={fieldLabel}>Unit</span>
+                    <select
+                      value={manualUnit}
+                      onChange={(e) => setManualUnit(e.target.value as FoodUnit)}
+                      style={inputStyle}
+                    >
+                      <option value="g">g (solid)</option>
+                      <option value="ml">mL (liquid)</option>
+                    </select>
+                  </label>
+                </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                   <label>
                     <span style={fieldLabel}>Protein (g)</span>

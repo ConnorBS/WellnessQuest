@@ -8,8 +8,10 @@ import { PresetIcon } from "@/components/presets/PresetIcon";
 import { useDailyValues } from "@/hooks/useDailyValues";
 import { useUploadIcon } from "@/hooks/useUploadIcon";
 import { PANEL_ORDER } from "@/lib/canadianDV";
+import { scaleValues } from "@/lib/foodScaling";
 import type {
   FoodPreset,
+  FoodUnit,
   IconKind,
   LabelScanOut,
   MealType,
@@ -32,6 +34,10 @@ const MEAL_OPTIONS: { label: string; value: MealType | "" }[] = [
 ];
 
 const MACRO_KEYS = new Set(["kcal", "protein_g", "carbs_g", "fat_g"]);
+// The combined sat+trans row is auto-derived backend-side for DV math.
+// Canadian labels show saturated and trans as separate lines, so a combined
+// input here just creates an empty cell users never fill. Hide it.
+const HIDDEN_PANEL_KEYS = new Set<string>(["saturated_trans_g"]);
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -89,6 +95,7 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
     initial?.serving_g != null ? String(initial.serving_g) : "",
   );
   const [servingLabel, setServingLabel] = useState<string>(initial?.serving_label ?? "");
+  const [unit, setUnit] = useState<FoodUnit>(initial?.unit ?? "g");
   const [nutrients, setNutrients] = useState<NutrientPanel>(
     (initial?.nutrients as NutrientPanel) ?? {},
   );
@@ -98,7 +105,10 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
     initial?.icon_key ?? "food-apple",
   );
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [rescaleOpen, setRescaleOpen] = useState(false);
+  const [rescaleTarget, setRescaleTarget] = useState<string>("");
   const upload = useUploadIcon();
+  const unitLabel = unit === "ml" ? "mL" : "g";
 
   function handleFile(file: File) {
     setUploadError(null);
@@ -118,8 +128,12 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
     if (parsed.name && !label.trim()) setLabel(parsed.name);
     if (parsed.brand && !brand.trim()) setBrand(parsed.brand);
     if (parsed.kcal != null) setKcal(parsed.kcal);
+    if (parsed.protein_g != null && !protein.trim()) setProtein(String(parsed.protein_g));
+    if (parsed.carbs_g != null && !carbs.trim()) setCarbs(String(parsed.carbs_g));
+    if (parsed.fat_g != null && !fat.trim()) setFat(String(parsed.fat_g));
     if (parsed.serving_g != null && !servingG) setServingG(String(parsed.serving_g));
     if (parsed.serving_label && !servingLabel) setServingLabel(parsed.serving_label);
+    if (parsed.unit) setUnit(parsed.unit);
     setNutrients((prev) => {
       const merged: NutrientPanel = { ...prev };
       for (const [k, v] of Object.entries(parsed.nutrients)) {
@@ -129,6 +143,32 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
       }
       return merged;
     });
+  }
+
+  function applyRescale() {
+    const targetNum = Number(rescaleTarget);
+    const current = servingG.trim() === "" ? NaN : Number(servingG);
+    if (!Number.isFinite(current) || current <= 0) return;
+    if (!Number.isFinite(targetNum) || targetNum <= 0) return;
+    const ratio = targetNum / current;
+    const scaled = scaleValues(
+      {
+        kcal: typeof kcal === "number" ? kcal : "",
+        protein_g: protein,
+        carbs_g: carbs,
+        fat_g: fat,
+        nutrients,
+      },
+      ratio,
+    );
+    if (scaled.kcal !== "") setKcal(Number(scaled.kcal));
+    setProtein(scaled.protein_g);
+    setCarbs(scaled.carbs_g);
+    setFat(scaled.fat_g);
+    setNutrients(scaled.nutrients);
+    setServingG(String(targetNum));
+    setRescaleOpen(false);
+    setRescaleTarget("");
   }
 
   function setNutrient(key: string, raw: string) {
@@ -153,6 +193,7 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
       fat_g: toNumOrNull(fat),
       serving_g: toNumOrNull(servingG),
       serving_label: servingLabel.trim() ? servingLabel.trim().slice(0, 64) : null,
+      unit,
       nutrients: Object.keys(cleanNutrients).length ? cleanNutrients : null,
       meal_type: meal === "" ? null : meal,
       provider: initial?.provider ?? null,
@@ -197,9 +238,9 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
         />
       </label>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8 }}>
         <label>
-          Serving size (g)
+          Serving size ({unitLabel})
           <input
             type="number"
             min={0}
@@ -212,16 +253,106 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
           />
         </label>
         <label>
-          Serving label
+          Unit
+          <select
+            value={unit}
+            onChange={(e) => setUnit(e.target.value as FoodUnit)}
+            style={inputStyle}
+          >
+            <option value="g">g</option>
+            <option value="ml">mL</option>
+          </select>
+        </label>
+        <label>
+          Label
           <input
             type="text"
             maxLength={64}
             value={servingLabel}
             onChange={(e) => setServingLabel(e.target.value)}
-            placeholder="e.g. 1 cup, 3 sticks"
+            placeholder="1 cup"
             style={inputStyle}
           />
         </label>
+      </div>
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setRescaleOpen((v) => !v)}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "#10b981",
+            fontSize: 12,
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          {rescaleOpen ? "Cancel rescale" : "Rescale all values to a different portion…"}
+        </button>
+        {rescaleOpen ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              padding: 10,
+              marginTop: 6,
+              background: "#0b1220",
+              border: "1px solid #1e293b",
+              borderRadius: 6,
+            }}
+          >
+            <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>
+              Current: {servingG.trim() === "" ? "—" : `${servingG} ${unitLabel}`} ·{" "}
+              {kcal} kcal
+              {protein.trim() ? ` · P ${protein}` : ""}
+              {carbs.trim() ? ` · C ${carbs}` : ""}
+              {fat.trim() ? ` · F ${fat}` : ""}
+              {Object.values(nutrients).filter((v) => v != null).length
+                ? ` · ${Object.values(nutrients).filter((v) => v != null).length} nutrients`
+                : ""}
+            </p>
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+              <label style={{ flex: 1, fontSize: 13 }}>
+                New serving size ({unitLabel})
+                <input
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  value={rescaleTarget}
+                  onChange={(e) => setRescaleTarget(e.target.value)}
+                  placeholder={servingG}
+                  style={inputStyle}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={applyRescale}
+                disabled={
+                  servingG.trim() === "" ||
+                  !Number(servingG) ||
+                  !Number(rescaleTarget)
+                }
+                style={{
+                  ...buttonStyle,
+                  opacity:
+                    servingG.trim() === "" ||
+                    !Number(servingG) ||
+                    !Number(rescaleTarget)
+                      ? 0.5
+                      : 1,
+                }}
+              >
+                Rescale
+              </button>
+            </div>
+            <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>
+              Multiplies kcal, macros, and all nutrient values by the new/old ratio.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <label>
@@ -277,6 +408,7 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
       </div>
 
       <details
+        open={Object.values(nutrients).some((v) => v != null)}
         style={{
           border: "1px solid #1e293b",
           borderRadius: 6,
@@ -296,7 +428,7 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
             fontSize: 12,
           }}
         >
-          {PANEL_ORDER.filter((k) => !MACRO_KEYS.has(k)).map((key) => {
+          {PANEL_ORDER.filter((k) => !MACRO_KEYS.has(k) && !HIDDEN_PANEL_KEYS.has(k)).map((key) => {
             const meta = dv.meta[key];
             if (!meta) return null;
             return (

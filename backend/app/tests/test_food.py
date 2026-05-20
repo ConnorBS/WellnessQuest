@@ -245,6 +245,92 @@ async def test_food_servings_and_nutrients_roundtrip(client, db, unique_email):
 
 
 @pytest.mark.asyncio
+async def test_food_unit_roundtrip(client, db, unique_email):
+    """`unit` ('g' or 'ml') round-trips through POST /food, GET /food/today,
+    PATCH /food/{id}, and POST + PATCH /food/presets. Older rows that pre-date
+    the column (and any POST that omits the field) come back as `unit=None`."""
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    # Log a liquid food with unit=ml.
+    r = await client.post(
+        "/api/v1/food",
+        headers=_auth(access),
+        json={
+            "name": "1% Milk",
+            "brand": "Reid's Dairy",
+            "kcal": 110,
+            "protein_g": 9.0,
+            "carbs_g": 13.0,
+            "fat_g": 2.5,
+            "servings": 1.0,
+            "serving_g": 250.0,
+            "serving_label": "1 cup",
+            "unit": "ml",
+            "meal_type": "snack",
+            "client_id": "milk-1",
+        },
+    )
+    assert r.status_code == 201, r.text
+    e = r.json()["entry"]
+    assert e["unit"] == "ml"
+    entry_id = e["id"]
+
+    # GET /food/today preserves it.
+    r = await client.get("/api/v1/food/today", headers=_auth(access))
+    body = r.json()
+    assert any(en["unit"] == "ml" for en in body["entries"])
+
+    # PATCH flips to g — direct passthrough, no recomputation.
+    r = await client.patch(
+        f"/api/v1/food/{entry_id}",
+        headers=_auth(access),
+        json={"unit": "g"},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["entry"]["unit"] == "g"
+
+    # Presets carry unit too — round trip POST + PATCH.
+    r = await client.post(
+        "/api/v1/food/presets",
+        headers=_auth(access),
+        json={
+            "label": "1% Milk (1 cup)",
+            "kcal": 110,
+            "serving_g": 250.0,
+            "serving_label": "1 cup",
+            "unit": "ml",
+        },
+    )
+    assert r.status_code == 201
+    preset = r.json()
+    assert preset["unit"] == "ml"
+
+    r = await client.patch(
+        f"/api/v1/food/presets/{preset['id']}",
+        headers=_auth(access),
+        json={
+            "label": "1% Milk",
+            "kcal": 110,
+            "serving_g": 250.0,
+            "serving_label": "1 cup",
+            "unit": "g",
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["unit"] == "g"
+
+    # POST without `unit` stays null for back-compat.
+    r = await client.post(
+        "/api/v1/food",
+        headers=_auth(access),
+        json={"name": "Apple", "kcal": 95, "client_id": "apple-1"},
+    )
+    assert r.status_code == 201
+    assert r.json()["entry"]["unit"] is None
+
+
+@pytest.mark.asyncio
 async def test_food_dv_combines_saturated_and_trans(client, db, unique_email):
     """DV is computed against the COMBINED saturated+trans value per Health
     Canada — the parser sums them when the combined key isn't supplied."""

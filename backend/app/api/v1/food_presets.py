@@ -27,6 +27,7 @@ def _to_out(p: FoodPreset) -> FoodPresetOut:
         fat_g=p.fat_g,
         serving_g=p.serving_g,
         serving_label=p.serving_label,
+        unit=p.unit,
         nutrients=p.nutrients,
         meal_type=p.meal_type,
         provider=p.provider,
@@ -80,6 +81,7 @@ async def create_preset(
         fat_g=payload.fat_g,
         serving_g=payload.serving_g,
         serving_label=payload.serving_label,
+        unit=payload.unit,
         nutrients=payload.nutrients.to_storage_dict() if payload.nutrients else None,
         meal_type=payload.meal_type,
         provider=payload.provider,
@@ -118,6 +120,7 @@ async def update_preset(
     preset.fat_g = payload.fat_g
     preset.serving_g = payload.serving_g
     preset.serving_label = payload.serving_label
+    preset.unit = payload.unit
     preset.nutrients = payload.nutrients.to_storage_dict() if payload.nutrients else None
     preset.meal_type = payload.meal_type
     preset.provider = payload.provider
