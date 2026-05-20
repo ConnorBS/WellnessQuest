@@ -52,6 +52,7 @@ export const MeSchema = z.object({
   weight_titles_opt_out: z.boolean(),
   bp_titles_opt_out: z.boolean(),
   pending_title_unlocks: z.array(TitleSummarySchema),
+  pending_title_unlocks_total: z.number().int().nonnegative(),
 });
 export type Me = z.infer<typeof MeSchema>;
 

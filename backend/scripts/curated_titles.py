@@ -781,7 +781,7 @@ MIXED_REFS: list[Entry] = [
     ("Crane Kick", "rare", "exercise_type_minutes", {"exercise_type": "Martial Arts", "minutes": 250}, "Log 250 minutes of martial arts.", "exercise_type"),
     ("Stick Two-Liter", "uncommon", "lifetime_water_ml", 2000, "Log 2 L of water.", "lifetime_water"),
     ("Eight-Liter", "uncommon", "lifetime_water_ml", 8000, "Log 8 L of water.", "lifetime_water"),
-    ("Sweet Sixteen Liters", "uncommon", "lifetime_water_ml", 16_000, "Log 16 L of water.", "lifetime_water"),
+    ("Tidemaker", "uncommon", "lifetime_water_ml", 16_000, "Log 16 L of water.", "lifetime_water"),
     ("Catch-22", "uncommon", "active_days", 22, "Active 22 distinct days.", "active_days"),
     ("Brave New Steps", "rare", "active_days", 365, "Active 365 distinct days.", "active_days"),
     ("Dystopia Diary", "rare", "habit_checkin_count", 150, "Complete 150 habit check-ins.", "habit"),

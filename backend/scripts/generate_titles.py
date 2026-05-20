@@ -399,14 +399,45 @@ def _backfill_ladder(
 # ---------------------------------------------------------------------------
 
 
-def _redistribute(all_titles: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Spread each ladder's titles across its log-scale range. Within a
-    ladder, the original threshold order is preserved (so the curator's
-    intent of "Captain's Log unlocks before Live Long" survives), but
-    the actual numbers respaced so titles don't pile up at the bottom.
+# Slot-fraction ranges per rarity bucket. Matches `_rarity_for_index` so
+# the bucket a title lands in via rarity-aware placement also gets the
+# matching rarity assigned by slot position — name, rarity, and threshold
+# all line up.
+RARITY_BUCKETS: list[tuple[str, float, float]] = [
+    ("common", 0.00, 0.32),
+    ("uncommon", 0.32, 0.58),
+    ("rare", 0.58, 0.82),
+    ("epic", 0.82, 0.96),
+    ("legendary", 0.96, 1.00),
+]
 
-    Descriptions are regenerated to match the new threshold. Rarity is
-    left alone — that's a curator decision tied to the title's name.
+
+def _is_backfill(title: dict[str, Any]) -> bool:
+    """Backfill rows are stamped with threshold=0 by `_make_backfill_row`;
+    the redistribute step treats that as a "place me anywhere I fit"
+    signal. Curated titles always have a positive threshold."""
+    return _original_threshold(title) == 0
+
+
+def _is_backfill_slug(slug: str) -> bool:
+    """Backfill slugs are minted as `{prefix}_bf_{index}`. Used after
+    redistribute (when threshold has been rewritten) to tell whether a
+    row's name still needs to be matched to its final slot."""
+    return "_bf_" in slug
+
+
+def _redistribute(all_titles: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Place curated titles into rarity-aligned slots, then fill the gaps
+    with backfill, then log-spread thresholds across the ladder range.
+    Rarity is reassigned from final slot position so name + rarity +
+    threshold are self-consistent.
+
+    Before this change, all curated titles were sorted to the bottom of
+    the ladder by their original threshold — a curator-RARE title like
+    "Mother of Hydration" (originally at 400L) ended up at slot 22 of 100
+    (~7L), labelled RARE but firing at a common-tier threshold. Now a
+    curator-RARE title is steered into the rare slot range (58-82% of
+    the ladder) and gets a threshold from that band.
 
     Onboarding and `signup` are exempt; those need to fire on the first
     action, not at some redistributed milestone."""
@@ -423,28 +454,86 @@ def _redistribute(all_titles: list[dict[str, Any]]) -> list[dict[str, Any]]:
             out.extend(titles)
             continue
 
-        # Curated titles (with real thresholds) take the bottom of the
-        # ladder; backfill ranks (threshold=0) sort to the top. The
-        # 10^12 sentinel for threshold==0 forces backfill last regardless
-        # of how high curated thresholds went.
-        titles.sort(
-            key=lambda t: (
-                _original_threshold(t) if _original_threshold(t) > 0 else 10**12,
-                t.get("sort_order", 0),
-                t["name"],
+        n = len(titles)
+        if n == 0:
+            continue
+
+        curated = [t for t in titles if not _is_backfill(t)]
+        backfill = [t for t in titles if _is_backfill(t)]
+        # Within each rarity, preserve the curator's relative ordering by
+        # original threshold (so "8L milestone" sits below "1500L milestone"
+        # inside the uncommon bucket).
+        curated_by_rarity: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for t in curated:
+            curated_by_rarity[t.get("rarity", "common")].append(t)
+        for items in curated_by_rarity.values():
+            items.sort(
+                key=lambda t: (_original_threshold(t), t.get("sort_order", 0), t["name"])
             )
-        )
 
-        lo, hi = LADDER_RANGE[kind]
-        new_thresholds = _log_spread(len(titles), lo, hi)
+        # Greedy slot assignment. For each rarity bucket, find its slot
+        # range in the new ladder, then spread the curated entries evenly
+        # across that range. Already-claimed slots get skipped.
+        slot_assignment: list[dict[str, Any] | None] = [None] * n
+        for rarity, lo_frac, hi_frac in RARITY_BUCKETS:
+            items = curated_by_rarity.get(rarity, [])
+            if not items:
+                continue
+            lo = int(lo_frac * n)
+            hi = max(lo + 1, int(hi_frac * n))
+            bucket_size = hi - lo
+            step = max(1, bucket_size // max(1, len(items)))
+            for idx, t in enumerate(items):
+                target = lo + idx * step
+                # Find the next empty slot at or after target, within the
+                # bucket. If the bucket is full, spill forward into the
+                # next-higher bucket (better to bump a few up than drop
+                # curated content).
+                slot: int | None = target
+                while slot is not None and slot < n and slot_assignment[slot] is not None:
+                    slot += 1
+                if slot is None or slot >= n:
+                    slot = next(
+                        (s for s in range(lo, n) if slot_assignment[s] is None),
+                        None,
+                    )
+                if slot is None:
+                    continue
+                slot_assignment[slot] = t
 
-        for slot, (t, th) in enumerate(zip(titles, new_thresholds, strict=True)):
+        # Fill remaining slots with backfill in order.
+        bf_iter = iter(backfill)
+        for i in range(n):
+            if slot_assignment[i] is None:
+                bf: dict[str, Any] | None = next(bf_iter, None)
+                if bf is not None:
+                    slot_assignment[i] = bf
+
+        ordered = [t for t in slot_assignment if t is not None]
+
+        lo_th, hi_th = LADDER_RANGE[kind]
+        new_thresholds = _log_spread(len(ordered), lo_th, hi_th)
+        nouns = _nouns_for(category, kind, ex_type)
+
+        for slot, (t, th) in enumerate(zip(ordered, new_thresholds, strict=True)):
             new_params = dict(t.get("condition_params") or {})
             if kind == "exercise_type_minutes":
                 new_params["minutes"] = th
             else:
                 new_params["threshold"] = th
             t["condition_params"] = new_params
+            # Reassign rarity from slot position so the output is
+            # self-consistent — a rare-name title ends up in a rare slot
+            # AND gets the rare rarity tag, no matter what the curator
+            # originally wrote.
+            t["rarity"] = _rarity_for_index(slot, len(ordered))
+            # Backfill names are minted from rank-position at generation
+            # time; the rarity-aware shuffle just moved them. Rename to
+            # match the final slot so "Newbie Hydrator" reliably appears
+            # at the bottom of the ladder, "Paragon Hydrator" at the top.
+            # Curated names are left alone — they're flavor, not rank.
+            if _is_backfill_slug(t["slug"]):
+                t["name"] = _name_for_slot(slot, nouns)
 
             tmpl = DESCRIPTION_TEMPLATES.get(kind)
             if tmpl:
@@ -456,7 +545,7 @@ def _redistribute(all_titles: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     t["description"] = tmpl.format(threshold=th)
 
             t["sort_order"] = slot
-        out.extend(titles)
+        out.extend(ordered)
     return out
 
 

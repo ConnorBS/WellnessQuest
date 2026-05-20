@@ -80,6 +80,13 @@ function buildParticles(accent: RarityAccent, seed: string): Particle[] {
 
 interface Props {
   pending: TitleSummary[];
+  /**
+   * True count of un-acknowledged unlocks from /me. `pending` is capped at
+   * the server's PENDING_UNLOCKS_LIMIT (5), so after a catalog rollout
+   * `pending.length` can be 5 while there are dozens still queued. The UI
+   * needs the real total to label "Accept all (N)" honestly.
+   */
+  pendingTotal: number;
 }
 
 /**
@@ -97,14 +104,17 @@ interface Props {
  * animate the exit before the React Query refetch removes the row from
  * `pending`, so the next title doesn't snap in instantly.
  */
-export function TitleUnlockModal({ pending }: Props) {
+export function TitleUnlockModal({ pending, pendingTotal }: Props) {
   const ack = useAcknowledgeTitle();
   const ackAll = useAcknowledgeAllTitles();
   const [dismissedId, setDismissedId] = useState<string | null>(null);
   const [dismissingAll, setDismissingAll] = useState(false);
 
   const next = pending.find((t) => t.id !== dismissedId) ?? null;
-  const remaining = pending.filter((t) => t.id !== dismissedId).length;
+  // `remaining` is what's left after dismissing the current one. Use the
+  // server-reported total instead of `pending.length` so the count is
+  // honest when there are more queued than the /me cap returns.
+  const remaining = Math.max(0, pendingTotal - (dismissedId ? 1 : 0));
   const accent = next ? RARITY_ACCENT[next.rarity] ?? RARITY_ACCENT.common : null;
 
   const particles = useMemo(
