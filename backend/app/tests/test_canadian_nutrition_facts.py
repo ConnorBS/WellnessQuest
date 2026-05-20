@@ -106,7 +106,12 @@ def test_parses_oatmeal_crisp_english():
     r = parse(OATMEAL_CRISP_EN)
     assert r.serving_g == 58.0
     assert r.serving_label == "1 cup"
+    assert r.unit == "g"
     assert r.kcal == 230
+    # Macros land on typed columns, not the JSONB nutrient panel.
+    assert r.fat_g == 4.0
+    assert r.carbs_g == 46.0
+    assert r.protein_g == 6.0
     assert r.language == "en"
     n = r.nutrients
     assert n.saturated_fat_g == 0.5
@@ -137,7 +142,12 @@ def test_parses_oatmeal_crisp_french():
     r = parse(OATMEAL_CRISP_FR)
     assert r.serving_g == 58.0
     assert r.serving_label == "1 tasse"
+    assert r.unit == "g"
     assert r.kcal == 230
+    # Macros from the French "Lipides / Glucides / Protéines" lines.
+    assert r.fat_g == 4.0
+    assert r.carbs_g == 46.0
+    assert r.protein_g == 6.0
     assert r.language == "fr"
     # French uses commas as decimal separators — verify the parser handles them.
     assert r.nutrients.iron_mg == 7.5
@@ -150,7 +160,11 @@ def test_parses_high_liner_fish_sticks():
     r = parse(HIGH_LINER_FISH_STICKS)
     assert r.serving_g == 75.0
     assert r.serving_label == "3 sticks"
+    assert r.unit == "g"
     assert r.kcal == 160
+    assert r.fat_g == 9.0
+    assert r.carbs_g == 11.0
+    assert r.protein_g == 9.0
     n = r.nutrients
     assert n.cholesterol_mg == 25.0
     assert n.sodium_mg == 280.0
@@ -165,11 +179,83 @@ def test_parses_yves_plant_based():
     r = parse(YVES_PLANT_BASED)
     assert r.serving_g == 100.0
     assert r.serving_label == "1 piece"
+    assert r.unit == "g"
     assert r.kcal == 180
+    assert r.fat_g == 2.5
+    assert r.carbs_g == 36.0
+    assert r.protein_g == 4.0
     n = r.nutrients
     assert n.saturated_fat_g == 1.0
     assert n.trans_fat_g == 0.0
     assert n.sodium_mg == 330.0
+
+
+REIDS_MILK = """Nutrition Facts
+Per 1 cup (250 mL)
+Calories 110
+Fat 2.5 g
+  Saturated 1.5 g
+  + Trans 0 g
+Carbohydrate 13 g
+  Fibre 0 g
+  Sugars 12 g
+Protein 9 g
+Cholesterol 10 mg
+Sodium 100 mg
+Calcium 320 mg
+Vitamin D 2.5 mcg
+"""
+
+
+def test_parses_liquid_label_ml_serving():
+    """Canadian milk-style labels declare "(250 mL)" — the parser should
+    extract the amount AND the unit so downstream code can render mL."""
+    r = parse(REIDS_MILK)
+    assert r.serving_g == 250.0
+    assert r.serving_label == "1 cup"
+    assert r.unit == "ml"
+    assert r.kcal == 110
+    assert r.fat_g == 2.5
+    assert r.carbs_g == 13.0
+    assert r.protein_g == 9.0
+    n = r.nutrients
+    assert n.saturated_fat_g == 1.5
+    assert n.cholesterol_mg == 10.0
+    assert n.sodium_mg == 100.0
+    assert n.calcium_mg == 320.0
+    assert n.vit_d_mcg == 2.5
+
+
+GARBLED_OCR = """Nutrition Facts
+Per 1 cup (58 g)
+Calories 230
+Fat 4 g
+  Saturafed 0.5 g
+  Trans 0 g
+Carbohydrale 46 g
+  Fibre 5 g
+  Sugars 13 g
+Proteln 6 g
+Cholesferol 2 mg
+Sodium 120 mg
+"""
+
+
+def test_parses_garbled_ocr_with_typos():
+    """Tesseract on noisy phone photos commonly substitutes adjacent-looking
+    glyphs: "Saturated" → "Saturafed" (t→f), "Carbohydrate" → "Carbohydrale"
+    (t→l), "Protein" → "Proteln" (i→l), "Cholesterol" → "Cholesferol" (t→f).
+    Prefix-style keyword patterns must still catch the row so a single OCR
+    glitch doesn't drop a whole nutrient."""
+    r = parse(GARBLED_OCR)
+    assert r.fat_g == 4.0
+    assert r.carbs_g == 46.0
+    assert r.protein_g == 6.0
+    assert r.nutrients.saturated_fat_g == 0.5
+    assert r.nutrients.cholesterol_mg == 2.0
+    assert r.nutrients.fibre_g == 5.0
+    assert r.nutrients.sugars_g == 13.0
+    assert r.nutrients.sodium_mg == 120.0
 
 
 def test_handles_empty_text():
@@ -192,15 +278,18 @@ def test_handles_partial_text():
 
 
 @pytest.mark.parametrize(
-    ("text", "expected_grams"),
+    ("text", "expected_amount", "expected_unit"),
     [
-        ("Per 1 cup (250 mL)", None),  # mL serving — not a gram match
-        ("Per 1 piece (12g)", 12.0),  # no space before unit
+        ("Per 1 cup (250 mL)", 250.0, "ml"),  # mL serving — captures unit
+        ("Per 1 cup (250 ml)", 250.0, "ml"),  # lower-case mL
+        ("Per 1 piece (12g)", 12.0, "g"),  # no space before unit
+        ("Per 1 piece (12 g)", 12.0, "g"),
     ],
 )
-def test_serving_size_edge_cases(text, expected_grams):
+def test_serving_size_edge_cases(text, expected_amount, expected_unit):
     r = parse(text + "\nCalories 100\n")
-    assert r.serving_g == expected_grams
+    assert r.serving_g == expected_amount
+    assert r.unit == expected_unit
 
 
 def test_kcal_must_be_realistic():

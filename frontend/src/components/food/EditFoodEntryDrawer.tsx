@@ -34,6 +34,7 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
   const update = useUpdateFood();
   const initialServings = entry.servings ?? 1;
   const initialServingG = entry.serving_g ?? null;
+  const unitLabel = entry.unit === "ml" ? "mL" : "g";
 
   const [servings, setServings] = useState<number>(initialServings);
   const [servingG, setServingG] = useState<number | "">(initialServingG ?? "");
@@ -240,7 +241,7 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
             </label>
             <label>
               <span style={fieldLabel}>
-                Serving size (g){" "}
+                Serving size ({unitLabel}){" "}
                 <span style={hintStyle}>— edit to change what 1 serving means</span>
               </span>
               <input
@@ -254,7 +255,7 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
               />
             </label>
             <p style={{ fontSize: 12, color: "#64748b", margin: 0 }}>
-              {`${Math.round(perServingKcal * servings)} kcal · ${servings} × ${initialServingG ?? "?"} g`}
+              {`${Math.round(perServingKcal * servings)} kcal · ${servings} × ${initialServingG ?? "?"} ${unitLabel}`}
             </p>
           </>
         ) : (

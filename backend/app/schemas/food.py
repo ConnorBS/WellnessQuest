@@ -73,6 +73,8 @@ class FoodAddIn(BaseModel):
     servings: Decimal | None = Field(default=None, ge=0, le=1000)
     serving_g: Decimal | None = Field(default=None, ge=0, le=100000)
     serving_label: str | None = Field(default=None, max_length=64)
+    # NULL = "g" for back-compat with rows written before the unit column existed.
+    unit: FoodUnit | None = None
     nutrients: NutrientPanel | None = None
     meal_type: MealType | None = None
     provider: str | None = Field(default=None, max_length=32)
@@ -92,6 +94,7 @@ class FoodEntryOut(BaseModel):
     servings: Decimal | None = None
     serving_g: Decimal | None = None
     serving_label: str | None = None
+    unit: FoodUnit | None = None
     nutrients: dict[str, float] | None = None
     meal_type: MealType | None = None
     source: str
@@ -118,6 +121,7 @@ class FoodEntryPatch(BaseModel):
     servings: Decimal | None = Field(default=None, ge=0, le=1000)
     serving_g: Decimal | None = Field(default=None, ge=0, le=100000)
     serving_label: str | None = Field(default=None, max_length=64)
+    unit: FoodUnit | None = None
     nutrients: NutrientPanel | None = None
     meal_type: MealType | None = None
 
@@ -173,6 +177,7 @@ class FoodRecentEntry(BaseModel):
     servings: Decimal | None = None
     serving_g: Decimal | None = None
     serving_label: str | None = None
+    unit: FoodUnit | None = None
     nutrients: dict[str, float] | None = None
     meal_type: MealType | None = None
     provider: str | None = None
@@ -200,6 +205,7 @@ class FoodPresetIn(BaseModel):
     # rewrite history.
     serving_g: Decimal | None = Field(default=None, ge=0, le=100000)
     serving_label: str | None = Field(default=None, max_length=64)
+    unit: FoodUnit | None = None
     nutrients: NutrientPanel | None = None
     meal_type: MealType | None = None
     provider: str | None = Field(default=None, max_length=32)
@@ -219,6 +225,7 @@ class FoodPresetOut(BaseModel):
     fat_g: Decimal | None = None
     serving_g: Decimal | None = None
     serving_label: str | None = None
+    unit: FoodUnit | None = None
     nutrients: dict[str, float] | None = None
     meal_type: MealType | None = None
     provider: str | None = None
@@ -282,7 +289,15 @@ class LabelScanOut(BaseModel):
     brand: str | None = None
     serving_g: float | None = None
     serving_label: str | None = None
+    # "g" or "ml" depending on what the label declared in the bracketed
+    # per-serving amount. NULL when the parser couldn't tell — the review
+    # screen defaults to "g" in that case.
+    unit: FoodUnit | None = None
     kcal: int | None = None
+    # Macros live in typed columns on the entry/preset, not in the JSONB panel.
+    protein_g: float | None = None
+    carbs_g: float | None = None
+    fat_g: float | None = None
     nutrients: NutrientPanel = NutrientPanel()
     raw_text: str
     language: Literal["en", "fr", "mixed"] = "mixed"

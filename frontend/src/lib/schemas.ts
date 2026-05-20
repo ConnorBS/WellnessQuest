@@ -323,6 +323,9 @@ export const NutrientPanelSchema = z.object({
 });
 export type NutrientPanel = z.infer<typeof NutrientPanelSchema>;
 
+export const FoodUnitSchema = z.enum(["g", "ml"]);
+export type FoodUnit = z.infer<typeof FoodUnitSchema>;
+
 export const FoodEntrySchema = z.object({
   id: z.number().int(),
   name: z.string(),
@@ -334,6 +337,7 @@ export const FoodEntrySchema = z.object({
   servings: z.coerce.number().nullable().optional(),
   serving_g: z.coerce.number().nullable().optional(),
   serving_label: z.string().nullable().optional(),
+  unit: FoodUnitSchema.nullable().optional(),
   nutrients: z.record(z.string(), z.number()).nullable().optional(),
   meal_type: MealTypeSchema.nullable().optional(),
   source: z.string(),
@@ -387,6 +391,7 @@ export const FoodPresetSchema = z.object({
   fat_g: z.coerce.number().nullable(),
   serving_g: z.coerce.number().nullable().optional(),
   serving_label: z.string().nullable().optional(),
+  unit: FoodUnitSchema.nullable().optional(),
   nutrients: z.record(z.string(), z.number()).nullable().optional(),
   meal_type: MealTypeSchema.nullable(),
   provider: z.string().nullable(),
@@ -457,9 +462,6 @@ export const FoodRecipeListItemSchema = z.object({
 export type FoodRecipeListItem = z.infer<typeof FoodRecipeListItemSchema>;
 export const FoodRecipeListSchema = z.array(FoodRecipeListItemSchema);
 
-export const FoodUnitSchema = z.enum(["g", "ml"]);
-export type FoodUnit = z.infer<typeof FoodUnitSchema>;
-
 export const FoodSearchHitSchema = z.object({
   provider: z.string(),
   provider_id: z.string(),
@@ -496,6 +498,7 @@ export const FoodRecentEntrySchema = z.object({
   servings: z.coerce.number().nullable().optional(),
   serving_g: z.coerce.number().nullable().optional(),
   serving_label: z.string().nullable().optional(),
+  unit: FoodUnitSchema.nullable().optional(),
   nutrients: z.record(z.string(), z.number()).nullable().optional(),
   meal_type: MealTypeSchema.nullable().optional(),
   provider: z.string().nullable().optional(),
@@ -536,7 +539,12 @@ export const LabelScanOutSchema = z.object({
   brand: z.string().nullable().optional(),
   serving_g: z.number().nullable().optional(),
   serving_label: z.string().nullable().optional(),
+  unit: FoodUnitSchema.nullable().optional(),
   kcal: z.number().int().nullable().optional(),
+  // Macros live on typed columns server-side, not in the JSONB nutrient panel.
+  protein_g: z.coerce.number().nullable().optional(),
+  carbs_g: z.coerce.number().nullable().optional(),
+  fat_g: z.coerce.number().nullable().optional(),
   nutrients: NutrientPanelSchema,
   raw_text: z.string(),
   language: z.enum(["en", "fr", "mixed"]),

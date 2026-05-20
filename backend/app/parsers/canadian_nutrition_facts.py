@@ -27,7 +27,11 @@ class ParsedLabel:
     brand: str | None
     serving_g: float | None
     serving_label: str | None
+    unit: Literal["g", "ml"] | None
     kcal: int | None
+    protein_g: float | None
+    carbs_g: float | None
+    fat_g: float | None
     nutrients: NutrientPanel
     language: Literal["en", "fr", "mixed"]
 
@@ -43,20 +47,33 @@ def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text.strip().lower())
 
 
-# Nutrient row keywords. Each tuple is (canonical_key, output_unit, scale_to_output, patterns).
-# Pattern matches the row LABEL (case/diacritic-insensitive, normalized). `scale_to_output`
-# converts whatever unit appears on the label to the canonical unit we store in JSONB.
+# Nutrient row keywords. Each tuple is (canonical_key, patterns).
+# Pattern matches the row LABEL on the normalized line (lower-cased, accents
+# stripped). Prefix-style patterns ("\bsatur" rather than "\bsaturated\b") let
+# a one-character OCR typo through — Tesseract on noisy phone photos garbles
+# "Saturated" → "Saturafed", "Cholesterol" → "Cholesferol", etc. The downside
+# (matching things like "saturation") is irrelevant because those words don't
+# appear on Nutrition Facts panels.
 #
-# Order matters: the parser walks rows top-to-bottom; later rows skip ones already
-# captured, so put more-specific keywords first when in doubt.
+# Order matters: the parser walks lines top-to-bottom and breaks on first match,
+# so put more-specific keywords (saturated, trans) BEFORE the generic ones
+# (fat) — a "Saturated 0.5 g" line otherwise falls through to fat_g.
 _NUTRIENT_PATTERNS: list[tuple[str, list[str]]] = [
-    ("saturated_fat_g", [r"\bsaturated\b", r"\bsatures?\b"]),
-    ("trans_fat_g", [r"\btrans\b"]),
-    ("fibre_g", [r"\bfib(?:re|er)s?\b"]),
-    ("sugars_g", [r"\bsugars?\b", r"\bsucres\b"]),
-    ("cholesterol_mg", [r"\bcholesterol\b"]),
+    # Sub-rows of fat — must come before fat_g.
+    ("saturated_fat_g", [r"\bsatur"]),
+    ("trans_fat_g", [r"\btran"]),
+    # Sub-rows of carbohydrate — must come before carbs_g.
+    ("fibre_g", [r"\bfib(?:re|er)"]),
+    ("sugars_g", [r"\bsugar", r"\bsucre"]),
+    # Total macros — set typed columns (protein_g/carbs_g/fat_g) on
+    # ParsedLabel, not the NutrientPanel. Handled in parse() via _MACRO_KEYS.
+    ("fat_g", [r"\bfat\b", r"\blipid"]),
+    ("carbs_g", [r"\bcarbohydra", r"\bglucid"]),
+    ("protein_g", [r"\bprote"]),
+    # Other panel rows.
+    ("cholesterol_mg", [r"\bcholes"]),
     ("sodium_mg", [r"\bsodium\b"]),
-    ("potassium_mg", [r"\bpotassium\b"]),
+    ("potassium_mg", [r"\bpotass"]),
     ("calcium_mg", [r"\bcalcium\b"]),
     ("iron_mg", [r"\biron\b", r"\bfer\b"]),
     # Vitamin patterns: anchor on the full "vitamin"/"vitamine" word so the
@@ -82,12 +99,9 @@ _NUTRIENT_PATTERNS: list[tuple[str, list[str]]] = [
     ("zinc_mg", [r"\bzinc\b"]),
 ]
 
-# Carbohydrate and total-fat (no Saturated/Trans qualifier) — handled specially
-# because they share keywords with their sub-rows and we want to set the typed
-# columns, not the nutrient JSON.
-_CARB_PATTERNS = [r"\bcarbohydrate\b", r"\bglucides?\b"]
-_FAT_TOTAL_PATTERNS = [r"^fat\b", r"\blipides?\b"]
-_PROTEIN_PATTERNS = [r"\bprotein\b", r"\bproteines?\b"]
+# Macros live in typed columns on FoodEntry/FoodPreset, not the JSONB
+# NutrientPanel. parse() routes these keys to ParsedLabel.protein_g/carbs_g/fat_g.
+_MACRO_KEYS = frozenset({"protein_g", "carbs_g", "fat_g"})
 _CALORIES_PATTERNS = [r"\bcalories\b"]
 
 # Conversion to the canonical storage unit for each key.
@@ -148,15 +162,18 @@ _ROW_RE = re.compile(
     re.IGNORECASE | re.VERBOSE,
 )
 
-# Serving-size line. Captures the bracketed gram amount when present:
-#   "Per 1 cup (58 g)"   →  serving_label="1 cup", serving_g=58
+# Serving-size line. Captures the bracketed amount and its unit:
+#   "Per 1 cup (58 g)"   →  serving_label="1 cup",  serving_g=58,  unit="g"
+#   "Per 1 cup (250 mL)" →  serving_label="1 cup",  serving_g=250, unit="ml"
 #   "pour 1 tasse (58 g)"
 #   "Per 3 sticks (75 g)"
+# Mass and volume share the same numeric storage column; the unit field is
+# how downstream code knows whether 250 means grams or millilitres.
 _SERVING_RE = re.compile(
     r"""
     (?:per|pour)\s+
     (?P<label>[^\(\n]{1,40}?)
-    \s*\(\s*(?P<grams>\d+(?:[.,]\d+)?)\s*g\s*\)
+    \s*\(\s*(?P<amount>\d+(?:[.,]\d+)?)\s*(?P<unit>mL|ml|g)\s*\)
     """,
     re.IGNORECASE | re.VERBOSE,
 )
@@ -169,15 +186,15 @@ def parse(raw_text: str) -> ParsedLabel:
     norm = _normalize(raw_text)
     lang = _detect_language(norm)
 
-    serving_g, serving_label = _parse_serving(raw_text)
+    serving_g, serving_label, unit = _parse_serving(raw_text)
     kcal = _parse_calories(norm)
     panel = NutrientPanel()
+    macros: dict[str, float] = {}
 
     # Walk line-by-line so the keyword scan stays local. OCR output is usually
     # one nutrient per line; the row regex pulls amount+unit from whatever
-    # follows the keyword. Carbs / fat-total / protein go to typed columns
-    # via the consumer; here we only populate the NutrientPanel for the
-    # detail rows.
+    # follows the keyword. Macro keys route to a separate `macros` dict that
+    # becomes the typed columns on ParsedLabel; detail rows go into the panel.
     for raw_line in raw_text.splitlines():
         line_norm = _normalize(raw_line)
         if not line_norm:
@@ -185,7 +202,12 @@ def parse(raw_text: str) -> ParsedLabel:
         for key, patterns in _NUTRIENT_PATTERNS:
             if any(re.search(p, line_norm) for p in patterns):
                 amt = _extract_amount_for_key(line_norm, key)
-                if amt is not None and getattr(panel, key) is None:
+                if amt is None:
+                    pass
+                elif key in _MACRO_KEYS:
+                    if key not in macros:
+                        macros[key] = amt
+                elif getattr(panel, key) is None:
                     setattr(panel, key, amt)
                 break  # one nutrient per line
 
@@ -194,7 +216,11 @@ def parse(raw_text: str) -> ParsedLabel:
         brand=None,  # the table on Canadian labels and are too noisy via OCR.
         serving_g=serving_g,
         serving_label=serving_label,
+        unit=unit,
         kcal=kcal,
+        protein_g=macros.get("protein_g"),
+        carbs_g=macros.get("carbs_g"),
+        fat_g=macros.get("fat_g"),
         nutrients=panel,
         language=lang,
     )
@@ -210,22 +236,32 @@ def _detect_language(norm: str) -> Literal["en", "fr", "mixed"]:
     return "en"
 
 
-def _parse_serving(raw_text: str) -> tuple[float | None, str | None]:
-    """Find the per-serving line. Returns (grams, label) or (None, None)."""
+def _parse_serving(
+    raw_text: str,
+) -> tuple[float | None, str | None, Literal["g", "ml"] | None]:
+    """Find the per-serving line. Returns (amount, label, unit).
+
+    The amount is stored in whatever unit the label declared — "(250 mL)"
+    yields (250, "1 cup", "ml") and "(58 g)" yields (58, "1 cup", "g"). The
+    column name `serving_g` is kept for backward compatibility but its
+    semantic is "serving amount in native unit".
+    """
     m = _SERVING_RE.search(raw_text)
     if not m:
-        return None, None
-    grams_str = m.group("grams").replace(",", ".")
+        return None, None, None
+    amount_str = m.group("amount").replace(",", ".")
     try:
-        grams = float(grams_str)
+        amount = float(amount_str)
     except ValueError:
-        grams = None
+        amount = None
     label = m.group("label").strip()
     # Drop trailing connectors like "of" / "de" that get glued on by OCR.
     label = re.sub(r"\s+(of|de)\s*$", "", label, flags=re.IGNORECASE).strip()
     if len(label) > 64:
         label = label[:64]
-    return grams, label or None
+    raw_unit = m.group("unit").lower()
+    unit: Literal["g", "ml"] = "ml" if raw_unit == "ml" else "g"
+    return amount, label or None, unit
 
 
 def _parse_calories(norm: str) -> int | None:

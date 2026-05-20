@@ -60,6 +60,10 @@ class FoodEntry(Base):
             "serving_g IS NULL OR (serving_g >= 0 AND serving_g <= 100000)",
             name="ck_food_entries_serving_g_range",
         ),
+        CheckConstraint(
+            "unit IS NULL OR unit IN ('g','ml')",
+            name="ck_food_entries_unit",
+        ),
         UniqueConstraint("user_id", "client_id", name="food_user_client"),
         Index("ix_food_entries_user_occurred_at", "user_id", "occurred_at"),
     )
@@ -77,6 +81,8 @@ class FoodEntry(Base):
     servings: Mapped[Decimal | None] = mapped_column(Numeric(7, 3), nullable=True)
     serving_g: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)
     serving_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # NULL = "g" for back-compat with rows written before the column existed.
+    unit: Mapped[str | None] = mapped_column(String(2), nullable=True)
     nutrients: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     meal_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
     source: Mapped[str] = mapped_column(String(20), nullable=False)  # 'pwa' | 'ha' | 'manual'

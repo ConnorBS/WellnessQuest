@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { PANEL_ORDER } from "@/lib/canadianDV";
 import { useDailyValues } from "@/hooks/useDailyValues";
-import type { LabelScanOut, MealType, NutrientPanel } from "@/lib/schemas";
+import { scaleValues } from "@/lib/foodScaling";
+import type { FoodUnit, LabelScanOut, MealType, NutrientPanel } from "@/lib/schemas";
 
 interface Props {
   parsed: LabelScanOut;
@@ -25,11 +26,18 @@ export type ReviewedLabel = {
   fat_g: number | null;
   serving_g: number | null;
   serving_label: string | null;
+  unit: FoodUnit;
   nutrients: NutrientPanel;
   meal_type: MealType;
 };
 
+// Macros live on typed columns, not in the JSONB nutrient panel.
 const MACRO_KEYS = ["protein_g", "carbs_g", "fat_g"] as const;
+// The combined sat+trans value is auto-derived backend-side (canadian_dv.py)
+// for DV math. Canadian labels list saturated and trans on separate lines, so
+// asking the user to fill a combined input here just creates a blank row that
+// never gets touched. Hide it.
+const HIDDEN_PANEL_KEYS = new Set<string>(["saturated_trans_g"]);
 
 /**
  * Editable form pre-filled with OCR results. Per the plan, every scan goes
@@ -50,14 +58,38 @@ export function ParsedLabelReview({
   const [name, setName] = useState(parsed.name ?? "");
   const [brand, setBrand] = useState(parsed.brand ?? "");
   const [kcal, setKcal] = useState<number | "">(parsed.kcal ?? "");
-  const [protein, setProtein] = useState<string>("");
-  const [carbs, setCarbs] = useState<string>("");
-  const [fat, setFat] = useState<string>("");
+  const [protein, setProtein] = useState<string>(
+    parsed.protein_g != null ? String(parsed.protein_g) : "",
+  );
+  const [carbs, setCarbs] = useState<string>(
+    parsed.carbs_g != null ? String(parsed.carbs_g) : "",
+  );
+  const [fat, setFat] = useState<string>(parsed.fat_g != null ? String(parsed.fat_g) : "");
   const [servingG, setServingG] = useState<number | "">(parsed.serving_g ?? "");
   const [servingLabel, setServingLabel] = useState(parsed.serving_label ?? "");
+  const [unit, setUnit] = useState<FoodUnit>(parsed.unit ?? "g");
   const [nutrients, setNutrients] = useState<NutrientPanel>(parsed.nutrients);
   const [meal, setMeal] = useState<MealType>(defaultMeal);
   const [showRaw, setShowRaw] = useState(false);
+  const [rescaleOpen, setRescaleOpen] = useState(false);
+  const [rescaleTarget, setRescaleTarget] = useState<string>("");
+
+  // Track which fields came pre-filled from the parser, so we can show a
+  // small "from label" hint on those rows. Cleared field-by-field once the
+  // user types anything new — anything they touched is "theirs", not OCR's.
+  const parsedFromLabel = useMemo(() => {
+    const s = new Set<string>();
+    if (parsed.kcal != null) s.add("kcal");
+    if (parsed.serving_g != null) s.add("serving_g");
+    if (parsed.serving_label) s.add("serving_label");
+    if (parsed.protein_g != null) s.add("protein_g");
+    if (parsed.carbs_g != null) s.add("carbs_g");
+    if (parsed.fat_g != null) s.add("fat_g");
+    for (const [k, v] of Object.entries(parsed.nutrients)) {
+      if (v != null) s.add(k);
+    }
+    return s;
+  }, [parsed]);
 
   function build(): ReviewedLabel | null {
     const trimmedName = name.trim();
@@ -73,6 +105,7 @@ export function ParsedLabelReview({
       fat_g: toNumOrNull(fat),
       serving_g: servingG === "" ? null : Number(servingG),
       serving_label: servingLabel.trim() || null,
+      unit,
       nutrients,
       meal_type: meal,
     };
@@ -85,7 +118,30 @@ export function ParsedLabelReview({
     }));
   }
 
+  function applyRescale() {
+    const targetNum = Number(rescaleTarget);
+    const current = servingG === "" ? null : Number(servingG);
+    if (!current || !Number.isFinite(targetNum) || targetNum <= 0) return;
+    const ratio = targetNum / current;
+    const scaled = scaleValues(
+      { kcal, protein_g: protein, carbs_g: carbs, fat_g: fat, nutrients },
+      ratio,
+    );
+    setKcal(scaled.kcal);
+    setProtein(scaled.protein_g);
+    setCarbs(scaled.carbs_g);
+    setFat(scaled.fat_g);
+    setNutrients(scaled.nutrients);
+    setServingG(targetNum);
+    setRescaleOpen(false);
+    setRescaleTarget("");
+  }
+
   const canSave = name.trim().length > 0 && kcal !== "" && !busy;
+  const unitLabel = unit === "ml" ? "mL" : "g";
+  const parsedNutrientCount = Object.values(parsed.nutrients).filter((v) => v != null).length;
+  const filledNutrientCount = Object.values(nutrients).filter((v) => v != null).length;
+  const panelOpen = parsedNutrientCount > 0 || filledNutrientCount > 0;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -133,9 +189,14 @@ export function ParsedLabelReview({
         />
       </label>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8 }}>
         <label>
-          <span style={fieldLabel}>Serving size (g)</span>
+          <span style={fieldLabel}>
+            Serving size ({unitLabel})
+            {parsedFromLabel.has("serving_g") ? (
+              <span style={fromLabelChip}> · from label</span>
+            ) : null}
+          </span>
           <input
             type="number"
             min={0}
@@ -149,20 +210,78 @@ export function ParsedLabelReview({
           />
         </label>
         <label>
-          <span style={fieldLabel}>Serving label</span>
+          <span style={fieldLabel}>Unit</span>
+          <select
+            value={unit}
+            onChange={(e) => setUnit(e.target.value as FoodUnit)}
+            style={inputStyle}
+          >
+            <option value="g">g</option>
+            <option value="ml">mL</option>
+          </select>
+        </label>
+        <label>
+          <span style={fieldLabel}>Label</span>
           <input
             value={servingLabel}
             maxLength={64}
-            placeholder="e.g. 1 cup, 3 sticks"
+            placeholder="1 cup"
             onChange={(e) => setServingLabel(e.target.value)}
             style={inputStyle}
           />
         </label>
       </div>
 
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <button type="button" onClick={() => setRescaleOpen((v) => !v)} style={linkBtn}>
+          {rescaleOpen ? "Cancel rescale" : "Rescale all values to a different portion…"}
+        </button>
+      </div>
+
+      {rescaleOpen ? (
+        <div style={rescaleBox}>
+          <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>
+            Current: {servingG === "" ? "—" : `${servingG} ${unitLabel}`}
+            {kcal !== "" ? ` · ${kcal} kcal` : ""}
+            {protein.trim() ? ` · P ${protein}` : ""}
+            {carbs.trim() ? ` · C ${carbs}` : ""}
+            {fat.trim() ? ` · F ${fat}` : ""}
+            {filledNutrientCount ? ` · ${filledNutrientCount} nutrients` : ""}
+          </p>
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+            <label style={{ flex: 1 }}>
+              <span style={fieldLabel}>New serving size ({unitLabel})</span>
+              <input
+                type="number"
+                min={0}
+                step={0.1}
+                value={rescaleTarget}
+                onChange={(e) => setRescaleTarget(e.target.value)}
+                placeholder={servingG === "" ? "" : String(servingG)}
+                style={inputStyle}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={applyRescale}
+              disabled={!servingG || !Number(rescaleTarget)}
+              style={primaryBtn(!servingG || !Number(rescaleTarget))}
+            >
+              Rescale
+            </button>
+          </div>
+          <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>
+            Multiplies kcal, macros, and all nutrient values by the new/old ratio.
+          </p>
+        </div>
+      ) : null}
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
         <label>
-          <span style={fieldLabel}>Calories</span>
+          <span style={fieldLabel}>
+            Calories
+            {parsedFromLabel.has("kcal") ? <span style={fromLabelChip}> ✓</span> : null}
+          </span>
           <input
             type="number"
             min={0}
@@ -175,7 +294,12 @@ export function ParsedLabelReview({
           />
         </label>
         <label>
-          <span style={fieldLabel}>Protein (g)</span>
+          <span style={fieldLabel}>
+            Protein (g)
+            {parsedFromLabel.has("protein_g") ? (
+              <span style={fromLabelChip}> ✓</span>
+            ) : null}
+          </span>
           <input
             type="number"
             min={0}
@@ -186,7 +310,10 @@ export function ParsedLabelReview({
           />
         </label>
         <label>
-          <span style={fieldLabel}>Carbs (g)</span>
+          <span style={fieldLabel}>
+            Carbs (g)
+            {parsedFromLabel.has("carbs_g") ? <span style={fromLabelChip}> ✓</span> : null}
+          </span>
           <input
             type="number"
             min={0}
@@ -197,7 +324,10 @@ export function ParsedLabelReview({
           />
         </label>
         <label>
-          <span style={fieldLabel}>Fat (g)</span>
+          <span style={fieldLabel}>
+            Fat (g)
+            {parsedFromLabel.has("fat_g") ? <span style={fromLabelChip}> ✓</span> : null}
+          </span>
           <input
             type="number"
             min={0}
@@ -224,6 +354,7 @@ export function ParsedLabelReview({
       </label>
 
       <details
+        open={panelOpen}
         style={{
           border: "1px solid #1e293b",
           borderRadius: 6,
@@ -232,9 +363,7 @@ export function ParsedLabelReview({
         }}
       >
         <summary style={{ cursor: "pointer", color: "#cbd5e1", fontSize: 13 }}>
-          Nutrients (
-          {Object.values(nutrients).filter((v) => v != null).length} read from label
-          )
+          Nutrients ({parsedNutrientCount} read from label · {filledNutrientCount} set)
         </summary>
         <div
           style={{
@@ -246,7 +375,10 @@ export function ParsedLabelReview({
           }}
         >
           {PANEL_ORDER.filter(
-            (k) => k !== "kcal" && !MACRO_KEYS.includes(k as (typeof MACRO_KEYS)[number]),
+            (k) =>
+              k !== "kcal" &&
+              !MACRO_KEYS.includes(k as (typeof MACRO_KEYS)[number]) &&
+              !HIDDEN_PANEL_KEYS.has(k),
           ).map((key) => {
             const meta = dv.meta[key];
             if (!meta) return null;
@@ -255,6 +387,9 @@ export function ParsedLabelReview({
               <label key={key}>
                 <span style={{ display: "block", color: "#94a3b8" }}>
                   {meta.label} ({meta.unit})
+                  {parsedFromLabel.has(key) ? (
+                    <span style={fromLabelChip}> ✓</span>
+                  ) : null}
                 </span>
                 <input
                   type="number"
@@ -351,6 +486,11 @@ const fieldLabel: React.CSSProperties = {
   marginBottom: 4,
 };
 
+const fromLabelChip: React.CSSProperties = {
+  color: "#10b981",
+  fontWeight: 600,
+};
+
 const hintStyle: React.CSSProperties = {
   color: "#64748b",
   fontWeight: "normal",
@@ -365,6 +505,26 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 6,
   color: "#e2e8f0",
   fontSize: 14,
+};
+
+const linkBtn: React.CSSProperties = {
+  alignSelf: "flex-start",
+  background: "transparent",
+  border: "none",
+  color: "#10b981",
+  fontSize: 12,
+  cursor: "pointer",
+  padding: 0,
+};
+
+const rescaleBox: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 8,
+  padding: 10,
+  background: "#0b1220",
+  border: "1px solid #1e293b",
+  borderRadius: 6,
 };
 
 function primaryBtn(disabled: boolean): React.CSSProperties {
