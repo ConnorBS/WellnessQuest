@@ -305,6 +305,21 @@ async def pending_unlocks(
     return list((await db.execute(stmt)).scalars().all())
 
 
+async def count_pending_unlocks(db: AsyncSession, user: User) -> int:
+    """Total un-acknowledged unlocks for `user`. The frontend uses this to
+    label the "Accept all (N)" button after a catalog rollout creates a
+    burst of retroactive unlocks larger than PENDING_UNLOCKS_LIMIT."""
+    stmt = (
+        select(func.count())
+        .select_from(UserTitle)
+        .where(
+            UserTitle.user_id == user.id,
+            UserTitle.acknowledged_at.is_(None),
+        )
+    )
+    return int((await db.execute(stmt)).scalar_one())
+
+
 async def equip(db: AsyncSession, user: User, title_id: uuid.UUID | None) -> Title | None:
     """Set the user's equipped title (or clear it).
 

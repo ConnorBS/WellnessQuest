@@ -107,7 +107,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <MainBody pathname={pathname}>{children}</MainBody>
         <VersionFooter />
       </div>
-      <TitleUnlockModal pending={me.pending_title_unlocks} />
+      <TitleUnlockModal
+        pending={me.pending_title_unlocks}
+        pendingTotal={me.pending_title_unlocks_total}
+      />
     </DayProvider>
   );
 }
