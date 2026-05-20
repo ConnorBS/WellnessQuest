@@ -21,6 +21,13 @@ When suggesting diagnostics or recovery commands, treat `POSTGRES_USER` and
 (Unraid UI → click container → Edit → POSTGRES_USER / POSTGRES_DB fields).
 Don't assume `wq` / `wellnessquest`.
 
+## Branches and image tags
+
+- **`main`** is the production branch and the GitHub default. Merges to `main` publish `ghcr.io/connorbs/wellnessquest:edge` (plus an immutable `:sha-<7>`). The Unraid template ships pointing at `:edge`, so the operator's container auto-updates whenever `main` advances.
+- **`claude/**`** branches are feature branches. They publish `:preview` (rolling, shared across every feature branch — overwritten on each push) and `:sha-<7>` (immutable). Do **not** suggest `:preview` to the operator for prod — it regresses any time a non-recipes branch is pushed.
+- **Tagged releases** (`vX.Y.Z`) publish `:stable` / `:latest` plus `:vX.Y.Z` and `:X.Y` / `:X` aliases. None of these exist yet; cut a tag when you want a frozen channel for self-hosters.
+- The repo had `claude/health-tracking-app-27gJW` as its default branch through May 2026 (an artifact of how the project bootstrapped via Claude Code on the web). It's gone now — references in older docs / commit messages are historical.
+
 ## The operator's primary interface is mobile
 
 Long shell pipelines, multi-step `find | xargs` chains, and "open three

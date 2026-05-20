@@ -132,12 +132,12 @@ From the bottom of the implementation plan. Adds water from PWA, sees it in HA, 
 
 When a new image lands on GHCR:
 
-- **Unraid UI**: Docker tab → click the WellnessQuest container icon → **Force Update**. Pulls the latest of the configured tag (e.g. `:preview`), recreates the container with the same env, runs migrations on start.
-- **Shell**: `docker pull ghcr.io/connorbs/wellnessquest:preview && docker restart wellnessquest`.
+- **Unraid UI**: Docker tab → click the WellnessQuest container icon → **Force Update**. Pulls the latest of the configured tag (e.g. `:edge`), recreates the container with the same env, runs migrations on start.
+- **Shell**: `docker pull ghcr.io/connorbs/wellnessquest:edge && docker restart wellnessquest`.
 
 Migrations run on backend startup, so there's nothing extra to do unless a release adds a new env var — in which case re-apply the template (Add Container → Template → wellnessquest) to surface the new field.
 
-**Pin to a specific build**: edit the container's **Repository** field from `:preview` to `:sha-XXXXXXX` (any tag from a green deploy run). Apply.
+**Pin to a specific build**: edit the container's **Repository** field from `:edge` to `:sha-XXXXXXX` (any tag from a green deploy run). Apply. Useful if `:edge` advances to something you're not ready for yet.
 
 ## When a deploy fails
 
