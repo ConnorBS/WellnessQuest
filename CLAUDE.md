@@ -28,6 +28,37 @@ Don't assume `wq` / `wellnessquest`.
 - **Tagged releases** (`vX.Y.Z`) publish `:stable` / `:latest` plus `:vX.Y.Z` and `:X.Y` / `:X` aliases. None of these exist yet; cut a tag when you want a frozen channel for self-hosters.
 - The repo had `claude/health-tracking-app-27gJW` as its default branch through May 2026 (an artifact of how the project bootstrapped via Claude Code on the web). It's gone now — references in older docs / commit messages are historical.
 
+## Working on a new feature branch
+
+Hard rules earned by an actual cleanup of 16 accumulated `claude/*` branches.
+Follow them at branch-creation time, not after the fact — retrofitting any of
+these into an open PR is painful and tends to lose work.
+
+### 1. Match the Alembic `down_revision` to current main
+
+Before writing any migration: `git fetch origin main && ls backend/alembic/versions/ | sort | tail -1`. Use that filename's revision id as your new migration's `down_revision`, and pick the next sequential number for your own. Migration numbering is sequential (`0001` → `0019` and counting), so two branches that both fork from an older head will silently both claim the next number and one will have to be renumbered at merge time. If multiple agents are working in parallel, the LAST branch to merge usually pays this cost — but you can avoid the collision entirely by rebasing onto main before opening the PR.
+
+### 2. Don't bundle CI/infra fixes with feature work
+
+If your branch's CI is failing for reasons unrelated to your feature (mypy strict-mode regression, postgres-race in e2e, ruff churn), open a SEPARATE PR for the CI fix and rebase your feature branch on top once it lands. Bundling them produces 11-commit branches where 10 commits are noise that someone has to triage out at merge time. CI fixes are reviewable as their own PRs; features are reviewable as their own PRs. Keep them separate.
+
+### 3. Single-purpose, small PRs
+
+A PR should do one logical thing. The previous HA branch bundled "Fernet encryption + steps table + sleep table + pull worker + dashboard cards + settings UI rewrite + scope expansion" into one commit and had to be split into two PRs at merge time. Before you start coding, ask yourself: can this land as 200–500 lines? If not, find the natural seam and split it before you write line one.
+
+Two healthy splits to keep in mind:
+
+- **Foundation vs. feature**: if you're adding a new metric, the encryption helper / model / migration is one PR; the dashboard card + UI is the next. Each is independently mergeable.
+- **Schema vs. behavior**: a new column + backfill is one PR; the code that reads from it is the next. Reduces rollback surface if the behavior is wrong.
+
+### 4. Land within ~24 hours of opening
+
+If a PR sits open for days, main moves forward and the merge surface grows. The cleanup found branches that were 25–52 commits behind main and required real rebase work to land. Aim to open a PR, address feedback, and merge same-day. If you can't, the scope was too big — see rule 3.
+
+### 5. Branches auto-delete on merge
+
+The repo has "Automatically delete head branches" enabled. Don't manually delete during the PR cycle — just let the merge do it. Don't push to a branch after its PR is merged; open a new branch for follow-ups.
+
 ## The operator's primary interface is mobile
 
 Long shell pipelines, multi-step `find | xargs` chains, and "open three
