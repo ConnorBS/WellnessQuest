@@ -14,6 +14,8 @@ from app.api.v1 import (
     habits,
     integrations,
     setup,
+    sleep,
+    steps,
     telemetry,
     titles,
     uploads,
@@ -33,6 +35,8 @@ api_v1.include_router(water.router)
 api_v1.include_router(water_presets.router)
 api_v1.include_router(activity.router)
 api_v1.include_router(activity_presets.router)
+api_v1.include_router(steps.router)
+api_v1.include_router(sleep.router)
 api_v1.include_router(food.router)
 api_v1.include_router(food_presets.router)
 api_v1.include_router(food_recipes.router)

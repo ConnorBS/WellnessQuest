@@ -73,8 +73,23 @@ export default function TokensPage() {
             required
             style={{ padding: 8, background: "#0f172a", border: "1px solid #334155", color: "inherit" }}
           />
-          <div style={{ display: "flex", gap: 12, fontSize: 14 }}>
-            {["water:read", "water:write"].map((s) => (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 8,
+              fontSize: 14,
+            }}
+          >
+            {[
+              "water:read",
+              "water:write",
+              "steps:read",
+              "steps:write",
+              "sleep:read",
+              "sleep:write",
+              "me:read",
+            ].map((s) => (
               <label key={s} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <input type="checkbox" checked={scopes.includes(s)} onChange={() => toggleScope(s)} />
                 {s}

@@ -16,6 +16,7 @@ from app import integrations as _integrations  # noqa: F401 - register channels
 from app import providers as _providers  # noqa: F401 - register providers
 from app.api.v1 import api_v1
 from app.config import settings
+from app.integrations.home_assistant import pull_worker as ha_pull_worker
 from app.security.crypto import ensure_fernet_key_valid
 from app.services import title_sync, webhook_dispatcher
 from app.telemetry.logger import configure_logging, get_logger
@@ -38,12 +39,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     await title_sync.sync_catalog_at_startup()
     task = webhook_dispatcher.start()
+    ha_task = ha_pull_worker.start()
     try:
         yield
     finally:
-        task.cancel()
-        with contextlib.suppress(asyncio.CancelledError, Exception):
-            await task
+        for t in (task, ha_task):
+            t.cancel()
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await t
         log.info("shutdown")
 
 

@@ -16,6 +16,8 @@ from app.models.habit import Habit
 from app.models.habit_checkin import HabitCheckin
 from app.models.integration import Integration
 from app.models.session import Session
+from app.models.sleep_entry import SleepEntry
+from app.models.steps_entry import StepsEntry
 from app.models.streak import Streak
 from app.models.title import Title
 from app.models.upload_file import UploadFile
@@ -45,6 +47,8 @@ __all__ = [
     "HabitCheckin",
     "Integration",
     "Session",
+    "SleepEntry",
+    "StepsEntry",
     "Streak",
     "Title",
     "UploadFile",

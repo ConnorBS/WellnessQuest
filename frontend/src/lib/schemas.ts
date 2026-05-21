@@ -176,6 +176,31 @@ export const ActivityRecentEntrySchema = z.object({
 export type ActivityRecentEntry = z.infer<typeof ActivityRecentEntrySchema>;
 export const ActivityRecentListSchema = z.array(ActivityRecentEntrySchema);
 
+export const StepsTodaySchema = z.object({
+  date: z.string(),
+  total: z.number().int(),
+  goal: z.number().int(),
+  percent: z.number().int(),
+});
+export type StepsToday = z.infer<typeof StepsTodaySchema>;
+
+export const SleepEntrySchema = z.object({
+  id: z.number().int(),
+  started_at: z.string(),
+  ended_at: z.string(),
+  duration_minutes: z.number().int(),
+  quality_score: z.number().int().nullable().optional(),
+  source: z.string(),
+  client_id: z.string().nullable().optional(),
+});
+export type SleepEntry = z.infer<typeof SleepEntrySchema>;
+
+export const SleepLastSchema = z.object({
+  entry: SleepEntrySchema.nullable(),
+  goal_minutes: z.number().int(),
+});
+export type SleepLast = z.infer<typeof SleepLastSchema>;
+
 export const ActivityPresetSchema = z.object({
   id: z.string().uuid(),
   label: z.string(),

@@ -10,6 +10,8 @@ from app.models.goal import Goal
 DEFAULT_WATER_ML_PER_DAY = 2000
 DEFAULT_ACTIVE_MINUTES_PER_DAY = 30
 DEFAULT_FOOD_KCAL_PER_DAY = 2000
+DEFAULT_STEPS_PER_DAY = 8000
+DEFAULT_SLEEP_MINUTES_PER_NIGHT = 420  # 7h
 
 
 async def get_active(
@@ -63,4 +65,22 @@ async def get_or_create_default_food(db: AsyncSession, *, user_id: uuid.UUID) ->
         user_id=user_id,
         metric="food_kcal",
         default_target=DEFAULT_FOOD_KCAL_PER_DAY,
+    )
+
+
+async def get_or_create_default_steps(db: AsyncSession, *, user_id: uuid.UUID) -> Goal:
+    return await _get_or_create(
+        db,
+        user_id=user_id,
+        metric="steps",
+        default_target=DEFAULT_STEPS_PER_DAY,
+    )
+
+
+async def get_or_create_default_sleep(db: AsyncSession, *, user_id: uuid.UUID) -> Goal:
+    return await _get_or_create(
+        db,
+        user_id=user_id,
+        metric="sleep_minutes",
+        default_target=DEFAULT_SLEEP_MINUTES_PER_NIGHT,
     )

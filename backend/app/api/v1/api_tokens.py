@@ -16,7 +16,15 @@ from app.telemetry.recorder import audit
 
 router = APIRouter(prefix="/api-tokens", tags=["api-tokens"])
 
-ALLOWED_SCOPES = {"water:read", "water:write"}
+ALLOWED_SCOPES = {
+    "water:read",
+    "water:write",
+    "steps:read",
+    "steps:write",
+    "sleep:read",
+    "sleep:write",
+    "me:read",
+}
 
 
 @router.post("", response_model=ApiTokenCreateOut, status_code=status.HTTP_201_CREATED)

@@ -14,6 +14,8 @@ from app.services.time_utils import day_bounds_for_user
 WATER_DAILY_CAP = 20
 ACTIVITY_DAILY_CAP = 30
 FOOD_DAILY_CAP = 5
+STEPS_DAILY_CAP = 20
+SLEEP_PER_SESSION_XP = 10
 GOAL_MET_XP = 50
 
 
@@ -116,6 +118,55 @@ async def grant_for_food(
     user.xp_total += 1
     user.level = _level_for_xp(user.xp_total)
     return 1
+
+
+async def grant_for_steps(
+    db: AsyncSession, *, user: User, count: int, ref_id: int
+) -> int:
+    """Grant XP per step delta: floor(count / 500), capped per local day."""
+    start, end = day_bounds_for_user(user.timezone, _today_for(user))
+    stmt = select(func.coalesce(func.sum(XpEvent.amount), 0)).where(
+        XpEvent.user_id == user.id,
+        XpEvent.reason == "steps_entry",
+        XpEvent.created_at >= start,
+        XpEvent.created_at < end,
+    )
+    earned_today = int((await db.execute(stmt)).scalar_one())
+    available = max(0, STEPS_DAILY_CAP - earned_today)
+    grant = min(count // 500, available)
+    if grant <= 0:
+        return 0
+    db.add(
+        XpEvent(
+            user_id=user.id,
+            amount=grant,
+            reason="steps_entry",
+            ref_type="steps_entry",
+            ref_id=str(ref_id),
+        )
+    )
+    user.xp_total += grant
+    user.level = _level_for_xp(user.xp_total)
+    return grant
+
+
+async def grant_for_sleep(
+    db: AsyncSession, *, user: User, minutes: int, ref_id: int
+) -> int:
+    """Flat XP for logging a sleep session. One grant per session."""
+    del minutes  # not used; flat per-session
+    db.add(
+        XpEvent(
+            user_id=user.id,
+            amount=SLEEP_PER_SESSION_XP,
+            reason="sleep_entry",
+            ref_type="sleep_entry",
+            ref_id=str(ref_id),
+        )
+    )
+    user.xp_total += SLEEP_PER_SESSION_XP
+    user.level = _level_for_xp(user.xp_total)
+    return SLEEP_PER_SESSION_XP
 
 
 async def grant_goal_met(

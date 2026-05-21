@@ -5,7 +5,10 @@ from typing import Any
 import httpx
 
 from app.integrations.base import IntegrationChannel, channels
-from app.integrations.home_assistant.schemas import HomeAssistantConfig
+from app.integrations.home_assistant.schemas import (
+    HomeAssistantConfig,
+    HomeAssistantSecrets,
+)
 
 
 @channels.register
@@ -13,6 +16,7 @@ class HomeAssistantChannel(IntegrationChannel):
     kind = "home_assistant"
     label = "Home Assistant"
     config_schema = HomeAssistantConfig
+    secrets_schema = HomeAssistantSecrets
 
     async def emit(self, event: str, payload: dict[str, Any]) -> tuple[int, str]:
         base_url = str(self.config["base_url"]).rstrip("/")
