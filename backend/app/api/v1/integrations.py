@@ -11,6 +11,7 @@ from app.integrations.base import channels
 from app.models.integration import Integration
 from app.models.user import User
 from app.schemas.integration import IntegrationCreateIn, IntegrationOut
+from app.security.crypto import encrypt_secrets
 from app.telemetry.recorder import audit
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])
@@ -45,7 +46,7 @@ async def create_integration(
         kind=payload.kind,
         name=payload.name,
         config=payload.config,
-        secrets=payload.secrets,
+        secrets=encrypt_secrets(payload.secrets),
         enabled=True,
     )
     db.add(row)

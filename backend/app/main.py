@@ -16,6 +16,7 @@ from app import integrations as _integrations  # noqa: F401 - register channels
 from app import providers as _providers  # noqa: F401 - register providers
 from app.api.v1 import api_v1
 from app.config import settings
+from app.security.crypto import ensure_fernet_key_valid
 from app.services import title_sync, webhook_dispatcher
 from app.telemetry.logger import configure_logging, get_logger
 from app.telemetry.middleware import RequestContextMiddleware
@@ -28,6 +29,7 @@ STATIC_DIR = Path(os.environ.get("WQ_STATIC_DIR", "/app/static"))
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
+    ensure_fernet_key_valid()
     log.info(
         "startup",
         version="0.1.0",
