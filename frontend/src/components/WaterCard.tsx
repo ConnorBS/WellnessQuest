@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useWaterPresets } from "@/hooks/useWaterPresets";
 import { useWaterToday } from "@/hooks/useWaterToday";
+import { CustomAddWater } from "@/components/CustomAddWater";
 import { QuickAddWaterButton } from "@/components/QuickAddWaterButton";
 
 export function WaterCard() {
@@ -42,6 +43,7 @@ export function WaterCard() {
           No quick-add buttons yet — <Link href="/settings/water" style={{ color: "#10b981" }}>add some in settings</Link>.
         </p>
       )}
+      <CustomAddWater />
       {isLoading && <p className="mt-3 text-sm text-slate-400">Loading...</p>}
     </section>
   );

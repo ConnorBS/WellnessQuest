@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useActivityPresets } from "@/hooks/useActivityPresets";
 import { useActivityToday } from "@/hooks/useActivityToday";
+import { CustomAddActivity } from "@/components/CustomAddActivity";
 import { QuickAddActivityButton } from "@/components/QuickAddActivityButton";
 
 export function ActivityCard() {
@@ -42,6 +43,7 @@ export function ActivityCard() {
           No quick-add buttons yet — <Link href="/settings/activity" style={{ color: "#10b981" }}>add some in settings</Link>.
         </p>
       )}
+      <CustomAddActivity />
       {isLoading && <p className="mt-3 text-sm text-slate-400">Loading...</p>}
     </section>
   );
