@@ -58,10 +58,14 @@ async def _setup_integration(client, db, email, *, entity_map: dict[str, str]):
     ).scalar_one()
 
 
-def _patch_transport(monkeypatch, transport):
-    original = httpx.AsyncClient
+_REAL_ASYNC_CLIENT = httpx.AsyncClient
 
-    class PatchedClient(original):
+
+def _patch_transport(monkeypatch, transport):
+    # Always subclass the real httpx.AsyncClient (not whatever the previous
+    # call left in pull_worker.httpx.AsyncClient), so calling _patch_transport
+    # twice in one test cleanly replaces the transport instead of nesting.
+    class PatchedClient(_REAL_ASYNC_CLIENT):
         def __init__(self, *args, **kwargs):
             kwargs.pop("transport", None)
             super().__init__(*args, transport=transport, **kwargs)
@@ -204,8 +208,15 @@ async def test_poll_401_disables_integration(client, db, unique_email, monkeypat
 
     await pull_worker._poll_one_integration(integration.id)
 
+    # `integration` is cached in the test's session from _setup_integration's load;
+    # the worker mutates+commits in a separate session, so we must re-read with
+    # populate_existing=True to bypass the identity map.
     row = (
-        await db.execute(select(Integration).where(Integration.id == integration.id))
+        await db.execute(
+            select(Integration)
+            .where(Integration.id == integration.id)
+            .execution_options(populate_existing=True)
+        )
     ).scalar_one()
     assert row.enabled is False
 
