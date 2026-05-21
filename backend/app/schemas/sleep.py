@@ -12,7 +12,7 @@ class SleepAddIn(BaseModel):
     client_id: str | None = Field(default=None, max_length=120)
 
     @model_validator(mode="after")
-    def _check_order(self) -> "SleepAddIn":
+    def _check_order(self) -> SleepAddIn:
         if self.ended_at <= self.started_at:
             raise ValueError("ended_at must be after started_at")
         return self

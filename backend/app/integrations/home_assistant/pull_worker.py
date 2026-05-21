@@ -82,7 +82,8 @@ async def _fetch_state(
     resp = await client.get(url)
     if resp.status_code != 200:
         return resp.status_code
-    return resp.json()
+    data: dict[str, Any] = resp.json()
+    return data
 
 
 async def _last_steps_seen_today(db: AsyncSession, user: User) -> int:

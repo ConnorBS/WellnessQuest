@@ -12,9 +12,7 @@ from app.integrations.home_assistant import pull_worker
 from app.models.integration import Integration
 from app.models.sleep_entry import SleepEntry
 from app.models.steps_entry import StepsEntry
-from app.security.crypto import encrypt_secrets
 from app.services.time_utils import utcnow
-
 from app.tests.test_ha_endpoints import _signup_and_token
 
 
@@ -55,16 +53,15 @@ async def _setup_integration(client, db, email, *, entity_map: dict[str, str]):
     integration_id = uuid.UUID(r.json()["id"])
 
     # Reload to capture user_id (the API stamps it server-side)
-    row = (
+    return (
         await db.execute(select(Integration).where(Integration.id == integration_id))
     ).scalar_one()
-    return row
 
 
 def _patch_transport(monkeypatch, transport):
     original = httpx.AsyncClient
 
-    class PatchedClient(original):  # type: ignore[misc, valid-type]
+    class PatchedClient(original):
         def __init__(self, *args, **kwargs):
             kwargs.pop("transport", None)
             super().__init__(*args, transport=transport, **kwargs)
