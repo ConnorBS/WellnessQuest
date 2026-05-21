@@ -171,7 +171,9 @@ jobs:
     env:
       DATABASE_URL: postgresql+asyncpg://wq:wq@localhost:5432/wellnessquest_migrate
       JWT_SECRET: ci-jwt
-      FERNET_KEY: ci-fernet
+      # Valid Fernet key (32 url-safe base64 bytes). Alembic doesn't read it, but
+      # loading app modules under the lifespan would, so keep this real.
+      FERNET_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

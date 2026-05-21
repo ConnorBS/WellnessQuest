@@ -12,6 +12,7 @@ from app.db.session import async_session
 from app.integrations.base import IntegrationChannel, channels
 from app.models.integration import Integration
 from app.models.webhook import WebhookDelivery, WebhookSubscription
+from app.security.crypto import SecretsDecryptError, decrypt_secrets
 from app.services import events
 from app.services.time_utils import utcnow
 from app.telemetry.logger import get_logger
@@ -77,7 +78,15 @@ async def _deliver_one(db: AsyncSession, delivery: WebhookDelivery) -> None:
         delivery.next_retry_at = None
         return
 
-    channel = channel_cls(integration.config, integration.secrets)
+    try:
+        decrypted_secrets = decrypt_secrets(integration.secrets)
+    except SecretsDecryptError as exc:
+        delivery.attempts += 1
+        delivery.status_code = 0
+        delivery.response_body = f"secrets_decrypt_failed: {exc}"
+        delivery.next_retry_at = None  # dead-letter: cannot recover without re-keying
+        return
+    channel = channel_cls(integration.config, decrypted_secrets)
     delivery.attempts += 1
     try:
         # Subscription URL overrides config-based routing where applicable; HA uses webhook_id from config.

@@ -17,7 +17,12 @@ os.environ.setdefault(
     "postgresql+asyncpg://wq:wq@postgres:5432/wellnessquest_test",
 )
 os.environ.setdefault("JWT_SECRET", "test-jwt-secret")
-os.environ.setdefault("FERNET_KEY", "test-fernet-key")
+# A real Fernet key (32 url-safe base64 bytes). Generated once at import so every
+# test run shares the same key without bundling secrets in the repo. Required
+# now that `app.main.lifespan` calls `ensure_fernet_key_valid()` on startup.
+from cryptography.fernet import Fernet  # noqa: E402
+
+os.environ.setdefault("FERNET_KEY", Fernet.generate_key().decode("ascii"))
 os.environ.setdefault("WQ_DISABLE_TITLE_SYNC", "1")
 
 import app.db.session as session_mod  # noqa: E402

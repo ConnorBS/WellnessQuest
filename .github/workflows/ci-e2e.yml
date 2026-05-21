@@ -23,7 +23,7 @@ jobs:
           cp .env.example .env
           echo "POSTGRES_PASSWORD=ci-postgres" >> .env
           echo "JWT_SECRET=ci-jwt-secret" >> .env
-          echo "FERNET_KEY=ci-fernet-key" >> .env
+          echo "FERNET_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" >> .env
           echo "DATABASE_URL=postgresql+asyncpg://wq:ci-postgres@postgres:5432/wellnessquest" >> .env
 
       - name: Bring up stack
