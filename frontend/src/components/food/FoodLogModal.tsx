@@ -74,14 +74,22 @@ export function FoodLogModal({ onClose }: Props) {
   // null, the product has no serving size from OFF and we fall back to a
   // raw-grams input below.
   const [servingG, setServingG] = useState<number | "">("");
+  // Free-text label for what "1 serving" looks like (e.g. "1 slice", "1/3
+  // pizza", "1 cup"). Defaults to OFF's serving_size string; user can override
+  // when OFF has none (or has a wrong one).
+  const [servingLabel, setServingLabel] = useState<string>("");
   // Raw-grams escape hatch for foods where "1 serving" is meaningless (bulk
   // items, foods without a serving size, "I ate half of what was in the pan").
   const [rawGrams, setRawGrams] = useState<number | "">("");
-  // Manual-mode kcal/macros for foods without OFF nutrition data.
+  // Manual-mode kcal/macros. Always available — empty means "use OFF's
+  // per-portion math"; any value here wins over the computed value for that
+  // field. The "Edit values" affordance pre-fills these from `computed` so
+  // the user has a starting point to tweak instead of guessing.
   const [overrideKcal, setOverrideKcal] = useState<number | "">("");
   const [overrideProtein, setOverrideProtein] = useState<number | "">("");
   const [overrideCarbs, setOverrideCarbs] = useState<number | "">("");
   const [overrideFat, setOverrideFat] = useState<number | "">("");
+  const [editingValues, setEditingValues] = useState(false);
   const [manualName, setManualName] = useState("");
   const [manualKcal, setManualKcal] = useState<number | "">("");
   const [manualProtein, setManualProtein] = useState<number | "">("");
@@ -113,10 +121,8 @@ export function FoodLogModal({ onClose }: Props) {
   const addFood = useAddFood();
   const createPreset = useCreateFoodPreset();
   const barcodeLookup = useFoodBarcode();
-  const { data, isLoading, isFetching, isError, error, refetch } = useFoodSearch(
-    search,
-    mode === "search",
-  );
+  const { data, isLoading, isFetching, isError, error, flushAndRefetch } =
+    useFoodSearch(search, mode === "search");
 
   function onBarcodeDetected(code: string) {
     setScannerOpen(false);
@@ -143,11 +149,13 @@ export function FoodLogModal({ onClose }: Props) {
     setSelected(hit);
     setServings(1);
     setServingG(hit.serving_g ?? "");
+    setServingLabel(hit.serving_label ?? "");
     setRawGrams(hit.serving_g ? "" : 100);
     setOverrideKcal("");
     setOverrideProtein("");
     setOverrideCarbs("");
     setOverrideFat("");
+    setEditingValues(false);
     if (opts.expandNutrients) setExpandNutrients(true);
   }
 
@@ -196,30 +204,63 @@ export function FoodLogModal({ onClose }: Props) {
     return resolvePortion(selected, spec);
   }, [selected, servings, servingG, rawGrams, hasServingBasis]);
 
-  // When OFF returned no per-100 nutriments, we fall back to whatever the user
-  // typed in the override fields. Leaving them blank is valid — it logs the
-  // entry with kcal=0 and null macros, so the user has a record of "I ate X"
-  // even when they don't know the numbers. Better than no entry at all.
-  const finalKcal: number = computed
-    ? computed.hasNutritionData
-      ? (computed.kcal ?? 0)
-      : overrideKcal === "" ? 0 : Number(overrideKcal)
-    : 0;
-  const finalProtein: number | null = computed
-    ? computed.hasNutritionData
-      ? computed.protein_g
-      : overrideProtein === "" ? null : Number(overrideProtein)
-    : null;
-  const finalCarbs: number | null = computed
-    ? computed.hasNutritionData
-      ? computed.carbs_g
-      : overrideCarbs === "" ? null : Number(overrideCarbs)
-    : null;
-  const finalFat: number | null = computed
-    ? computed.hasNutritionData
-      ? computed.fat_g
-      : overrideFat === "" ? null : Number(overrideFat)
-    : null;
+  // Override fields always win when populated — works for both "OFF had no
+  // nutrition data" and "user is correcting wrong OFF data" cases. Leaving
+  // them blank falls back to whatever `computed` produced from OFF, or 0/null
+  // when OFF gave us nothing to multiply.
+  const finalKcal: number =
+    overrideKcal !== ""
+      ? Number(overrideKcal)
+      : computed?.hasNutritionData
+        ? (computed.kcal ?? 0)
+        : 0;
+  const finalProtein: number | null =
+    overrideProtein !== ""
+      ? Number(overrideProtein)
+      : computed?.hasNutritionData
+        ? computed.protein_g
+        : null;
+  const finalCarbs: number | null =
+    overrideCarbs !== ""
+      ? Number(overrideCarbs)
+      : computed?.hasNutritionData
+        ? computed.carbs_g
+        : null;
+  const finalFat: number | null =
+    overrideFat !== ""
+      ? Number(overrideFat)
+      : computed?.hasNutritionData
+        ? computed.fat_g
+        : null;
+  const hasOverride =
+    overrideKcal !== "" ||
+    overrideProtein !== "" ||
+    overrideCarbs !== "" ||
+    overrideFat !== "";
+
+  function startEditingValues() {
+    setEditingValues(true);
+    if (overrideKcal === "" && computed?.kcal != null) {
+      setOverrideKcal(computed.kcal);
+    }
+    if (overrideProtein === "" && computed?.protein_g != null) {
+      setOverrideProtein(computed.protein_g);
+    }
+    if (overrideCarbs === "" && computed?.carbs_g != null) {
+      setOverrideCarbs(computed.carbs_g);
+    }
+    if (overrideFat === "" && computed?.fat_g != null) {
+      setOverrideFat(computed.fat_g);
+    }
+  }
+
+  function resetOverrides() {
+    setEditingValues(false);
+    setOverrideKcal("");
+    setOverrideProtein("");
+    setOverrideCarbs("");
+    setOverrideFat("");
+  }
 
   function logSelected() {
     if (!selected || !computed || finalKcal < 0) return;
@@ -232,11 +273,12 @@ export function FoodLogModal({ onClose }: Props) {
         carbs_g: finalCarbs,
         fat_g: finalFat,
         // Snapshot what "1 serving" meant at log time. The user may have
-        // edited servingG away from OFF's default — record what they actually
-        // logged against so the entry-edit flow scales correctly later.
+        // edited servingG / servingLabel away from OFF's default — record
+        // what they actually logged against so the entry-edit flow scales
+        // correctly later.
         servings: hasServingBasis ? servings : null,
         serving_g: hasServingBasis ? Number(servingG) : null,
-        serving_label: selected.serving_label ?? null,
+        serving_label: servingLabel.trim() || selected.serving_label || null,
         unit: selected.unit ?? null,
         nutrients:
           computed.hasNutritionData && Object.keys(computed.nutrients).length
@@ -270,8 +312,8 @@ export function FoodLogModal({ onClose }: Props) {
               protein_g: presetProtein ?? finalProtein,
               carbs_g: presetCarbs ?? finalCarbs,
               fat_g: presetFat ?? finalFat,
-              serving_g: selected.serving_g ?? null,
-              serving_label: selected.serving_label ?? null,
+              serving_g: hasServingBasis ? Number(servingG) : selected.serving_g ?? null,
+              serving_label: servingLabel.trim() || selected.serving_label || null,
               unit: selected.unit ?? null,
               nutrients: Object.keys(presetNutrients).length ? presetNutrients : null,
               meal_type: meal,
@@ -522,7 +564,7 @@ export function FoodLogModal({ onClose }: Props) {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && search.trim().length >= 2) {
                           e.preventDefault();
-                          refetch();
+                          flushAndRefetch();
                         }
                       }}
                       style={{ ...inputStyle, flex: 1 }}
@@ -562,7 +604,7 @@ export function FoodLogModal({ onClose }: Props) {
                     <span>Search failed: {searchErrorMessage(error)}.</span>
                     <button
                       type="button"
-                      onClick={() => refetch()}
+                      onClick={() => flushAndRefetch()}
                       style={{
                         background: "transparent",
                         color: "#10b981",
@@ -728,6 +770,19 @@ export function FoodLogModal({ onClose }: Props) {
                                   />
                                 </label>
                               </div>
+                              <label>
+                                <span style={fieldLabel}>
+                                  Serving looks like (optional)
+                                </span>
+                                <input
+                                  type="text"
+                                  maxLength={64}
+                                  placeholder="e.g. 1 slice, 1/3 pizza, 1 cup"
+                                  value={servingLabel}
+                                  onChange={(e) => setServingLabel(e.target.value)}
+                                  style={inputStyle}
+                                />
+                              </label>
                               <span
                                 style={{
                                   fontSize: 11,
@@ -736,9 +791,12 @@ export function FoodLogModal({ onClose }: Props) {
                                 }}
                               >
                                 Logging {fmtAmount(totalAmount)} {servingUnitLabel}
-                                {selected.serving_label
-                                  ? ` · OFF says 1 serving = ${selected.serving_label}`
-                                  : ""}
+                                {servingLabel.trim()
+                                  ? ` · ${servings} × ${servingLabel.trim()}`
+                                  : selected.serving_label &&
+                                      servingLabel.trim() !== selected.serving_label
+                                    ? ` · OFF says 1 serving = ${selected.serving_label}`
+                                    : ""}
                               </span>
                               <button
                                 type="button"
@@ -784,116 +842,165 @@ export function FoodLogModal({ onClose }: Props) {
                             </>
                           )}
 
-                          {computed?.hasNutritionData ? (
-                            <>
-                              <div style={{ fontSize: 13, color: "#cbd5e1" }}>
-                                {`${computed.kcal} kcal · P ${fmt(computed.protein_g)} · C ${fmt(
-                                  computed.carbs_g,
-                                )} · F ${fmt(computed.fat_g)}`}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setExpandNutrients((v) => !v)}
-                                style={linkBtn}
-                              >
-                                {expandNutrients ? "Hide" : "Show"} full nutrient panel
-                              </button>
-                              {expandNutrients ? (
-                                <NutrientPanelView
-                                  totals={{
-                                    kcal: computed.kcal ?? 0,
-                                    protein_g: computed.protein_g ?? null,
-                                    carbs_g: computed.carbs_g ?? null,
-                                    fat_g: computed.fat_g ?? null,
-                                    ...computed.nutrients,
-                                  }}
-                                />
-                              ) : null}
-                            </>
-                          ) : (
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 8,
-                                padding: 10,
-                                background: "#0b1220",
-                                border: "1px solid #1e293b",
-                                borderRadius: 6,
-                              }}
-                            >
-                              <p style={{ fontSize: 12, color: "#fcd34d", margin: 0 }}>
-                                Open Food Facts doesn&apos;t have nutrition data for this
-                                product. Enter the values from the package below, or use
-                                &quot;Scan a nutrition label&quot; above.
-                              </p>
-                              <label>
-                                <span style={fieldLabel}>Calories (kcal) for this portion</span>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={20000}
-                                  value={overrideKcal}
-                                  onChange={(e) =>
-                                    setOverrideKcal(
-                                      e.target.value === "" ? "" : Number(e.target.value),
-                                    )
-                                  }
-                                  style={inputStyle}
-                                />
-                              </label>
-                              <div
-                                style={{
-                                  display: "grid",
-                                  gridTemplateColumns: "1fr 1fr 1fr",
-                                  gap: 8,
-                                }}
-                              >
-                                <label>
-                                  <span style={fieldLabel}>Protein (g)</span>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    value={overrideProtein}
-                                    onChange={(e) =>
-                                      setOverrideProtein(
-                                        e.target.value === "" ? "" : Number(e.target.value),
-                                      )
-                                    }
-                                    style={inputStyle}
-                                  />
-                                </label>
-                                <label>
-                                  <span style={fieldLabel}>Carbs (g)</span>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    value={overrideCarbs}
-                                    onChange={(e) =>
-                                      setOverrideCarbs(
-                                        e.target.value === "" ? "" : Number(e.target.value),
-                                      )
-                                    }
-                                    style={inputStyle}
-                                  />
-                                </label>
-                                <label>
-                                  <span style={fieldLabel}>Fat (g)</span>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    value={overrideFat}
-                                    onChange={(e) =>
-                                      setOverrideFat(
-                                        e.target.value === "" ? "" : Number(e.target.value),
-                                      )
-                                    }
-                                    style={inputStyle}
-                                  />
-                                </label>
-                              </div>
-                            </div>
-                          )}
+                          {(() => {
+                            const showOverrideFields =
+                              editingValues || !computed?.hasNutritionData;
+                            return (
+                              <>
+                                {computed?.hasNutritionData && !editingValues ? (
+                                  <>
+                                    <div style={{ fontSize: 13, color: "#cbd5e1" }}>
+                                      {`${finalKcal} kcal · P ${fmt(
+                                        finalProtein,
+                                      )} · C ${fmt(finalCarbs)} · F ${fmt(finalFat)}`}
+                                    </div>
+                                    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                                      <button
+                                        type="button"
+                                        onClick={startEditingValues}
+                                        style={linkBtn}
+                                      >
+                                        Edit values
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setExpandNutrients((v) => !v)}
+                                        style={linkBtn}
+                                      >
+                                        {expandNutrients ? "Hide" : "Show"} full nutrient panel
+                                      </button>
+                                    </div>
+                                    {expandNutrients ? (
+                                      <NutrientPanelView
+                                        totals={{
+                                          kcal: computed.kcal ?? 0,
+                                          protein_g: computed.protein_g ?? null,
+                                          carbs_g: computed.carbs_g ?? null,
+                                          fat_g: computed.fat_g ?? null,
+                                          ...computed.nutrients,
+                                        }}
+                                      />
+                                    ) : null}
+                                  </>
+                                ) : null}
+                                {showOverrideFields ? (
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      gap: 8,
+                                      padding: 10,
+                                      background: "#0b1220",
+                                      border: "1px solid #1e293b",
+                                      borderRadius: 6,
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "flex-start",
+                                        gap: 8,
+                                        flexWrap: "wrap",
+                                      }}
+                                    >
+                                      <p
+                                        style={{
+                                          fontSize: 12,
+                                          color: computed?.hasNutritionData
+                                            ? "#94a3b8"
+                                            : "#fcd34d",
+                                          margin: 0,
+                                          flex: 1,
+                                          minWidth: 180,
+                                        }}
+                                      >
+                                        {computed?.hasNutritionData
+                                          ? "Your values for this portion — overrides OFF's data."
+                                          : "Open Food Facts doesn't have nutrition data for this product. Enter the values from the package below, or use “Scan a nutrition label” above."}
+                                      </p>
+                                      {hasOverride || editingValues ? (
+                                        <button
+                                          type="button"
+                                          onClick={resetOverrides}
+                                          style={linkBtn}
+                                        >
+                                          {computed?.hasNutritionData
+                                            ? "Reset to OFF"
+                                            : "Clear"}
+                                        </button>
+                                      ) : null}
+                                    </div>
+                                    <label>
+                                      <span style={fieldLabel}>Calories (kcal) for this portion</span>
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        max={20000}
+                                        value={overrideKcal}
+                                        onChange={(e) =>
+                                          setOverrideKcal(
+                                            e.target.value === "" ? "" : Number(e.target.value),
+                                          )
+                                        }
+                                        style={inputStyle}
+                                      />
+                                    </label>
+                                    <div
+                                      style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "1fr 1fr 1fr",
+                                        gap: 8,
+                                      }}
+                                    >
+                                      <label>
+                                        <span style={fieldLabel}>Protein (g)</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          value={overrideProtein}
+                                          onChange={(e) =>
+                                            setOverrideProtein(
+                                              e.target.value === "" ? "" : Number(e.target.value),
+                                            )
+                                          }
+                                          style={inputStyle}
+                                        />
+                                      </label>
+                                      <label>
+                                        <span style={fieldLabel}>Carbs (g)</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          value={overrideCarbs}
+                                          onChange={(e) =>
+                                            setOverrideCarbs(
+                                              e.target.value === "" ? "" : Number(e.target.value),
+                                            )
+                                          }
+                                          style={inputStyle}
+                                        />
+                                      </label>
+                                      <label>
+                                        <span style={fieldLabel}>Fat (g)</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          value={overrideFat}
+                                          onChange={(e) =>
+                                            setOverrideFat(
+                                              e.target.value === "" ? "" : Number(e.target.value),
+                                            )
+                                          }
+                                          style={inputStyle}
+                                        />
+                                      </label>
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </>
+                            );
+                          })()}
                           <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
                           {(() => {
                             const disabled = addFood.isPending || finalKcal < 0;
