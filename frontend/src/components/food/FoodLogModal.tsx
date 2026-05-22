@@ -70,16 +70,20 @@ export function FoodLogModal({ onClose }: Props) {
   const [servings, setServings] = useState<number>(1);
   // The gram-weight of ONE serving. Editable: OFF's value is just a default,
   // and labels often disagree (e.g. preset says 320g but the user only ate
-  // half the tub). Total grams logged = servings × servingG. When this is
-  // null, the product has no serving size from OFF and we fall back to a
-  // raw-grams input below.
+  // half the tub). Total grams logged = servings × servingG. Empty when OFF
+  // doesn't know the serving size and the user hasn't filled one in yet —
+  // we keep showing the servings UI so the user is prompted to define one,
+  // instead of silently defaulting to 100 g.
   const [servingG, setServingG] = useState<number | "">("");
   // Free-text label for what "1 serving" looks like (e.g. "1 slice", "1/3
   // pizza", "1 cup"). Defaults to OFF's serving_size string; user can override
   // when OFF has none (or has a wrong one).
   const [servingLabel, setServingLabel] = useState<string>("");
   // Raw-grams escape hatch for foods where "1 serving" is meaningless (bulk
-  // items, foods without a serving size, "I ate half of what was in the pan").
+  // items, "I ate half of what was in the pan"). Opt-in via "log by g only" —
+  // we no longer drop into this mode automatically when OFF lacks a serving
+  // size, because that hid the prompt to define one.
+  const [portionMode, setPortionMode] = useState<"servings" | "raw">("servings");
   const [rawGrams, setRawGrams] = useState<number | "">("");
   // Manual-mode kcal/macros. Always available — empty means "use OFF's
   // per-portion math"; any value here wins over the computed value for that
@@ -111,11 +115,6 @@ export function FoodLogModal({ onClose }: Props) {
     servings,
     (v) => setServings(typeof v === "number" ? v : 1),
     1,
-  );
-  const servingGSnap = useSnapBack(
-    servingG,
-    setServingG,
-    selected?.serving_g ?? 100,
   );
   const rawGramsSnap = useSnapBack(rawGrams, setRawGrams, 100);
   const addFood = useAddFood();
@@ -150,7 +149,12 @@ export function FoodLogModal({ onClose }: Props) {
     setServings(1);
     setServingG(hit.serving_g ?? "");
     setServingLabel(hit.serving_label ?? "");
-    setRawGrams(hit.serving_g ? "" : 100);
+    // Always land in servings mode so the "1 serving = (g)" prompt is the
+    // first thing the user sees. When OFF has no serving_g the field stays
+    // empty and the Log button is disabled until the user fills it in —
+    // better than silently defaulting to 100 g.
+    setPortionMode("servings");
+    setRawGrams("");
     setOverrideKcal("");
     setOverrideProtein("");
     setOverrideCarbs("");
@@ -181,28 +185,34 @@ export function FoodLogModal({ onClose }: Props) {
     [scanImageUrl],
   );
 
-  // Whether the product has a meaningful "1 serving" definition (from OFF or
-  // user input). Foods without one drop the servings field and use rawGrams.
-  const hasServingBasis = servingG !== "" && Number(servingG) > 0;
+  // True when the user is logging by "N servings × X g/serving"; false when
+  // they've opted into raw-grams mode via "log by g only". When in servings
+  // mode but servingG is empty, no portion is defined yet — see
+  // `hasDefinedPortion` for the gate on logging.
+  const inServingsMode = portionMode === "servings";
+  const hasDefinedPortion = inServingsMode
+    ? servingG !== "" && Number(servingG) > 0
+    : rawGrams !== "" && Number(rawGrams) > 0;
 
   const computed = useMemo(() => {
     if (!selected) return null;
-    // Pick a spec for the shared portion math: serving-based when the user
-    // has a serving-g, raw-amount when they're logging by g/mL only.
     const nativeUnit: FoodUnit = selected.unit ?? DEFAULT_NATIVE_UNIT;
-    const spec = hasServingBasis
+    const spec = inServingsMode
       ? {
           quantity: servings,
           unit: "serving" as IngredientUnit,
-          servingG: Number(servingG),
+          // 0 when the user hasn't defined the serving size yet —
+          // resolvePortion returns nativeAmount=0 + nulled-out macros, which
+          // is what drives the "set a serving size to log" disabled state.
+          servingG: servingG === "" ? 0 : Number(servingG),
         }
       : {
-          quantity: rawGrams === "" ? 100 : Number(rawGrams),
+          quantity: rawGrams === "" ? 0 : Number(rawGrams),
           unit: nativeUnit as IngredientUnit,
           servingG: null,
         };
     return resolvePortion(selected, spec);
-  }, [selected, servings, servingG, rawGrams, hasServingBasis]);
+  }, [selected, servings, servingG, rawGrams, inServingsMode]);
 
   // Override fields always win when populated — works for both "OFF had no
   // nutrition data" and "user is correcting wrong OFF data" cases. Leaving
@@ -263,7 +273,7 @@ export function FoodLogModal({ onClose }: Props) {
   }
 
   function logSelected() {
-    if (!selected || !computed || finalKcal < 0) return;
+    if (!selected || !computed || finalKcal < 0 || !hasDefinedPortion) return;
     addFood.mutate(
       {
         name: selected.name,
@@ -276,8 +286,8 @@ export function FoodLogModal({ onClose }: Props) {
         // edited servingG / servingLabel away from OFF's default — record
         // what they actually logged against so the entry-edit flow scales
         // correctly later.
-        servings: hasServingBasis ? servings : null,
-        serving_g: hasServingBasis ? Number(servingG) : null,
+        servings: inServingsMode && hasDefinedPortion ? servings : null,
+        serving_g: inServingsMode && hasDefinedPortion ? Number(servingG) : null,
         serving_label: servingLabel.trim() || selected.serving_label || null,
         unit: selected.unit ?? null,
         nutrients:
@@ -312,7 +322,10 @@ export function FoodLogModal({ onClose }: Props) {
               protein_g: presetProtein ?? finalProtein,
               carbs_g: presetCarbs ?? finalCarbs,
               fat_g: presetFat ?? finalFat,
-              serving_g: hasServingBasis ? Number(servingG) : selected.serving_g ?? null,
+              serving_g:
+                inServingsMode && hasDefinedPortion
+                  ? Number(servingG)
+                  : selected.serving_g ?? null,
               serving_label: servingLabel.trim() || selected.serving_label || null,
               unit: selected.unit ?? null,
               nutrients: Object.keys(presetNutrients).length ? presetNutrients : null,
@@ -710,7 +723,7 @@ export function FoodLogModal({ onClose }: Props) {
                               </div>
                             ) : null}
                           </div>
-                          {hasServingBasis ? (
+                          {inServingsMode ? (
                             <>
                               <div
                                 style={{
@@ -764,8 +777,12 @@ export function FoodLogModal({ onClose }: Props) {
                                     min={0}
                                     step={0.1}
                                     value={servingG}
-                                    onChange={(e) => servingGSnap.onChange(e.target.value)}
-                                    onBlur={servingGSnap.onBlur}
+                                    placeholder={`weight per serving in ${servingUnitLabel}`}
+                                    onChange={(e) =>
+                                      setServingG(
+                                        e.target.value === "" ? "" : Number(e.target.value),
+                                      )
+                                    }
                                     style={inputStyle}
                                   />
                                 </label>
@@ -783,25 +800,37 @@ export function FoodLogModal({ onClose }: Props) {
                                   style={inputStyle}
                                 />
                               </label>
-                              <span
-                                style={{
-                                  fontSize: 11,
-                                  color: "#64748b",
-                                  display: "block",
-                                }}
-                              >
-                                Logging {fmtAmount(totalAmount)} {servingUnitLabel}
-                                {servingLabel.trim()
-                                  ? ` · ${servings} × ${servingLabel.trim()}`
-                                  : selected.serving_label &&
-                                      servingLabel.trim() !== selected.serving_label
-                                    ? ` · OFF says 1 serving = ${selected.serving_label}`
-                                    : ""}
-                              </span>
+                              {hasDefinedPortion ? (
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: "#64748b",
+                                    display: "block",
+                                  }}
+                                >
+                                  Logging {fmtAmount(totalAmount)} {servingUnitLabel}
+                                  {servingLabel.trim()
+                                    ? ` · ${servings} × ${servingLabel.trim()}`
+                                    : selected.serving_label &&
+                                        servingLabel.trim() !== selected.serving_label
+                                      ? ` · OFF says 1 serving = ${selected.serving_label}`
+                                      : ""}
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: "#fcd34d",
+                                    display: "block",
+                                  }}
+                                >
+                                  Set the serving size to log this food.
+                                </span>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setServingG("");
+                                  setPortionMode("raw");
                                   setRawGrams(Math.round(totalAmount) || 100);
                                 }}
                                 style={linkBtn}
@@ -829,10 +858,11 @@ export function FoodLogModal({ onClose }: Props) {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setServingG(
-                                    selected.serving_g ?? (rawGrams === "" ? 100 : Number(rawGrams)),
-                                  );
-                                  setRawGrams("");
+                                  setPortionMode("servings");
+                                  // Restore OFF's serving_g if it had one;
+                                  // otherwise leave blank so the user is
+                                  // prompted to set it (not silently 100).
+                                  setServingG(selected.serving_g ?? "");
                                   setServings(1);
                                 }}
                                 style={linkBtn}
@@ -1003,7 +1033,8 @@ export function FoodLogModal({ onClose }: Props) {
                           })()}
                           <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
                           {(() => {
-                            const disabled = addFood.isPending || finalKcal < 0;
+                            const disabled =
+                              addFood.isPending || finalKcal < 0 || !hasDefinedPortion;
                             return (
                               <button
                                 type="button"
@@ -1013,9 +1044,11 @@ export function FoodLogModal({ onClose }: Props) {
                               >
                                 {addFood.isPending
                                   ? "Logging…"
-                                  : computed?.hasNutritionData || overrideKcal !== ""
-                                    ? "Log it"
-                                    : "Log without nutrition"}
+                                  : !hasDefinedPortion
+                                    ? "Set serving size to log"
+                                    : computed?.hasNutritionData || overrideKcal !== ""
+                                      ? "Log it"
+                                      : "Log without nutrition"}
                               </button>
                             );
                           })()}
