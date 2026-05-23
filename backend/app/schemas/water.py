@@ -21,6 +21,16 @@ class WaterEntryOut(BaseModel):
     name: str | None = None
 
 
+class WaterEntryPatch(BaseModel):
+    """All fields optional; only provided ones are updated. `source` and
+    `client_id` are intentionally not patchable — source is the audit trail
+    of where the row came from, and client_id is the idempotency key."""
+
+    ml: int | None = Field(default=None, gt=0, le=5000)
+    occurred_at: datetime | None = None
+    name: str | None = Field(default=None, max_length=60)
+
+
 class WaterTodayOut(BaseModel):
     date: str  # YYYY-MM-DD in user's tz
     total_ml: int

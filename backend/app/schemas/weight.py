@@ -19,6 +19,14 @@ class WeightEntryOut(BaseModel):
     note: str | None = None
 
 
+class WeightEntryPatch(BaseModel):
+    """All fields optional; only provided ones are updated."""
+
+    weight_kg: Decimal | None = Field(default=None, gt=Decimal("0"), lt=Decimal("1000"))
+    occurred_at: datetime | None = None
+    note: str | None = Field(default=None, max_length=500)
+
+
 class WeightTargetIn(BaseModel):
     # None = explicit "no target as of effective_at" (clears the goal). Non-None
     # values are range-checked at the endpoint, not here, so that null can pass.

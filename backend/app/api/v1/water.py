@@ -11,6 +11,7 @@ from app.schemas.water import (
     WaterAddIn,
     WaterAddOut,
     WaterEntryOut,
+    WaterEntryPatch,
     WaterRecentEntry,
     WaterTodayOut,
 )
@@ -131,6 +132,37 @@ async def add_water(
         goal_ml=result.goal_ml,
         xp_delta=result.xp_delta,
         goal_met=result.goal_met,
+    )
+
+
+@router.patch("/{entry_id}", response_model=WaterEntryOut)
+async def update_water(
+    entry_id: int,
+    payload: WaterEntryPatch,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> WaterEntryOut:
+    row = await water_service.update_entry(
+        db, user=user, entry_id=entry_id, patch=payload
+    )
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="water.update",
+        user_id=user.id,
+        target_type="water_entry",
+        target_id=str(row.id),
+        meta={"fields": list(payload.model_dump(exclude_unset=True).keys())},
+    )
+    return WaterEntryOut(
+        id=row.id,
+        ml=row.ml,
+        source=row.source,
+        occurred_at=row.occurred_at,
+        client_id=row.client_id,
+        name=row.name,
     )
 
 

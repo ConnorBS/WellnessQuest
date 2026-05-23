@@ -10,11 +10,13 @@ from app.models.user import User
 from app.schemas.blood_pressure import (
     BloodPressureEntryIn,
     BloodPressureEntryOut,
+    BloodPressureEntryPatch,
     BloodPressureSummaryOut,
     BloodPressureTargetIn,
     BloodPressureTargetOut,
 )
 from app.services import blood_pressure_service
+from app.services.blood_pressure_service import InvalidBPPatch
 from app.services.time_utils import utcnow
 from app.telemetry.recorder import audit
 
@@ -93,6 +95,33 @@ async def add_bp(
             "diastolic": row.diastolic,
             "pulse": row.pulse,
         },
+    )
+    return _to_out(row)
+
+
+@router.patch("/{entry_id}", response_model=BloodPressureEntryOut)
+async def update_bp(
+    entry_id: int,
+    payload: BloodPressureEntryPatch,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> BloodPressureEntryOut:
+    try:
+        row = await blood_pressure_service.update_entry(
+            db, user=user, entry_id=entry_id, patch=payload
+        )
+    except InvalidBPPatch as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.code) from e
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="blood_pressure.update",
+        user_id=user.id,
+        target_type="blood_pressure_entry",
+        target_id=str(row.id),
+        meta={"fields": list(payload.model_dump(exclude_unset=True).keys())},
     )
     return _to_out(row)
 

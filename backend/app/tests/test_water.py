@@ -92,3 +92,92 @@ async def test_water_rejects_invalid_ml(client, db, unique_email):
 
     r = await client.post("/api/v1/water", headers=_auth(access), json={"ml": -1})
     assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_water_patch_updates_fields(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.post(
+        "/api/v1/water",
+        headers=_auth(access),
+        json={"ml": 250, "client_id": "k1", "name": "Glass"},
+    )
+    entry_id = r.json()["entry"]["id"]
+
+    r = await client.patch(
+        f"/api/v1/water/{entry_id}",
+        headers=_auth(access),
+        json={"ml": 500, "name": "Bottle", "occurred_at": "2026-05-22T07:30:00Z"},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["ml"] == 500
+    assert body["name"] == "Bottle"
+    assert body["occurred_at"].startswith("2026-05-22T07:30:00")
+    # source and client_id are unchanged (and intentionally not patchable)
+    assert body["source"] == "pwa"
+    assert body["client_id"] == "k1"
+
+
+@pytest.mark.asyncio
+async def test_water_patch_does_not_regrant_xp(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.post(
+        "/api/v1/water",
+        headers=_auth(access),
+        json={"ml": 250, "client_id": "k1"},
+    )
+    entry_id = r.json()["entry"]["id"]
+    r = await client.get("/api/v1/me", headers=_auth(access))
+    xp_before = r.json()["xp_total"]
+
+    # Edit ml upward — no extra XP should be granted on edit (passthrough).
+    r = await client.patch(
+        f"/api/v1/water/{entry_id}",
+        headers=_auth(access),
+        json={"ml": 1000},
+    )
+    assert r.status_code == 200
+    r = await client.get("/api/v1/me", headers=_auth(access))
+    assert r.json()["xp_total"] == xp_before
+
+
+@pytest.mark.asyncio
+async def test_water_patch_other_users_entry_returns_404(client, db, unique_email):
+    user_a = await _signup(client, db, unique_email)
+    email_b = f"u-other-{unique_email.split('-', 1)[1]}"
+    user_b = await _signup(client, db, email_b)
+
+    r = await client.post(
+        "/api/v1/water",
+        headers=_auth(user_a["tokens"]["access_token"]),
+        json={"ml": 250, "client_id": "k1"},
+    )
+    entry_id = r.json()["entry"]["id"]
+
+    r = await client.patch(
+        f"/api/v1/water/{entry_id}",
+        headers=_auth(user_b["tokens"]["access_token"]),
+        json={"ml": 500},
+    )
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_water_goal_patch_still_matches_first(client, db, unique_email):
+    """Sanity check: PATCH /water/goal still routes to the goal handler, not
+    the new entry handler — the path literal is declared first."""
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.patch(
+        "/api/v1/water/goal",
+        headers=_auth(access),
+        json={"target_ml": 3000},
+    )
+    assert r.status_code == 200
+    assert r.json()["target_ml"] == 3000

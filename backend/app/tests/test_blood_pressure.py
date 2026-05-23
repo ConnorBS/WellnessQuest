@@ -132,6 +132,74 @@ async def test_delete_entry(client, db, unique_email):
 
 
 @pytest.mark.asyncio
+async def test_patch_entry_updates_fields(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.post(
+        "/api/v1/blood-pressure",
+        headers=_auth(access),
+        json={"systolic": 120, "diastolic": 80, "pulse": 72},
+    )
+    entry_id = r.json()["id"]
+
+    r = await client.patch(
+        f"/api/v1/blood-pressure/{entry_id}",
+        headers=_auth(access),
+        json={"systolic": 125, "note": "after walk", "occurred_at": "2026-05-22T08:00:00Z"},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["systolic"] == 125
+    assert body["diastolic"] == 80
+    assert body["pulse"] == 72  # untouched
+    assert body["note"] == "after walk"
+    assert body["occurred_at"].startswith("2026-05-22T08:00:00")
+
+
+@pytest.mark.asyncio
+async def test_patch_rejects_invariant_violation(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.post(
+        "/api/v1/blood-pressure",
+        headers=_auth(access),
+        json={"systolic": 120, "diastolic": 80},
+    )
+    entry_id = r.json()["id"]
+
+    r = await client.patch(
+        f"/api/v1/blood-pressure/{entry_id}",
+        headers=_auth(access),
+        json={"systolic": 70},  # would make sys (70) <= dia (80)
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "systolic_must_exceed_diastolic"
+
+
+@pytest.mark.asyncio
+async def test_patch_other_users_entry_returns_404(client, db, unique_email):
+    user_a = await _signup(client, db, unique_email)
+    email_b = f"u-other-{unique_email.split('-', 1)[1]}"
+    user_b = await _signup(client, db, email_b)
+
+    r = await client.post(
+        "/api/v1/blood-pressure",
+        headers=_auth(user_a["tokens"]["access_token"]),
+        json={"systolic": 120, "diastolic": 80},
+    )
+    entry_id = r.json()["id"]
+
+    r = await client.patch(
+        f"/api/v1/blood-pressure/{entry_id}",
+        headers=_auth(user_b["tokens"]["access_token"]),
+        json={"systolic": 130},
+    )
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_summary_returns_latest_and_target(client, db, unique_email):
     data = await _signup(client, db, unique_email)
     access = data["tokens"]["access_token"]

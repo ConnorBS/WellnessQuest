@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.activity_entry import ActivityEntry
 from app.models.user import User
+from app.schemas.activity import ActivityEntryPatch
 from app.services import events, goal_service, streak_service, xp_service
 from app.services.time_utils import day_bounds_for_user, day_for_user, utcnow
 
@@ -163,6 +164,34 @@ async def recent_distinct(
     )
     rows = list((await db.execute(stmt)).scalars().all())
     return rows[:limit]
+
+
+async def update_entry(
+    db: AsyncSession,
+    *,
+    user: User,
+    entry_id: int,
+    patch: ActivityEntryPatch,
+) -> ActivityEntry | None:
+    """Apply a partial update to an activity entry. Returns None when not
+    found. Same passthrough semantics as water/food edits — no re-grant of
+    XP, no goal-met re-fire even if the edit pushes the day above the goal.
+    """
+    stmt = select(ActivityEntry).where(
+        ActivityEntry.id == entry_id, ActivityEntry.user_id == user.id
+    )
+    entry = (await db.execute(stmt)).scalar_one_or_none()
+    if entry is None:
+        return None
+    data = patch.model_dump(exclude_unset=True)
+    for field, value in data.items():
+        if field in {"name", "exercise_type"} and isinstance(value, str):
+            stripped = value.strip()
+            setattr(entry, field, stripped or None)
+        else:
+            setattr(entry, field, value)
+    await db.flush()
+    return entry
 
 
 async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:
