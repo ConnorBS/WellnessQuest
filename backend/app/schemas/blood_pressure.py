@@ -28,6 +28,18 @@ class BloodPressureEntryOut(BaseModel):
     note: str | None = None
 
 
+class BloodPressureEntryPatch(BaseModel):
+    """All fields optional; only provided ones are updated. The
+    systolic > diastolic invariant is re-checked against the merged result
+    in the service, not here, since either side may be unset."""
+
+    systolic: int | None = Field(default=None, ge=1, le=299)
+    diastolic: int | None = Field(default=None, ge=1, le=199)
+    pulse: int | None = Field(default=None, ge=1, le=299)
+    occurred_at: datetime | None = None
+    note: str | None = Field(default=None, max_length=500)
+
+
 class BloodPressureTargetIn(BaseModel):
     # Both None = explicit "no target as of effective_at" (clears the goal).
     # Otherwise both must be present and range-checked.

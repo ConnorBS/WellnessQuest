@@ -11,6 +11,7 @@ from app.schemas.activity import (
     ActivityAddIn,
     ActivityAddOut,
     ActivityEntryOut,
+    ActivityEntryPatch,
     ActivityRecentEntry,
     ActivityTodayOut,
 )
@@ -144,6 +145,38 @@ async def add_activity(
         goal_minutes=result.goal_minutes,
         xp_delta=result.xp_delta,
         goal_met=result.goal_met,
+    )
+
+
+@router.patch("/{entry_id}", response_model=ActivityEntryOut)
+async def update_activity(
+    entry_id: int,
+    payload: ActivityEntryPatch,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ActivityEntryOut:
+    row = await activity_service.update_entry(
+        db, user=user, entry_id=entry_id, patch=payload
+    )
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="activity.update",
+        user_id=user.id,
+        target_type="activity_entry",
+        target_id=str(row.id),
+        meta={"fields": list(payload.model_dump(exclude_unset=True).keys())},
+    )
+    return ActivityEntryOut(
+        id=row.id,
+        minutes=row.minutes,
+        source=row.source,
+        occurred_at=row.occurred_at,
+        client_id=row.client_id,
+        exercise_type=row.exercise_type,
+        name=row.name,
     )
 
 

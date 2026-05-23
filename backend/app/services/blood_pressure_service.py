@@ -8,7 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.blood_pressure_entry import BloodPressureEntry
 from app.models.blood_pressure_target import BloodPressureTarget
 from app.models.user import User
+from app.schemas.blood_pressure import BloodPressureEntryPatch
 from app.services.time_utils import utcnow
+
+
+class InvalidBPPatch(Exception):
+    """Raised when a patch would violate the systolic > diastolic invariant."""
+
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code
 
 
 async def add(
@@ -60,6 +69,43 @@ async def list_history(
         .scalars()
         .all()
     )
+
+
+async def update_entry(
+    db: AsyncSession,
+    *,
+    user: User,
+    entry_id: int,
+    patch: BloodPressureEntryPatch,
+) -> BloodPressureEntry | None:
+    """Apply a partial update to a BP entry. Returns None when not found.
+    Raises InvalidBPPatch when the merged result would violate the
+    systolic > diastolic invariant."""
+    row = (
+        await db.execute(
+            select(BloodPressureEntry).where(
+                BloodPressureEntry.id == entry_id,
+                BloodPressureEntry.user_id == user.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        return None
+
+    data = patch.model_dump(exclude_unset=True)
+    new_sys = data.get("systolic", row.systolic)
+    new_dia = data.get("diastolic", row.diastolic)
+    if new_sys <= new_dia:
+        raise InvalidBPPatch("systolic_must_exceed_diastolic")
+
+    for field, value in data.items():
+        if field == "note" and isinstance(value, str):
+            stripped = value.strip()
+            setattr(row, field, stripped or None)
+        else:
+            setattr(row, field, value)
+    await db.flush()
+    return row
 
 
 async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:

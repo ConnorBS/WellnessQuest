@@ -23,6 +23,16 @@ class ActivityEntryOut(BaseModel):
     name: str | None = None
 
 
+class ActivityEntryPatch(BaseModel):
+    """All fields optional; only provided ones are updated. `source` and
+    `client_id` are intentionally not patchable."""
+
+    minutes: int | None = Field(default=None, gt=0, le=1440)
+    occurred_at: datetime | None = None
+    exercise_type: str | None = Field(default=None, max_length=60)
+    name: str | None = Field(default=None, max_length=60)
+
+
 class ActivityTodayOut(BaseModel):
     date: str
     total_minutes: int

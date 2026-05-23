@@ -124,6 +124,7 @@ class FoodEntryPatch(BaseModel):
     unit: FoodUnit | None = None
     nutrients: NutrientPanel | None = None
     meal_type: MealType | None = None
+    occurred_at: datetime | None = None
 
 
 class FoodMacroTotals(BaseModel):

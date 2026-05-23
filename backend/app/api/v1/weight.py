@@ -11,6 +11,7 @@ from app.models.weight_target import WeightTarget
 from app.schemas.weight import (
     WeightEntryIn,
     WeightEntryOut,
+    WeightEntryPatch,
     WeightSummaryOut,
     WeightTargetIn,
     WeightTargetOut,
@@ -94,6 +95,30 @@ async def add_weight(
         target_type="weight_entry",
         target_id=str(row.id),
         meta={"weight_kg": str(row.weight_kg)},
+    )
+    return _to_out(row)
+
+
+@router.patch("/{entry_id}", response_model=WeightEntryOut)
+async def update_weight(
+    entry_id: int,
+    payload: WeightEntryPatch,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> WeightEntryOut:
+    row = await weight_service.update_entry(
+        db, user=user, entry_id=entry_id, patch=payload
+    )
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="weight.update",
+        user_id=user.id,
+        target_type="weight_entry",
+        target_id=str(row.id),
+        meta={"fields": list(payload.model_dump(exclude_unset=True).keys())},
     )
     return _to_out(row)
 

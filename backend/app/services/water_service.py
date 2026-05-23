@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 from app.models.water_entry import WaterEntry
+from app.schemas.water import WaterEntryPatch
 from app.services import events, goal_service, streak_service, xp_service
 from app.services.time_utils import day_bounds_for_user, day_for_user, utcnow
 
@@ -171,6 +172,35 @@ async def recent_distinct(
         if len(result) >= limit:
             break
     return result
+
+
+async def update_entry(
+    db: AsyncSession,
+    *,
+    user: User,
+    entry_id: int,
+    patch: WaterEntryPatch,
+) -> WaterEntry | None:
+    """Apply a partial update to a water entry. Returns None when not found.
+
+    Does NOT re-grant XP or fire `water.goal_met` even if the edit pushes
+    the day above the goal — matches food's edit semantics (edits are
+    corrections, not new crossings). Day totals are recomputed on read so
+    the dashboard stays consistent even when ml or occurred_at changes.
+    """
+    stmt = select(WaterEntry).where(WaterEntry.id == entry_id, WaterEntry.user_id == user.id)
+    entry = (await db.execute(stmt)).scalar_one_or_none()
+    if entry is None:
+        return None
+    data = patch.model_dump(exclude_unset=True)
+    for field, value in data.items():
+        if field == "name" and isinstance(value, str):
+            stripped = value.strip()
+            setattr(entry, field, stripped or None)
+        else:
+            setattr(entry, field, value)
+    await db.flush()
+    return entry
 
 
 async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:

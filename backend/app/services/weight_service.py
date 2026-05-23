@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User
 from app.models.weight_entry import WeightEntry
 from app.models.weight_target import WeightTarget
+from app.schemas.weight import WeightEntryPatch
 from app.services.time_utils import utcnow
 
 
@@ -78,6 +79,34 @@ async def list_history(
         .scalars()
         .all()
     )
+
+
+async def update_entry(
+    db: AsyncSession,
+    *,
+    user: User,
+    entry_id: int,
+    patch: WeightEntryPatch,
+) -> WeightEntry | None:
+    """Apply a partial update to a weight entry. Returns None when not found."""
+    row = (
+        await db.execute(
+            select(WeightEntry).where(
+                WeightEntry.id == entry_id, WeightEntry.user_id == user.id
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        return None
+    data = patch.model_dump(exclude_unset=True)
+    for field, value in data.items():
+        if field == "note" and isinstance(value, str):
+            stripped = value.strip()
+            setattr(row, field, stripped or None)
+        else:
+            setattr(row, field, value)
+    await db.flush()
+    return row
 
 
 async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:

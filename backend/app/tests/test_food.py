@@ -397,6 +397,29 @@ async def test_food_patch_entry(client, db, unique_email):
 
 
 @pytest.mark.asyncio
+async def test_food_patch_occurred_at(client, db, unique_email):
+    """Time editing is exposed via PATCH so a meal logged late can be moved
+    back to when it was actually eaten."""
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.post(
+        "/api/v1/food",
+        headers=_auth(access),
+        json={"name": "Toast", "kcal": 100, "client_id": "t1"},
+    )
+    entry_id = r.json()["entry"]["id"]
+
+    r = await client.patch(
+        f"/api/v1/food/{entry_id}",
+        headers=_auth(access),
+        json={"occurred_at": "2026-05-22T07:15:00Z"},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["entry"]["occurred_at"].startswith("2026-05-22T07:15:00")
+
+
+@pytest.mark.asyncio
 async def test_food_patch_rejects_unknown_nutrient(client, db, unique_email):
     """The NutrientPanel whitelist must reject extra keys so the JSONB blob
     doesn't accumulate typos / garbage."""
