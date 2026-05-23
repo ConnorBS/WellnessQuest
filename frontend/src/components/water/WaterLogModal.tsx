@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { OccurredAtField } from "@/components/forms/OccurredAtField";
 import { useAddWater } from "@/hooks/useAddWater";
 import { useCreatePreset } from "@/hooks/useWaterPresets";
 import { useRecentWater } from "@/hooks/useRecentWater";
 import { ApiError } from "@/lib/api";
+import { useViewedDay } from "@/lib/day-context";
+import { occurredAtFor } from "@/lib/occurredAt";
 import { uuidv4 } from "@/lib/uuid";
 
 interface Props {
@@ -32,8 +35,10 @@ export function WaterLogModal({ onClose }: Props) {
   const [unit, setUnit] = useState<Unit>("ml");
   const [name, setName] = useState("");
   const [saveAsPreset, setSaveAsPreset] = useState(false);
+  const [occurredAt, setOccurredAt] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const { viewedDay, isToday } = useViewedDay();
   const add = useAddWater();
   const createPreset = useCreatePreset();
   const recent = useRecentWater(12);
@@ -79,7 +84,12 @@ export function WaterLogModal({ onClose }: Props) {
     const trimmed = name.trim();
     const entryName = trimmed ? trimmed.slice(0, 60) : null;
     add.mutate(
-      { ml, client_id: uuidv4(), name: entryName },
+      {
+        ml,
+        client_id: uuidv4(),
+        name: entryName,
+        ...(occurredAt ? { occurred_at: occurredAt } : {}),
+      },
       {
         onSuccess: () => {
           if (saveAsPreset) {
@@ -216,6 +226,13 @@ export function WaterLogModal({ onClose }: Props) {
               </span>
             )}
           </label>
+
+          <OccurredAtField
+            value={occurredAt}
+            onChange={setOccurredAt}
+            defaultLabel={isToday ? "now" : "noon"}
+            initialPickerIso={occurredAtFor(viewedDay, isToday)}
+          />
 
           <label
             style={{

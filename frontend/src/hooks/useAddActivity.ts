@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { apiDelete, apiPost } from "@/lib/api";
 import { useViewedDay } from "@/lib/day-context";
+import { occurredAtFor } from "@/lib/occurredAt";
 import { ActivityAddOut, ActivityAddOutSchema, ActivityToday } from "@/lib/schemas";
 
 type AddArgs = {
@@ -11,12 +12,8 @@ type AddArgs = {
   client_id: string;
   exercise_type?: string | null;
   name?: string | null;
+  occurred_at?: string | null;
 };
-
-function occurredAtFor(viewedDay: string, isToday: boolean): string {
-  if (isToday) return new Date().toISOString();
-  return new Date(`${viewedDay}T12:00:00`).toISOString();
-}
 
 export function useAddActivity() {
   const qc = useQueryClient();
@@ -29,7 +26,7 @@ export function useAddActivity() {
         client_id: args.client_id,
         exercise_type: args.exercise_type ?? null,
         name: args.name ?? null,
-        occurred_at: occurredAtFor(viewedDay, isToday),
+        occurred_at: args.occurred_at ?? occurredAtFor(viewedDay, isToday),
       }),
     onMutate: async (args) => {
       await qc.cancelQueries({ queryKey: key });
@@ -48,7 +45,7 @@ export function useAddActivity() {
               id: -1,
               minutes: args.minutes,
               source: "pwa",
-              occurred_at: occurredAtFor(viewedDay, isToday),
+              occurred_at: args.occurred_at ?? occurredAtFor(viewedDay, isToday),
               client_id: args.client_id,
               exercise_type: args.exercise_type ?? null,
               name: args.name ?? null,

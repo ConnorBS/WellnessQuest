@@ -4,16 +4,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { apiDelete, apiPost } from "@/lib/api";
 import { useViewedDay } from "@/lib/day-context";
+import { occurredAtFor } from "@/lib/occurredAt";
 import { WaterAddOut, WaterAddOutSchema, WaterToday } from "@/lib/schemas";
 
-type AddArgs = { ml: number; client_id: string; name?: string | null };
-
-function occurredAtFor(viewedDay: string, isToday: boolean): string {
-  if (isToday) return new Date().toISOString();
-  // Past day — anchor at local noon so the entry lands squarely on the right
-  // calendar day in the user's timezone.
-  return new Date(`${viewedDay}T12:00:00`).toISOString();
-}
+type AddArgs = {
+  ml: number;
+  client_id: string;
+  name?: string | null;
+  occurred_at?: string | null;
+};
 
 export function useAddWater() {
   const qc = useQueryClient();
@@ -25,7 +24,7 @@ export function useAddWater() {
         ml: args.ml,
         client_id: args.client_id,
         name: args.name ?? null,
-        occurred_at: occurredAtFor(viewedDay, isToday),
+        occurred_at: args.occurred_at ?? occurredAtFor(viewedDay, isToday),
       }),
     onMutate: async (args) => {
       await qc.cancelQueries({ queryKey: key });
@@ -42,7 +41,7 @@ export function useAddWater() {
               id: -1,
               ml: args.ml,
               source: "pwa",
-              occurred_at: occurredAtFor(viewedDay, isToday),
+              occurred_at: args.occurred_at ?? occurredAtFor(viewedDay, isToday),
               client_id: args.client_id,
               name: args.name ?? null,
             },

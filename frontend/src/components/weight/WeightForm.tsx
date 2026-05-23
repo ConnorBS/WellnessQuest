@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
+import { OccurredAtField } from "@/components/forms/OccurredAtField";
 import { useAddWeight } from "@/hooks/useWeight";
 import { displayToKg } from "@/lib/units";
 
@@ -24,6 +25,7 @@ export function WeightForm({ unit, defaultValue, onSaved }: Props) {
   const add = useAddWeight();
   const [val, setVal] = useState<string>(defaultValue?.toFixed(1) ?? "");
   const [note, setNote] = useState("");
+  const [occurredAt, setOccurredAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function handleSubmit(e: FormEvent) {
@@ -36,10 +38,15 @@ export function WeightForm({ unit, defaultValue, onSaved }: Props) {
     }
     const kg = displayToKg(num, unit);
     add.mutate(
-      { weight_kg: Number(kg.toFixed(2)), note: note.trim() || null },
+      {
+        weight_kg: Number(kg.toFixed(2)),
+        note: note.trim() || null,
+        ...(occurredAt ? { occurred_at: occurredAt } : {}),
+      },
       {
         onSuccess: () => {
           setNote("");
+          setOccurredAt(null);
           setError(null);
           onSaved?.();
         },
@@ -71,6 +78,7 @@ export function WeightForm({ unit, defaultValue, onSaved }: Props) {
         placeholder="Optional note (e.g. after workout)"
         maxLength={500}
       />
+      <OccurredAtField value={occurredAt} onChange={setOccurredAt} />
       {error && <p style={{ color: "#fca5a5", fontSize: 13 }}>{error}</p>}
       <button type="submit" disabled={add.isPending} style={primaryBtn}>
         {add.isPending ? "Saving…" : "Log weight"}

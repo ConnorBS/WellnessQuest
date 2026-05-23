@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { OccurredAtField } from "@/components/forms/OccurredAtField";
 import { useAddFood } from "@/hooks/useAddFood";
 import { useFoodBarcode } from "@/hooks/useFoodBarcode";
 import { useCreateFoodPreset } from "@/hooks/useFoodPresets";
 import { useFoodSearch } from "@/hooks/useFoodSearch";
 import { ApiError } from "@/lib/api";
+import { useViewedDay } from "@/lib/day-context";
 import { resolvePortion, type IngredientUnit } from "@/lib/food/portionMath";
+import { occurredAtFor } from "@/lib/occurredAt";
 import type {
   FoodSearchHit,
   FoodUnit,
@@ -107,6 +110,8 @@ export function FoodLogModal({ onClose }: Props) {
   const [manualUnit, setManualUnit] = useState<FoodUnit>("g");
   const [search, setSearch] = useState("");
   const [saveAsPreset, setSaveAsPreset] = useState(false);
+  const [occurredAt, setOccurredAt] = useState<string | null>(null);
+  const { viewedDay, isToday } = useViewedDay();
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   // Label-scan review state
@@ -307,6 +312,7 @@ export function FoodLogModal({ onClose }: Props) {
         provider: selected.provider,
         provider_id: selected.provider_id,
         client_id: uuidv4(),
+        ...(occurredAt ? { occurred_at: occurredAt } : {}),
       },
       {
         onSuccess: () => {
@@ -368,6 +374,7 @@ export function FoodLogModal({ onClose }: Props) {
         unit: manualUnit,
         meal_type: meal,
         client_id: uuidv4(),
+        ...(occurredAt ? { occurred_at: occurredAt } : {}),
       },
       {
         onSuccess: () => {
@@ -1086,6 +1093,12 @@ export function FoodLogModal({ onClose }: Props) {
                               </>
                             );
                           })()}
+                          <OccurredAtField
+                            value={occurredAt}
+                            onChange={setOccurredAt}
+                            defaultLabel={isToday ? "now" : "noon"}
+                            initialPickerIso={occurredAtFor(viewedDay, isToday)}
+                          />
                           <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
                           {(() => {
                             const disabled =
@@ -1187,6 +1200,12 @@ export function FoodLogModal({ onClose }: Props) {
                     />
                   </label>
                 </div>
+                <OccurredAtField
+                  value={occurredAt}
+                  onChange={setOccurredAt}
+                  defaultLabel={isToday ? "now" : "noon"}
+                  initialPickerIso={occurredAtFor(viewedDay, isToday)}
+                />
                 <SaveAsPresetCheckbox value={saveAsPreset} onChange={setSaveAsPreset} />
                 {(() => {
                   const manualDisabled =

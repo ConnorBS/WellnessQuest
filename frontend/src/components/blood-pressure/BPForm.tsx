@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
+import { OccurredAtField } from "@/components/forms/OccurredAtField";
 import { useAddBP } from "@/hooks/useBloodPressure";
 
 interface Props {
@@ -28,6 +29,7 @@ export function BPForm({ onSaved }: Props) {
   const [diastolic, setDiastolic] = useState("");
   const [pulse, setPulse] = useState("");
   const [note, setNote] = useState("");
+  const [occurredAt, setOccurredAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function handleSubmit(e: FormEvent) {
@@ -62,11 +64,13 @@ export function BPForm({ onSaved }: Props) {
         diastolic: dia,
         pulse: pulseNum,
         note: note.trim() || null,
+        ...(occurredAt ? { occurred_at: occurredAt } : {}),
       },
       {
         onSuccess: () => {
           setPulse("");
           setNote("");
+          setOccurredAt(null);
           setError(null);
           onSaved?.();
         },
@@ -134,6 +138,7 @@ export function BPForm({ onSaved }: Props) {
         placeholder="Optional note (e.g. morning, post-exercise)"
         maxLength={500}
       />
+      <OccurredAtField value={occurredAt} onChange={setOccurredAt} />
       {error && <p style={{ color: "#fca5a5", fontSize: 13 }}>{error}</p>}
       <button type="submit" disabled={add.isPending} style={primaryBtn}>
         {add.isPending ? "Saving…" : "Log reading"}
