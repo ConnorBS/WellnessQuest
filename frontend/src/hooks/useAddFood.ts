@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { apiDelete, apiPost } from "@/lib/api";
 import { useViewedDay } from "@/lib/day-context";
+import { occurredAtFor } from "@/lib/occurredAt";
 import {
   FoodAddOut,
   FoodAddOutSchema,
@@ -30,12 +31,8 @@ export type AddFoodArgs = {
   provider?: string | null;
   provider_id?: string | null;
   client_id: string;
+  occurred_at?: string | null;
 };
-
-function occurredAtFor(viewedDay: string, isToday: boolean): string {
-  if (isToday) return new Date().toISOString();
-  return new Date(`${viewedDay}T12:00:00`).toISOString();
-}
 
 export function useAddFood() {
   const qc = useQueryClient();
@@ -45,7 +42,7 @@ export function useAddFood() {
     mutationFn: (args) =>
       apiPost("/food", FoodAddOutSchema, {
         ...args,
-        occurred_at: occurredAtFor(viewedDay, isToday),
+        occurred_at: args.occurred_at ?? occurredAtFor(viewedDay, isToday),
       }),
     onMutate: async (args) => {
       await qc.cancelQueries({ queryKey: key });
@@ -70,7 +67,7 @@ export function useAddFood() {
           source: "pwa",
           provider: args.provider ?? null,
           provider_id: args.provider_id ?? null,
-          occurred_at: occurredAtFor(viewedDay, isToday),
+          occurred_at: args.occurred_at ?? occurredAtFor(viewedDay, isToday),
           client_id: args.client_id,
         };
         const mergedNutrientsTotal = mergeNutrientTotals(

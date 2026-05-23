@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { OccurredAtField } from "@/components/forms/OccurredAtField";
 import { useAddActivity } from "@/hooks/useAddActivity";
 import { useCreateActivityPreset } from "@/hooks/useActivityPresets";
 import { useRecentActivity } from "@/hooks/useRecentActivity";
 import { ApiError } from "@/lib/api";
+import { useViewedDay } from "@/lib/day-context";
+import { occurredAtFor } from "@/lib/occurredAt";
 import { uuidv4 } from "@/lib/uuid";
 
 interface Props {
@@ -35,8 +38,10 @@ export function ActivityLogModal({ onClose }: Props) {
   const [exerciseType, setExerciseType] = useState("");
   const [minutes, setMinutes] = useState<number | "">("");
   const [saveAsPreset, setSaveAsPreset] = useState(false);
+  const [occurredAt, setOccurredAt] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const { viewedDay, isToday } = useViewedDay();
   const add = useAddActivity();
   const createPreset = useCreateActivityPreset();
   const recent = useRecentActivity(12);
@@ -95,6 +100,7 @@ export function ActivityLogModal({ onClose }: Props) {
         client_id: uuidv4(),
         exercise_type: entryType,
         name: entryName,
+        ...(occurredAt ? { occurred_at: occurredAt } : {}),
       },
       {
         onSuccess: () => {
@@ -233,6 +239,13 @@ export function ActivityLogModal({ onClose }: Props) {
               data-testid="activity-log-minutes"
             />
           </label>
+
+          <OccurredAtField
+            value={occurredAt}
+            onChange={setOccurredAt}
+            defaultLabel={isToday ? "now" : "noon"}
+            initialPickerIso={occurredAtFor(viewedDay, isToday)}
+          />
 
           <label
             style={{
