@@ -94,6 +94,11 @@ export function FoodLogModal({ onClose }: Props) {
   const [overrideCarbs, setOverrideCarbs] = useState<number | "">("");
   const [overrideFat, setOverrideFat] = useState<number | "">("");
   const [editingValues, setEditingValues] = useState(false);
+  // Whether the "1 serving = X g" override is exposed. Default collapsed when
+  // OFF gives us a serving (so the form is just "type servings count, see
+  // kcal"); auto-expanded when OFF has none, so the user is prompted to
+  // define one. The link toggles it for the "I only ate half the tub" case.
+  const [editingServing, setEditingServing] = useState(false);
   const [manualName, setManualName] = useState("");
   const [manualKcal, setManualKcal] = useState<number | "">("");
   const [manualProtein, setManualProtein] = useState<number | "">("");
@@ -149,11 +154,15 @@ export function FoodLogModal({ onClose }: Props) {
     setServings(1);
     setServingG(hit.serving_g ?? "");
     setServingLabel(hit.serving_label ?? "");
-    // Always land in servings mode so the "1 serving = (g)" prompt is the
-    // first thing the user sees. When OFF has no serving_g the field stays
-    // empty and the Log button is disabled until the user fills it in —
-    // better than silently defaulting to 100 g.
+    // Always land in servings mode so the per-serving readout is the first
+    // thing the user sees. When OFF has no serving_g we auto-expand the
+    // override form and keep the Log button disabled until they define
+    // one — better than silently defaulting to 100 g.
     setPortionMode("servings");
+    // Open the override form only when OFF didn't give us a serving size —
+    // we need the user to define one. Otherwise stay collapsed; the link
+    // below the readout reopens it for overrides.
+    setEditingServing(hit.serving_g == null);
     setRawGrams("");
     setOverrideKcal("");
     setOverrideProtein("");
@@ -682,15 +691,23 @@ export function FoodLogModal({ onClose }: Props) {
                                     ? h.kcal_per_100ml ?? h.kcal_per_100g
                                     : h.kcal_per_100g ?? h.kcal_per_100ml;
                                 const unitLabel = native === "ml" ? "mL" : "g";
-                                return per100 != null
-                                  ? `${Math.round(per100)} kcal / 100 ${unitLabel}`
+                                // Prefer kcal-per-serving when OFF gives us a
+                                // serving size — that's the number people
+                                // actually compare. Fall back to per-100 when
+                                // we have nothing to scale by.
+                                if (per100 != null && h.serving_g != null) {
+                                  const perServing = Math.round((per100 * h.serving_g) / 100);
+                                  const portion =
+                                    h.serving_label ?? `${h.serving_g} ${unitLabel}`;
+                                  return `${perServing} kcal · ${portion}`;
+                                }
+                                if (per100 != null) {
+                                  return `${Math.round(per100)} kcal / 100 ${unitLabel}`;
+                                }
+                                return h.serving_label
+                                  ? `no kcal data · ${h.serving_label}`
                                   : "no kcal data";
                               })()}
-                              {h.serving_label
-                                ? ` · serving: ${h.serving_label}`
-                                : h.serving_g
-                                  ? ` · serving: ${h.serving_g} ${h.unit === "ml" ? "mL" : "g"}`
-                                  : ""}
                             </div>
                           </button>
                         </li>
@@ -717,89 +734,133 @@ export function FoodLogModal({ onClose }: Props) {
                                 {selected.brand}
                               </div>
                             ) : null}
-                            {selected.serving_label ? (
-                              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                                OFF serving: {selected.serving_label}
-                              </div>
-                            ) : null}
                           </div>
                           {inServingsMode ? (
                             <>
-                              <div
-                                style={{
-                                  display: "grid",
-                                  gridTemplateColumns: "1fr 1fr",
-                                  gap: 8,
-                                }}
-                              >
-                                <label>
-                                  <span style={fieldLabel}>Servings</span>
-                                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                              {(() => {
+                                const servingsCounter = (
+                                  <label>
+                                    <span style={fieldLabel}>Servings</span>
+                                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setServings((s) =>
+                                            Math.max(0.25, +(s - 0.5).toFixed(2)),
+                                          )
+                                        }
+                                        style={stepperBtn}
+                                        aria-label="Half a serving less"
+                                      >
+                                        −
+                                      </button>
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        step={0.25}
+                                        value={servings}
+                                        onChange={(e) => servingsSnap.onChange(e.target.value)}
+                                        onBlur={servingsSnap.onBlur}
+                                        style={{ ...inputStyle, flex: 1, textAlign: "center" }}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setServings((s) => +(s + 0.5).toFixed(2))
+                                        }
+                                        style={stepperBtn}
+                                        aria-label="Half a serving more"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </label>
+                                );
+                                const labelText = servingLabel.trim();
+                                const gramsText =
+                                  servingG !== ""
+                                    ? `${fmtAmount(Number(servingG))} ${servingUnitLabel}`
+                                    : null;
+                                return editingServing ? (
+                                  <>
+                                    <div
+                                      style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "1fr 1fr",
+                                        gap: 8,
+                                      }}
+                                    >
+                                      {servingsCounter}
+                                      <label>
+                                        <span style={fieldLabel}>
+                                          1 serving ({servingUnitLabel})
+                                        </span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          step={0.1}
+                                          value={servingG}
+                                          placeholder={`grams per serving`}
+                                          onChange={(e) =>
+                                            setServingG(
+                                              e.target.value === "" ? "" : Number(e.target.value),
+                                            )
+                                          }
+                                          style={inputStyle}
+                                        />
+                                      </label>
+                                    </div>
+                                    <label>
+                                      <span style={fieldLabel}>
+                                        Serving looks like (optional)
+                                      </span>
+                                      <input
+                                        type="text"
+                                        maxLength={64}
+                                        placeholder="e.g. 1 slice, 1/3 pizza, 1 cup"
+                                        value={servingLabel}
+                                        onChange={(e) => setServingLabel(e.target.value)}
+                                        style={inputStyle}
+                                      />
+                                    </label>
+                                    {selected.serving_g != null ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingServing(false)}
+                                        style={linkBtn}
+                                      >
+                                        Done editing serving
+                                      </button>
+                                    ) : null}
+                                  </>
+                                ) : (
+                                  <>
+                                    {servingsCounter}
+                                    <div
+                                      style={{
+                                        fontSize: 13,
+                                        color: "#cbd5e1",
+                                        background: "#0f172a",
+                                        border: "1px solid #1e293b",
+                                        borderRadius: 6,
+                                        padding: "8px 10px",
+                                      }}
+                                    >
+                                      1 serving ={" "}
+                                      {labelText
+                                        ? `${labelText}${gramsText ? ` (${gramsText})` : ""}`
+                                        : (gramsText ?? "?")}
+                                    </div>
                                     <button
                                       type="button"
-                                      onClick={() =>
-                                        setServings((s) =>
-                                          Math.max(0.25, +(s - 0.5).toFixed(2)),
-                                        )
-                                      }
-                                      style={stepperBtn}
-                                      aria-label="Half a serving less"
+                                      onClick={() => setEditingServing(true)}
+                                      style={linkBtn}
                                     >
-                                      −
+                                      Edit serving
                                     </button>
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      step={0.25}
-                                      value={servings}
-                                      onChange={(e) => servingsSnap.onChange(e.target.value)}
-                                      onBlur={servingsSnap.onBlur}
-                                      style={{ ...inputStyle, flex: 1, textAlign: "center" }}
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setServings((s) => +(s + 0.5).toFixed(2))
-                                      }
-                                      style={stepperBtn}
-                                      aria-label="Half a serving more"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-                                </label>
-                                <label>
-                                  <span style={fieldLabel}>
-                                    1 serving = ({servingUnitLabel})
-                                  </span>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    step={0.1}
-                                    value={servingG}
-                                    placeholder={`weight per serving in ${servingUnitLabel}`}
-                                    onChange={(e) =>
-                                      setServingG(
-                                        e.target.value === "" ? "" : Number(e.target.value),
-                                      )
-                                    }
-                                    style={inputStyle}
-                                  />
-                                </label>
-                              </div>
-                              <label>
-                                <span style={fieldLabel}>
-                                  Serving looks like (optional)
-                                </span>
-                                <input
-                                  type="text"
-                                  maxLength={64}
-                                  placeholder="e.g. 1 slice, 1/3 pizza, 1 cup"
-                                  value={servingLabel}
-                                  onChange={(e) => setServingLabel(e.target.value)}
-                                  style={inputStyle}
-                                />
-                              </label>
+                                  </>
+                                );
+                              })()}
                               {hasDefinedPortion ? (
                                 <span
                                   style={{
@@ -809,12 +870,6 @@ export function FoodLogModal({ onClose }: Props) {
                                   }}
                                 >
                                   Logging {fmtAmount(totalAmount)} {servingUnitLabel}
-                                  {servingLabel.trim()
-                                    ? ` · ${servings} × ${servingLabel.trim()}`
-                                    : selected.serving_label &&
-                                        servingLabel.trim() !== selected.serving_label
-                                      ? ` · OFF says 1 serving = ${selected.serving_label}`
-                                      : ""}
                                 </span>
                               ) : (
                                 <span
