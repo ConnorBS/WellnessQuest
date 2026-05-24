@@ -2,10 +2,16 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { apiDelete, apiPost } from "@/lib/api";
+import { apiDelete, apiPatch, apiPost } from "@/lib/api";
 import { useViewedDay } from "@/lib/day-context";
 import { occurredAtFor } from "@/lib/occurredAt";
-import { ActivityAddOut, ActivityAddOutSchema, ActivityToday } from "@/lib/schemas";
+import {
+  ActivityAddOut,
+  ActivityAddOutSchema,
+  ActivityEntry,
+  ActivityEntrySchema,
+  ActivityToday,
+} from "@/lib/schemas";
 
 type AddArgs = {
   minutes: number;
@@ -77,6 +83,29 @@ export function useDeleteActivity() {
       qc.invalidateQueries({ queryKey: ["activity", "today", viewedDay] });
       qc.invalidateQueries({ queryKey: ["activity", "recent"] });
       qc.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
+}
+
+export type UpdateActivityArgs = {
+  id: number;
+  patch: {
+    minutes?: number;
+    occurred_at?: string;
+    exercise_type?: string | null;
+    name?: string | null;
+  };
+};
+
+export function useUpdateActivity() {
+  const qc = useQueryClient();
+  const { viewedDay } = useViewedDay();
+  return useMutation<ActivityEntry, Error, UpdateActivityArgs>({
+    mutationFn: ({ id, patch }) =>
+      apiPatch(`/activity/${id}`, ActivityEntrySchema, patch),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["activity", "today", viewedDay] });
+      qc.invalidateQueries({ queryKey: ["activity", "recent"] });
     },
   });
 }

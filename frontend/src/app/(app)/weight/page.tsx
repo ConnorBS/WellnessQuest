@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 
+import { EditWeightEntryDrawer } from "@/components/weight/EditWeightEntryDrawer";
 import { WeightForm } from "@/components/weight/WeightForm";
 import { WeightSparkline } from "@/components/weight/WeightSparkline";
 import { useMe } from "@/hooks/useMe";
 import { useDeleteWeight, useWeightHistory } from "@/hooks/useWeight";
+import type { WeightEntry } from "@/lib/schemas";
 import { formatWeight } from "@/lib/units";
 
 const primaryBtn: React.CSSProperties = {
@@ -26,12 +28,22 @@ const dangerBtn: React.CSSProperties = {
   fontSize: 12,
 };
 
+const subtleBtn: React.CSSProperties = {
+  padding: "4px 8px",
+  background: "transparent",
+  color: "#cbd5e1",
+  border: "1px solid #334155",
+  borderRadius: 6,
+  fontSize: 12,
+};
+
 export default function WeightPage() {
   const { data: me } = useMe();
   const history = useWeightHistory(180);
   const del = useDeleteWeight();
   const unit = me?.weight_unit ?? "kg";
   const [showForm, setShowForm] = useState(true);
+  const [editing, setEditing] = useState<WeightEntry | null>(null);
 
   return (
     <>
@@ -88,21 +100,33 @@ export default function WeightPage() {
                       {e.note ? ` · ${e.note}` : ""}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (confirm("Delete this entry?")) del.mutate(e.id);
-                    }}
-                    style={dangerBtn}
-                  >
-                    Delete
-                  </button>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button type="button" onClick={() => setEditing(e)} style={subtleBtn}>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm("Delete this entry?")) del.mutate(e.id);
+                      }}
+                      style={dangerBtn}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
           </>
         )}
       </section>
+      {editing ? (
+        <EditWeightEntryDrawer
+          entry={editing}
+          unit={unit}
+          onClose={() => setEditing(null)}
+        />
+      ) : null}
     </>
   );
 }

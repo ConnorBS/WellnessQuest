@@ -2,10 +2,10 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { apiDelete, apiPost } from "@/lib/api";
+import { apiDelete, apiPatch, apiPost } from "@/lib/api";
 import { useViewedDay } from "@/lib/day-context";
 import { occurredAtFor } from "@/lib/occurredAt";
-import { WaterAddOut, WaterAddOutSchema, WaterToday } from "@/lib/schemas";
+import { WaterAddOut, WaterAddOutSchema, WaterEntry, WaterEntrySchema, WaterToday } from "@/lib/schemas";
 
 type AddArgs = {
   ml: number;
@@ -72,6 +72,27 @@ export function useDeleteWater() {
       qc.invalidateQueries({ queryKey: ["water", "today", viewedDay] });
       qc.invalidateQueries({ queryKey: ["water", "recent"] });
       qc.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
+}
+
+export type UpdateWaterArgs = {
+  id: number;
+  patch: {
+    ml?: number;
+    occurred_at?: string;
+    name?: string | null;
+  };
+};
+
+export function useUpdateWater() {
+  const qc = useQueryClient();
+  const { viewedDay } = useViewedDay();
+  return useMutation<WaterEntry, Error, UpdateWaterArgs>({
+    mutationFn: ({ id, patch }) => apiPatch(`/water/${id}`, WaterEntrySchema, patch),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["water", "today", viewedDay] });
+      qc.invalidateQueries({ queryKey: ["water", "recent"] });
     },
   });
 }

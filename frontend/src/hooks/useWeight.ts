@@ -2,8 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { apiDelete, apiFetch, apiPost } from "@/lib/api";
+import { apiDelete, apiFetch, apiPatch, apiPost } from "@/lib/api";
 import {
+  type WeightEntry,
   WeightEntrySchema,
   WeightEntryListSchema,
   WeightSummarySchema,
@@ -43,6 +44,25 @@ export function useDeleteWeight() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => apiDelete(`/weight/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["weight"] });
+    },
+  });
+}
+
+export type UpdateWeightArgs = {
+  id: number;
+  patch: {
+    weight_kg?: number;
+    occurred_at?: string;
+    note?: string | null;
+  };
+};
+
+export function useUpdateWeight() {
+  const qc = useQueryClient();
+  return useMutation<WeightEntry, Error, UpdateWeightArgs>({
+    mutationFn: ({ id, patch }) => apiPatch(`/weight/${id}`, WeightEntrySchema, patch),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["weight"] });
     },

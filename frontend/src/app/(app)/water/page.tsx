@@ -3,14 +3,17 @@
 import { useState } from "react";
 
 import { WaterCard } from "@/components/WaterCard";
+import { EditWaterEntryDrawer } from "@/components/water/EditWaterEntryDrawer";
 import { WaterLogModal } from "@/components/water/WaterLogModal";
 import { useWaterToday } from "@/hooks/useWaterToday";
 import { useDeleteWater } from "@/hooks/useAddWater";
+import type { WaterEntry } from "@/lib/schemas";
 
 export default function WaterPage() {
   const { data } = useWaterToday();
   const del = useDeleteWater();
   const [showLog, setShowLog] = useState(false);
+  const [editing, setEditing] = useState<WaterEntry | null>(null);
   return (
     <>
       <WaterCard />
@@ -66,24 +69,30 @@ export default function WaterPage() {
                     {new Date(e.occurred_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {e.source}
                   </span>
                   {e.id > 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => del.mutate(e.id)}
-                      disabled={del.isPending}
-                      title="Delete entry"
-                      aria-label="Delete entry"
-                      style={{
-                        color: "#94a3b8",
-                        background: "transparent",
-                        border: "none",
-                        cursor: del.isPending ? "not-allowed" : "pointer",
-                        padding: 4,
-                        fontSize: 16,
-                        lineHeight: 1,
-                      }}
-                    >
-                      ×
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditing(e)}
+                        title="Edit entry"
+                        aria-label="Edit entry"
+                        style={iconBtn}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => del.mutate(e.id)}
+                        disabled={del.isPending}
+                        title="Delete entry"
+                        aria-label="Delete entry"
+                        style={{
+                          ...iconBtn,
+                          cursor: del.isPending ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </>
                   ) : null}
                 </span>
               </li>
@@ -92,6 +101,19 @@ export default function WaterPage() {
         )}
       </section>
       {showLog ? <WaterLogModal onClose={() => setShowLog(false)} /> : null}
+      {editing ? (
+        <EditWaterEntryDrawer entry={editing} onClose={() => setEditing(null)} />
+      ) : null}
     </>
   );
 }
+
+const iconBtn: React.CSSProperties = {
+  color: "#94a3b8",
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  padding: 4,
+  fontSize: 16,
+  lineHeight: 1,
+};

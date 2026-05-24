@@ -4,7 +4,9 @@ import { useState } from "react";
 
 import { BPCategoryChip } from "@/components/blood-pressure/BPCategoryChip";
 import { BPForm } from "@/components/blood-pressure/BPForm";
+import { EditBPEntryDrawer } from "@/components/blood-pressure/EditBPEntryDrawer";
 import { useBPHistory, useBPSummary, useDeleteBP } from "@/hooks/useBloodPressure";
+import type { BloodPressureEntry } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
@@ -24,11 +26,21 @@ const dangerBtn: React.CSSProperties = {
   fontSize: 12,
 };
 
+const subtleBtn: React.CSSProperties = {
+  padding: "4px 8px",
+  background: "transparent",
+  color: "#cbd5e1",
+  border: "1px solid #334155",
+  borderRadius: 6,
+  fontSize: 12,
+};
+
 export default function BloodPressurePage() {
   const history = useBPHistory(180);
   const summary = useBPSummary();
   const del = useDeleteBP();
   const [showForm, setShowForm] = useState(true);
+  const [editing, setEditing] = useState<BloodPressureEntry | null>(null);
 
   const target = summary.data?.current_target ?? null;
   const hasTarget =
@@ -94,20 +106,28 @@ export default function BloodPressurePage() {
                     {e.note ? ` · ${e.note}` : ""}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm("Delete this reading?")) del.mutate(e.id);
-                  }}
-                  style={dangerBtn}
-                >
-                  Delete
-                </button>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button type="button" onClick={() => setEditing(e)} style={subtleBtn}>
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm("Delete this reading?")) del.mutate(e.id);
+                    }}
+                    style={dangerBtn}
+                  >
+                    Delete
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
+      {editing ? (
+        <EditBPEntryDrawer entry={editing} onClose={() => setEditing(null)} />
+      ) : null}
     </>
   );
 }
