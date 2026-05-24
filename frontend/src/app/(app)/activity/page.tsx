@@ -4,13 +4,16 @@ import { useState } from "react";
 
 import { ActivityCard } from "@/components/ActivityCard";
 import { ActivityLogModal } from "@/components/activity/ActivityLogModal";
+import { EditActivityEntryDrawer } from "@/components/activity/EditActivityEntryDrawer";
 import { useActivityToday } from "@/hooks/useActivityToday";
 import { useDeleteActivity } from "@/hooks/useAddActivity";
+import type { ActivityEntry } from "@/lib/schemas";
 
 export default function ActivityPage() {
   const { data } = useActivityToday();
   const del = useDeleteActivity();
   const [showLog, setShowLog] = useState(false);
+  const [editing, setEditing] = useState<ActivityEntry | null>(null);
   return (
     <>
       <ActivityCard />
@@ -69,24 +72,30 @@ export default function ActivityPage() {
                     {new Date(e.occurred_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {e.source}
                   </span>
                   {e.id > 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => del.mutate(e.id)}
-                      disabled={del.isPending}
-                      title="Delete entry"
-                      aria-label="Delete entry"
-                      style={{
-                        color: "#94a3b8",
-                        background: "transparent",
-                        border: "none",
-                        cursor: del.isPending ? "not-allowed" : "pointer",
-                        padding: 4,
-                        fontSize: 16,
-                        lineHeight: 1,
-                      }}
-                    >
-                      ×
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditing(e)}
+                        title="Edit entry"
+                        aria-label="Edit entry"
+                        style={iconBtn}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => del.mutate(e.id)}
+                        disabled={del.isPending}
+                        title="Delete entry"
+                        aria-label="Delete entry"
+                        style={{
+                          ...iconBtn,
+                          cursor: del.isPending ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </>
                   ) : null}
                 </span>
               </li>
@@ -95,6 +104,19 @@ export default function ActivityPage() {
         )}
       </section>
       {showLog ? <ActivityLogModal onClose={() => setShowLog(false)} /> : null}
+      {editing ? (
+        <EditActivityEntryDrawer entry={editing} onClose={() => setEditing(null)} />
+      ) : null}
     </>
   );
 }
+
+const iconBtn: React.CSSProperties = {
+  color: "#94a3b8",
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  padding: 4,
+  fontSize: 16,
+  lineHeight: 1,
+};

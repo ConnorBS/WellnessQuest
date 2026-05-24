@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { OccurredAtField } from "@/components/forms/OccurredAtField";
 import { useUpdateFood } from "@/hooks/useUpdateFood";
 import type { FoodEntry, MealType } from "@/lib/schemas";
 import { useSnapBack } from "@/lib/useSnapBack";
@@ -41,6 +42,10 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
   const [meal, setMeal] = useState<MealType | "">(entry.meal_type ?? "");
   const [name, setName] = useState(entry.name);
   const [brand, setBrand] = useState(entry.brand ?? "");
+  // null = keep the meal's original time; non-null = user opened the picker
+  // and chose a new time. See OccurredAtField for the collapsed/expanded
+  // semantics.
+  const [occurredAt, setOccurredAt] = useState<string | null>(null);
   // Direct kcal/macro edits — we expose these only when there's no
   // serving_g snapshot, otherwise the scaling does the work.
   const [kcalDraft, setKcalDraft] = useState<number | "">(entry.kcal);
@@ -95,6 +100,8 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
     if (brandTrim !== (entry.brand ?? null)) patch.brand = brandTrim;
     const mealVal: MealType | null = meal === "" ? null : meal;
     if (mealVal !== (entry.meal_type ?? null)) patch.meal_type = mealVal;
+
+    if (occurredAt !== null) patch.occurred_at = occurredAt;
 
     if (hasServingBasis) {
       // Scale per-serving values by the new servings count. We always
@@ -289,6 +296,13 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
           </select>
         </label>
 
+        <OccurredAtField
+          value={occurredAt}
+          onChange={setOccurredAt}
+          defaultLabel={formatTime(entry.occurred_at)}
+          initialPickerIso={entry.occurred_at}
+        />
+
         {update.isError ? (
           <p style={{ fontSize: 12, color: "#fca5a5", margin: 0 }}>
             Save failed — try again.
@@ -315,6 +329,10 @@ export function EditFoodEntryDrawer({ entry, onClose }: Props) {
 
 function round2(v: number): number {
   return Math.round(v * 100) / 100;
+}
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 const fieldLabel: React.CSSProperties = {

@@ -25,6 +25,7 @@ export type UpdateFoodArgs = {
     serving_label?: string | null;
     nutrients?: NutrientPanel | null;
     meal_type?: MealType | null;
+    occurred_at?: string;
   };
 };
 

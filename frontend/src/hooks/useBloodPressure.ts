@@ -2,8 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { apiDelete, apiFetch, apiPost } from "@/lib/api";
+import { ApiError, apiDelete, apiFetch, apiPatch, apiPost } from "@/lib/api";
 import {
+  type BloodPressureEntry,
   BloodPressureEntryListSchema,
   BloodPressureEntrySchema,
   BloodPressureSummarySchema,
@@ -51,4 +52,38 @@ export function useDeleteBP() {
       qc.invalidateQueries({ queryKey: ["bp"] });
     },
   });
+}
+
+export type UpdateBPArgs = {
+  id: number;
+  patch: {
+    systolic?: number;
+    diastolic?: number;
+    pulse?: number | null;
+    occurred_at?: string;
+    note?: string | null;
+  };
+};
+
+export function useUpdateBP() {
+  const qc = useQueryClient();
+  return useMutation<BloodPressureEntry, Error, UpdateBPArgs>({
+    mutationFn: ({ id, patch }) =>
+      apiPatch(`/blood-pressure/${id}`, BloodPressureEntrySchema, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bp"] });
+    },
+  });
+}
+
+// The backend raises 400 `systolic_must_exceed_diastolic` if a patch would
+// cross the invariant; surface a friendlier message in the UI.
+export function bpUpdateErrorMessage(err: Error): string {
+  if (err instanceof ApiError) {
+    const body = err.body as { detail?: string } | null;
+    if (body?.detail === "systolic_must_exceed_diastolic") {
+      return "Systolic must be greater than diastolic.";
+    }
+  }
+  return "Save failed — try again.";
 }
