@@ -51,6 +51,7 @@ export const MeSchema = z.object({
   title_hidden: z.boolean(),
   weight_titles_opt_out: z.boolean(),
   bp_titles_opt_out: z.boolean(),
+  show_raw_weight_delta: z.boolean(),
   pending_title_unlocks: z.array(TitleSummarySchema),
   pending_title_unlocks_total: z.number().int().nonnegative(),
 });
@@ -282,8 +283,26 @@ export const WeightSummarySchema = z.object({
   prior_week: WeightEntrySchema.nullable(),
   delta_kg: z.coerce.number().nullable(),
   current_target: WeightTargetSchema.nullable().optional(),
+  trend_kg: z.coerce.number().nullable().optional(),
+  trend_delta_kg: z.coerce.number().nullable().optional(),
+  trend_lookback_days: z.number().int().default(14),
+  trend_ready: z.boolean().default(false),
+  starting_kg: z.coerce.number().nullable().optional(),
 });
 export type WeightSummary = z.infer<typeof WeightSummarySchema>;
+
+export const WeightTrendPointSchema = z.object({
+  occurred_at: z.string(),
+  weight_kg: z.coerce.number(),
+  trend_kg: z.coerce.number(),
+});
+export type WeightTrendPoint = z.infer<typeof WeightTrendPointSchema>;
+
+export const WeightTrendSeriesSchema = z.object({
+  unit: z.string(),
+  points: z.array(WeightTrendPointSchema),
+});
+export type WeightTrendSeries = z.infer<typeof WeightTrendSeriesSchema>;
 
 export const BloodPressureEntrySchema = z.object({
   id: z.number().int(),

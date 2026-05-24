@@ -12,6 +12,7 @@ interface MePatch {
   title_hidden?: boolean;
   weight_titles_opt_out?: boolean;
   bp_titles_opt_out?: boolean;
+  show_raw_weight_delta?: boolean;
 }
 
 export function useUpdateMe() {

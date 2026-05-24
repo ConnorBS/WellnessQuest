@@ -15,6 +15,8 @@ from app.schemas.weight import (
     WeightSummaryOut,
     WeightTargetIn,
     WeightTargetOut,
+    WeightTrendPoint,
+    WeightTrendSeriesOut,
 )
 from app.services import weight_service
 from app.services.time_utils import utcnow
@@ -47,20 +49,68 @@ async def weight_summary(
     latest = await weight_service.latest(db, user=user)
     prior = None
     delta: Decimal | None = None
+    trend_kg: Decimal | None = None
+    trend_delta_kg: Decimal | None = None
+    trend_ready = False
     if latest is not None:
         prior = await weight_service.closest_before(
             db, user=user, anchor=latest.occurred_at, max_lookback_days=14
         )
         if prior is not None:
             delta = (latest.weight_kg - prior.weight_kg).quantize(Decimal("0.01"))
+        # Trend computation uses a wider window (90 entries) so the EWMA
+        # has had time to converge before we expose it.
+        history = await weight_service.list_history(db, user=user, limit=90)
+        if history:
+            oldest_first = list(reversed(history))
+            series = weight_service.compute_ewma_trend(oldest_first)
+            trend_kg = series[-1][1].quantize(Decimal("0.01"))
+            span_days = (series[-1][0] - series[0][0]).days
+            if (
+                len(series) >= weight_service.TREND_MIN_ENTRIES
+                and span_days >= 7
+            ):
+                trend_ready = True
+                trend_delta_kg = weight_service.trend_delta(series)
     current_target = await weight_service.current_target(db, user=user)
+    starting_kg = await weight_service.starting_weight_for_target(
+        db, user=user, target=current_target
+    )
     return WeightSummaryOut(
         unit=user.weight_unit,
         latest=_to_out(latest) if latest is not None else None,
         prior_week=_to_out(prior) if prior is not None else None,
         delta_kg=delta,
         current_target=_target_to_out(current_target) if current_target is not None else None,
+        trend_kg=trend_kg,
+        trend_delta_kg=trend_delta_kg,
+        trend_lookback_days=weight_service.TREND_LOOKBACK_DAYS,
+        trend_ready=trend_ready,
+        starting_kg=starting_kg,
     )
+
+
+@router.get("/trend", response_model=WeightTrendSeriesOut)
+async def weight_trend(
+    limit: int = 180,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> WeightTrendSeriesOut:
+    limit = max(1, min(limit, 365))
+    rows = await weight_service.list_history(db, user=user, limit=limit)
+    if not rows:
+        return WeightTrendSeriesOut(unit=user.weight_unit, points=[])
+    oldest_first = list(reversed(rows))
+    series = weight_service.compute_ewma_trend(oldest_first)
+    points = [
+        WeightTrendPoint(
+            occurred_at=entry.occurred_at,
+            weight_kg=entry.weight_kg,
+            trend_kg=trend.quantize(Decimal("0.01")),
+        )
+        for entry, (_, trend) in zip(oldest_first, series, strict=True)
+    ]
+    return WeightTrendSeriesOut(unit=user.weight_unit, points=points)
 
 
 @router.get("", response_model=list[WeightEntryOut])

@@ -41,6 +41,7 @@ class MeOut(BaseModel):
     title_hidden: bool = False
     weight_titles_opt_out: bool = False
     bp_titles_opt_out: bool = False
+    show_raw_weight_delta: bool = False
     pending_title_unlocks: list[TitleSummary] = Field(default_factory=list)
     # True count of un-acknowledged unlocks. `pending_title_unlocks` is
     # capped at PENDING_UNLOCKS_LIMIT (5) so the popup can show one at a
@@ -57,6 +58,7 @@ class MePatchIn(BaseModel):
     title_hidden: bool | None = None
     weight_titles_opt_out: bool | None = None
     bp_titles_opt_out: bool | None = None
+    show_raw_weight_delta: bool | None = None
 
 
 class SetupStatusOut(BaseModel):

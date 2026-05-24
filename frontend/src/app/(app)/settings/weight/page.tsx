@@ -216,6 +216,26 @@ export default function WeightSettingsPage() {
 
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
         <h2 className="text-lg font-semibold" style={{ marginBottom: 12 }}>
+          Trend display
+        </h2>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={me.show_raw_weight_delta}
+            disabled={updateMe.isPending}
+            onChange={(e) => updateMe.mutate({ show_raw_weight_delta: e.target.checked })}
+          />
+          Show raw day-to-day delta
+        </label>
+        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+          Day-to-day weight swings 1–3 lb from water and food — the smoothed
+          trend is a much better signal of progress. Leave this off unless you
+          find the raw number motivating.
+        </p>
+      </section>
+
+      <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+        <h2 className="text-lg font-semibold" style={{ marginBottom: 12 }}>
           Achievements
         </h2>
         <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>

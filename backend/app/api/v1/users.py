@@ -45,6 +45,7 @@ async def _build_me_out(db: AsyncSession, user: User) -> MeOut:
         title_hidden=user.title_hidden,
         weight_titles_opt_out=user.weight_titles_opt_out,
         bp_titles_opt_out=user.bp_titles_opt_out,
+        show_raw_weight_delta=user.show_raw_weight_delta,
         pending_title_unlocks=[_to_title_summary(t) for t in pending],
         pending_title_unlocks_total=pending_total,
     )
@@ -92,6 +93,8 @@ async def patch_me(
         if user.bp_titles_opt_out and not payload.bp_titles_opt_out:
             user.titles_last_scan_at = None
         user.bp_titles_opt_out = payload.bp_titles_opt_out
+    if payload.show_raw_weight_delta is not None:
+        user.show_raw_weight_delta = payload.show_raw_weight_delta
     await db.flush()
     await audit(
         db,

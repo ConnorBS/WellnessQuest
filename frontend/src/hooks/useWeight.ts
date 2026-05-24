@@ -8,6 +8,7 @@ import {
   WeightEntrySchema,
   WeightEntryListSchema,
   WeightSummarySchema,
+  WeightTrendSeriesSchema,
 } from "@/lib/schemas";
 
 export function useWeightSummary() {
@@ -21,6 +22,13 @@ export function useWeightHistory(limit = 90) {
   return useQuery({
     queryKey: ["weight", "history", limit],
     queryFn: () => apiFetch(`/weight?limit=${limit}`, WeightEntryListSchema),
+  });
+}
+
+export function useWeightTrend(limit = 180) {
+  return useQuery({
+    queryKey: ["weight", "trend", limit],
+    queryFn: () => apiFetch(`/weight/trend?limit=${limit}`, WeightTrendSeriesSchema),
   });
 }
 
