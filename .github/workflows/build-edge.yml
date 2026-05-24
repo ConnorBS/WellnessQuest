@@ -140,7 +140,7 @@ jobs:
       contents: read
       issues: write
     steps:
-      - name: Open a tracking issue
+      - name: Open or comment on a tracking issue
         uses: actions/github-script@v7
         with:
           script: |
@@ -148,6 +148,18 @@ jobs:
             const trigger = context.eventName === 'delete'
               ? `deletion of \`${context.payload.ref}\``
               : `push to \`${context.ref.replace('refs/heads/', '')}\``;
+            // One issue per failure mode (push vs delete), to avoid spamming
+            // a fresh issue on every push while a single open claude/* branch
+            // is the cause. The issue accumulates a comment per failed run
+            // until someone closes it.
+            const title = `:edge integration failed (${context.eventName})`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const match = existing.data.find(i => i.title === title && !i.pull_request);
             const body = [
               `:edge integration build failed after ${trigger}.`,
               '',
@@ -159,9 +171,18 @@ jobs:
               '- Merge conflict between two open `claude/*` branches. Rebase one onto the other (or onto main) to resolve, or close one of the branches.',
               '- Image build failure inside the integrated tree (lint, type, migration). Same triage as a regular deploy failure.',
             ].join('\n');
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `:edge integration failed (${context.eventName})`,
-              body,
-            });
+            if (match) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: match.number,
+                body: `Another run failed: [logs →](${runUrl}) (triggered by ${trigger}).`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+            }
