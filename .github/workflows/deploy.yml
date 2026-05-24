@@ -55,9 +55,9 @@ jobs:
               fi
               ;;
             refs/heads/main)
-              # main HEAD between releases. Self-hosters who want bleeding edge
-              # pin to :edge; :stable / :latest still point at the last release.
-              TAGS="${TAGS},${IMG}:edge"
+              # main HEAD between releases gets only the immutable :sha-<7>
+              # here. The floating :edge tag is published by build-edge.yml,
+              # which integrates main + every open claude/* branch.
               ;;
             refs/heads/claude/*)
               # Feature branches share one rolling :preview tag for dev/testing.

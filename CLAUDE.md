@@ -23,8 +23,9 @@ Don't assume `wq` / `wellnessquest`.
 
 ## Branches and image tags
 
-- **`main`** is the production branch and the GitHub default. Merges to `main` publish `ghcr.io/connorbs/wellnessquest:edge` (plus an immutable `:sha-<7>`). The Unraid template ships pointing at `:edge`, so the operator's container auto-updates whenever `main` advances.
-- **`claude/**`** branches are feature branches. They publish `:preview` (rolling, shared across every feature branch — overwritten on each push) and `:sha-<7>` (immutable). Do **not** suggest `:preview` to the operator for prod — it regresses any time a non-recipes branch is pushed.
+- **`main`** is the production branch and the GitHub default. Pushes publish an immutable `:sha-<7>`.
+- **`:edge`** is an **integration build**, not a per-branch alias: `.github/workflows/build-edge.yml` checks out `main`, merges every open `claude/*` branch on top, and publishes the result as `ghcr.io/connorbs/wellnessquest:edge`. It rebuilds on push to `main`, push to any `claude/*` branch, and on deletion of any `claude/*` branch — so pushing a feature branch adds it to `:edge` and deleting the branch removes it, no `main` revert needed. If two open `claude/*` branches conflict, the build fails and `:edge` stays pointed at the previous successful integration; close or rebase one of the branches to recover. The Unraid template ships pointing at `:edge`, so the operator's container auto-updates whenever the integration rebuilds.
+- **`claude/**`** branches are feature branches. They publish `:preview` (rolling, shared across every feature branch — overwritten on each push) and `:sha-<7>` (immutable), and also trigger an `:edge` rebuild as above. Do **not** suggest `:preview` to the operator for prod — it regresses any time another feature branch is pushed.
 - **Tagged releases** (`vX.Y.Z`) publish `:stable` / `:latest` plus `:vX.Y.Z` and `:X.Y` / `:X` aliases. None of these exist yet; cut a tag when you want a frozen channel for self-hosters.
 - The repo had `claude/health-tracking-app-27gJW` as its default branch through May 2026 (an artifact of how the project bootstrapped via Claude Code on the web). It's gone now — references in older docs / commit messages are historical.
 
