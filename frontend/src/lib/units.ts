@@ -27,6 +27,26 @@ export function formatWeightDelta(deltaKg: number | null | undefined, unit: stri
   return `${direction} ${v.toFixed(1)} ${unit}`;
 }
 
+// "Stable" band for the smoothed trend — anything inside this is noise,
+// not signal, so we phrase it neutrally instead of "up 0.1 lb" / "down 0.1 lb".
+const TREND_STABLE_KG = 0.2;
+
+// Render the trend-over-time delta as supportive copy. Inputs are always
+// kg (backend canonical) and the display unit comes from the user.
+export function formatTrendDelta(
+  deltaKg: number | null | undefined,
+  unit: string,
+  lookbackDays: number,
+): string {
+  if (deltaKg == null) return "";
+  const weeks = Math.max(1, Math.round(lookbackDays / 7));
+  const window = weeks === 1 ? "1 week" : `${weeks} weeks`;
+  if (Math.abs(deltaKg) < TREND_STABLE_KG) return `stable over ${window}`;
+  const v = kgToDisplay(Math.abs(deltaKg), unit);
+  const direction = deltaKg > 0 ? "up" : "down";
+  return `${direction} ${v.toFixed(1)} ${unit} over ${window}`;
+}
+
 // ---------- Food portion units ----------
 
 export type SolidUnit = "g" | "oz";
