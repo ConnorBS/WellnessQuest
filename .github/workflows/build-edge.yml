@@ -1,0 +1,188 @@
+name: build-edge
+
+# The :edge tag is an integration build: main HEAD + every open claude/*
+# branch merged on top. Pushing a feature branch updates :edge to include
+# it; deleting a feature branch updates :edge to drop it. A push to main
+# updates :edge with the new base. Conflicts between two open branches
+# fail this workflow (and so leave :edge pointing at the previous
+# successful integration) — fix the conflict on one of the branches or
+# close one of them.
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  delete:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  issues: write
+
+concurrency:
+  group: build-edge
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: >-
+      github.event_name != 'delete' ||
+      (github.event.ref_type == 'branch' && startsWith(github.event.ref, 'claude/'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure git identity for merge commits
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "edge-integration"
+
+      - name: Merge main + all open claude/* branches
+        id: integrate
+        run: |
+          set -euo pipefail
+          git fetch --prune origin '+refs/heads/claude/*:refs/remotes/origin/claude/*' || true
+
+          MAIN_SHA=$(git rev-parse HEAD)
+          DELETED_REF=""
+          if [ "${{ github.event_name }}" = "delete" ]; then
+            DELETED_REF="${{ github.event.ref }}"
+          fi
+
+          MERGED=()
+          # Sort for determinism so the merge order is stable across runs.
+          BRANCHES=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/claude/* | sort)
+          for REMOTE in $BRANCHES; do
+            BRANCH="${REMOTE#origin/}"
+            if [ -n "$DELETED_REF" ] && [ "$BRANCH" = "$DELETED_REF" ]; then
+              echo "Skipping just-deleted branch: $BRANCH"
+              continue
+            fi
+            echo "::group::merge $BRANCH"
+            if git merge --no-ff --no-edit -m "edge: integrate $BRANCH" "$REMOTE"; then
+              MERGED+=("$BRANCH")
+            else
+              echo "::endgroup::"
+              echo "::error::Merge conflict integrating $BRANCH into edge. Already-merged: ${MERGED[*]:-(none)}"
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
+
+          INTEGRATED_SHA=$(git rev-parse HEAD)
+          {
+            echo "main_sha=$MAIN_SHA"
+            echo "integrated_sha=$INTEGRATED_SHA"
+            echo "merged_branches<<EOF"
+            if [ ${#MERGED[@]} -gt 0 ]; then printf '%s\n' "${MERGED[@]}"; fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute tags
+        id: t
+        run: |
+          OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+          IMG="ghcr.io/${OWNER}/wellnessquest"
+          echo "tags=${IMG}:edge" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push :edge
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: prod
+          push: true
+          tags: ${{ steps.t.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.integrate.outputs.integrated_sha }}
+          build-args: |
+            GIT_SHA=${{ steps.integrate.outputs.integrated_sha }}
+          cache-from: type=gha,scope=wellnessquest
+          cache-to: type=gha,mode=max,scope=wellnessquest
+
+      - name: Summary
+        run: |
+          {
+            echo "### Published :edge"
+            echo
+            echo "**Base (main):** \`${{ steps.integrate.outputs.main_sha }}\`"
+            echo "**Integrated HEAD:** \`${{ steps.integrate.outputs.integrated_sha }}\`"
+            echo
+            echo "**Merged branches:**"
+            echo
+            echo '```'
+            if [ -n "${{ steps.integrate.outputs.merged_branches }}" ]; then
+              echo "${{ steps.integrate.outputs.merged_branches }}"
+            else
+              echo "(none — :edge == main)"
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  notify-on-failure:
+    needs: [build]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Open or comment on a tracking issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const trigger = context.eventName === 'delete'
+              ? `deletion of \`${context.payload.ref}\``
+              : `push to \`${context.ref.replace('refs/heads/', '')}\``;
+            // One issue per failure mode (push vs delete), to avoid spamming
+            // a fresh issue on every push while a single open claude/* branch
+            // is the cause. The issue accumulates a comment per failed run
+            // until someone closes it.
+            const title = `:edge integration failed (${context.eventName})`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const match = existing.data.find(i => i.title === title && !i.pull_request);
+            const body = [
+              `:edge integration build failed after ${trigger}.`,
+              '',
+              `[View workflow run logs →](${runUrl})`,
+              '',
+              '**Impact:** the published `:edge` image on GHCR still reflects the previous successful integration. Force Update on Unraid will pull that older state until this is fixed.',
+              '',
+              'Likely causes:',
+              '- Merge conflict between two open `claude/*` branches. Rebase one onto the other (or onto main) to resolve, or close one of the branches.',
+              '- Image build failure inside the integrated tree (lint, type, migration). Same triage as a regular deploy failure.',
+            ].join('\n');
+            if (match) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: match.number,
+                body: `Another run failed: [logs →](${runUrl}) (triggered by ${trigger}).`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+            }
