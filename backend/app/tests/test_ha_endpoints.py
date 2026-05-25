@@ -202,3 +202,21 @@ async def test_api_tokens_rejects_unknown_scope(client, db, unique_email):
         json={"name": "bad", "scopes": ["something:weird"]},
     )
     assert r.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_api_token_create_returns_full_shape(client, db, unique_email):
+    # The frontend parses the create response against the same schema as the
+    # list endpoint plus `token`, so last_used_at and revoked_at must be present
+    # (null) on creation or the client rejects an otherwise-successful 201.
+    access, _ = await _signup_and_token(client, db, unique_email)
+    r = await client.post(
+        "/api/v1/api-tokens",
+        headers={"Authorization": f"Bearer {access}"},
+        json={"name": "shape", "scopes": ["water:read", "steps:read", "sleep:read", "me:read"]},
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert set(body) >= {"id", "name", "scopes", "token", "last_used_at", "created_at", "revoked_at"}
+    assert body["last_used_at"] is None
+    assert body["revoked_at"] is None

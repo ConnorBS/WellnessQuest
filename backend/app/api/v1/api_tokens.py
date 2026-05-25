@@ -56,7 +56,9 @@ async def create_token(
         name=row.name,
         scopes=list(row.scopes),
         token=raw,
+        last_used_at=row.last_used_at,
         created_at=row.created_at,
+        revoked_at=row.revoked_at,
     )
 
 
