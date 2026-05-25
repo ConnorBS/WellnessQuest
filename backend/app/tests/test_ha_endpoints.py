@@ -220,3 +220,27 @@ async def test_api_token_create_returns_full_shape(client, db, unique_email):
     assert set(body) >= {"id", "name", "scopes", "token", "last_used_at", "created_at", "revoked_at"}
     assert body["last_used_at"] is None
     assert body["revoked_at"] is None
+
+
+@pytest.mark.asyncio
+async def test_api_token_hard_delete_removes_row(client, db, unique_email):
+    access, _ = await _signup_and_token(client, db, unique_email)
+    r = await client.post(
+        "/api/v1/api-tokens",
+        headers={"Authorization": f"Bearer {access}"},
+        json={"name": "to delete", "scopes": ["water:read"]},
+    )
+    token_id = r.json()["id"]
+    auth = {"Authorization": f"Bearer {access}"}
+
+    # Soft revoke keeps the row listed (audit trail), still flagged revoked.
+    assert (await client.delete(f"/api/v1/api-tokens/{token_id}", headers=auth)).status_code == 204
+    listed = await client.get("/api/v1/api-tokens", headers=auth)
+    match = next(t for t in listed.json() if t["id"] == token_id)
+    assert match["revoked_at"] is not None
+
+    # Hard delete drops it from the list entirely.
+    r = await client.delete(f"/api/v1/api-tokens/{token_id}?hard=true", headers=auth)
+    assert r.status_code == 204
+    listed = await client.get("/api/v1/api-tokens", headers=auth)
+    assert all(t["id"] != token_id for t in listed.json())
