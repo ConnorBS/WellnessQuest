@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pydantic import AnyHttpUrl, BaseModel, Field
+from typing import Any
+
+from pydantic import AnyHttpUrl, BaseModel, Field, field_validator
 
 
 class HomeAssistantEntityMap(BaseModel):
@@ -15,11 +17,21 @@ class HomeAssistantConfig(BaseModel):
     base_url: AnyHttpUrl = Field(
         ..., description="Home Assistant base URL, e.g. http://homeassistant.local:8123"
     )
-    webhook_id: str = Field(
-        ..., min_length=8, description="HA webhook id (matches a HA automation trigger)"
+    # Only the outbound channel uses this (to build the HA webhook URL); the pull
+    # worker never reads it. Optional so a pull-only setup (steps/sleep import with
+    # no outbound events) can be saved without one.
+    webhook_id: str | None = Field(
+        default=None, min_length=8, description="HA webhook id (matches a HA automation trigger)"
     )
     entity_map: HomeAssistantEntityMap = Field(default_factory=HomeAssistantEntityMap)
     pull_interval_seconds: int = Field(default=300, ge=60, le=3600)
+
+    @field_validator("webhook_id", mode="before")
+    @classmethod
+    def _blank_webhook_id_to_none(cls, v: Any) -> Any:
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
 
 
 class HomeAssistantSecrets(BaseModel):

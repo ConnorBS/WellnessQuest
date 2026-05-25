@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { z } from "zod";
 
-import { apiDelete, apiFetch, apiPost } from "@/lib/api";
+import { ApiError, apiDelete, apiFetch, apiPost } from "@/lib/api";
 
 const IntegrationOut = z.object({
   id: z.string().uuid(),
@@ -34,6 +34,18 @@ const DEFAULT_EVENTS = [
   "steps.daily_goal_met",
   "sleep.session_logged",
 ];
+
+function describeError(err: unknown): string {
+  if (err instanceof ApiError) {
+    const body = err.body;
+    if (body && typeof body === "object" && "detail" in body) {
+      const detail = (body as { detail: unknown }).detail;
+      if (typeof detail === "string") return `Could not create integration: ${detail}`;
+    }
+    return `Could not create integration (HTTP ${err.status})`;
+  }
+  return "Could not create integration";
+}
 
 export default function IntegrationsPage() {
   const [items, setItems] = useState<Integration[]>([]);
@@ -78,10 +90,17 @@ export default function IntegrationsPage() {
   async function onCreate(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    const trimmedWebhookId = webhookId.trim();
+    if (subscribedEvents.length > 0 && !trimmedWebhookId) {
+      setError(
+        "Enter the HA webhook id to receive the selected outbound events, or uncheck them.",
+      );
+      return;
+    }
     try {
       const config: Record<string, unknown> = {
         base_url: baseUrl,
-        webhook_id: webhookId,
+        webhook_id: trimmedWebhookId || null,
         pull_interval_seconds: pullInterval,
         entity_map: {
           steps: stepsEntity || null,
@@ -101,13 +120,13 @@ export default function IntegrationsPage() {
       for (const ev of subscribedEvents) {
         await apiPost(`/integrations/${created.id}/webhooks`, SubOut, {
           event: ev,
-          url: `${baseUrl.replace(/\/$/, "")}/api/webhook/${webhookId}`,
+          url: `${baseUrl.replace(/\/$/, "")}/api/webhook/${trimmedWebhookId}`,
         });
       }
       setAccessToken("");
       await load();
-    } catch (_e) {
-      setError("Could not create integration");
+    } catch (err) {
+      setError(describeError(err));
     }
   }
 
