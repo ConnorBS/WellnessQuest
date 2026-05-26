@@ -161,6 +161,10 @@ async def toggle_today(
     now_done, result = await habit_service.toggle_checkin(
         db, user=user, habit=habit, for_date=date_
     )
+    if now_done:
+        # A new check-in may cross a habit-checkin-count title threshold; flag
+        # for a re-scan on the next /me so the unlock surfaces immediately.
+        user.titles_last_scan_at = None
     await audit(
         db,
         actor=f"user:{user.id}",

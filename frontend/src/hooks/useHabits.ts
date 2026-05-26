@@ -59,7 +59,11 @@ export function useToggleHabit() {
         HabitWithStatusSchema,
         {},
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["habits"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["habits"] });
+      // A check-in may have unlocked a title; refetch /me to surface the popup.
+      qc.invalidateQueries({ queryKey: ["me"] });
+    },
   });
 }
 

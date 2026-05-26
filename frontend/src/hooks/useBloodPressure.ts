@@ -40,6 +40,8 @@ export function useAddBP() {
       apiPost("/blood-pressure", BloodPressureEntrySchema, args),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["bp"] });
+      // Logging may have unlocked a title; refetch /me to surface the popup.
+      qc.invalidateQueries({ queryKey: ["me"] });
     },
   });
 }
