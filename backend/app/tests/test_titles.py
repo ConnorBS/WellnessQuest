@@ -396,3 +396,63 @@ async def test_scan_user_directly_unlocks_lifetime_water(
         )
     ).scalars().all()
     assert len(rows) == 1
+
+
+@pytest.mark.asyncio
+async def test_pending_unlocks_ordered_rarest_first(client, db, unique_email):
+    """When several titles unlock at once, the popup queue surfaces the
+    rarest first (legendary -> common)."""
+    await _seed_titles(
+        db,
+        [
+            {"slug": "c_common", "name": "C", "rarity": "common", "condition_kind": "signup"},
+            {"slug": "e_epic", "name": "E", "rarity": "epic", "condition_kind": "signup"},
+            {"slug": "u_uncommon", "name": "U", "rarity": "uncommon", "condition_kind": "signup"},
+            {"slug": "l_legendary", "name": "L", "rarity": "legendary", "condition_kind": "signup"},
+            {"slug": "r_rare", "name": "R", "rarity": "rare", "condition_kind": "signup"},
+        ],
+    )
+    await db.commit()
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.get("/api/v1/me", headers=_auth(access))
+    assert r.status_code == 200
+    rarities = [t["rarity"] for t in r.json()["pending_title_unlocks"]]
+    assert rarities == ["legendary", "epic", "rare", "uncommon", "common"]
+
+
+@pytest.mark.asyncio
+async def test_logging_water_surfaces_unlock_on_next_me(client, db, unique_email):
+    """Crossing a threshold via the normal POST flow should surface the unlock
+    on the very next /me — no 24h wait, no manual cursor reset."""
+    await _seed_titles(
+        db,
+        [
+            {
+                "slug": "water_1000",
+                "name": "First Litre",
+                "condition_kind": "lifetime_water_ml",
+                "condition_params": {"threshold": 1000},
+            }
+        ],
+    )
+    await db.commit()
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    # Signup already ran a scan and stamped the freshness cursor; without the
+    # write-path re-scan flag this title would stay hidden until the cursor
+    # went stale (24h).
+    for _ in range(4):
+        r = await client.post(
+            "/api/v1/water",
+            headers=_auth(access),
+            json={"ml": 300, "source": "pwa"},
+        )
+        assert r.status_code == 201, r.text
+
+    r = await client.get("/api/v1/me", headers=_auth(access))
+    assert r.status_code == 200
+    slugs = [t["slug"] for t in r.json()["pending_title_unlocks"]]
+    assert "water_1000" in slugs

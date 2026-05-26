@@ -161,6 +161,9 @@ async def add_food(
         client_id=payload.client_id,
         occurred_at=payload.occurred_at,
     )
+    # This log may cross a title threshold; flag for a re-scan on the next /me
+    # so the unlock surfaces immediately rather than on the 24h lazy scan.
+    user.titles_last_scan_at = None
     await audit(
         db,
         actor=f"user:{user.id}",

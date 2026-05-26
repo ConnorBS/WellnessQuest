@@ -20,7 +20,8 @@ from collections import defaultdict
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.activity_entry import ActivityEntry
@@ -39,6 +40,16 @@ from app.services.time_utils import utcnow
 
 SCAN_STALE_AFTER = timedelta(hours=24)
 PENDING_UNLOCKS_LIMIT = 5
+
+# Higher = rarer. Drives "show the rarest unlock first" ordering in the unlock
+# popup when several titles unlock from the same action.
+_RARITY_RANK = case(
+    (Title.rarity == "legendary", 5),
+    (Title.rarity == "epic", 4),
+    (Title.rarity == "rare", 3),
+    (Title.rarity == "uncommon", 2),
+    else_=1,
+)
 
 
 async def _lifetime_water_ml(db: AsyncSession, user: User) -> int:
@@ -247,14 +258,23 @@ async def scan_user(db: AsyncSession, user: User) -> list[Title]:
     for kind, kind_candidates in by_kind.items():
         matched = await _evaluate_kind(db, user, kind, kind_candidates)
         for t in matched:
-            db.add(
-                UserTitle(
-                    user_id=user.id,
-                    title_id=t.id,
-                    unlocked_at=now,
-                )
-            )
-            newly_unlocked.append(t)
+            # Savepoint per insert: a concurrent scan (two writes landing at
+            # once) may have already recorded this unlock, tripping the
+            # user_id+title_id unique constraint. Swallow it so the duplicate
+            # doesn't roll back the whole transaction — just skip the title.
+            try:
+                async with db.begin_nested():
+                    db.add(
+                        UserTitle(
+                            user_id=user.id,
+                            title_id=t.id,
+                            unlocked_at=now,
+                        )
+                    )
+                    await db.flush()
+                newly_unlocked.append(t)
+            except IntegrityError:
+                pass
 
     user.titles_last_scan_at = now
     await db.flush()
@@ -291,7 +311,11 @@ async def equipped_title(db: AsyncSession, user: User) -> Title | None:
 async def pending_unlocks(
     db: AsyncSession, user: User, limit: int = PENDING_UNLOCKS_LIMIT
 ) -> list[Title]:
-    """Titles unlocked but not yet acknowledged by the user, oldest first."""
+    """Titles unlocked but not yet acknowledged by the user.
+
+    Ordered rarest-first so a batch of simultaneous unlocks surfaces the
+    legendary before the common, then oldest-first within a rarity tier.
+    """
     stmt = (
         select(Title)
         .join(UserTitle, UserTitle.title_id == Title.id)
@@ -299,7 +323,7 @@ async def pending_unlocks(
             UserTitle.user_id == user.id,
             UserTitle.acknowledged_at.is_(None),
         )
-        .order_by(UserTitle.unlocked_at.asc())
+        .order_by(_RARITY_RANK.desc(), UserTitle.unlocked_at.asc())
         .limit(limit)
     )
     return list((await db.execute(stmt)).scalars().all())

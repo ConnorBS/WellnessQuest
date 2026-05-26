@@ -44,6 +44,8 @@ export function useAddWeight() {
     mutationFn: (args: AddArgs) => apiPost("/weight", WeightEntrySchema, args),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["weight"] });
+      // Logging may have unlocked a title; refetch /me to surface the popup.
+      qc.invalidateQueries({ queryKey: ["me"] });
     },
   });
 }
