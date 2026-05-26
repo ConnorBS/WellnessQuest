@@ -9,7 +9,7 @@ export function useUpdateActivityGoal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (target_minutes: number) =>
-      apiPatch("/activity/goal", ActivityGoalOutSchema, { target_minutes }),
+      apiPatch("/move/goal", ActivityGoalOutSchema, { target_minutes }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["activity", "today"] });
     },

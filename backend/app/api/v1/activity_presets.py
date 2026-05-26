@@ -13,7 +13,9 @@ from app.schemas.activity_preset import ActivityPresetIn, ActivityPresetOut
 from app.services.time_utils import utcnow
 from app.telemetry.recorder import audit
 
-router = APIRouter(prefix="/activity/presets", tags=["activity"])
+# Prefix applied at include time so these mount under both /activity/presets
+# and the ad-blocker-safe /move/presets alias (see api/v1/__init__.py).
+router = APIRouter(tags=["activity"])
 
 
 def _to_out(p: ActivityPreset) -> ActivityPresetOut:

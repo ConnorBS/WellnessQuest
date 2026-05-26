@@ -12,7 +12,7 @@ export function useActivityToday() {
     queryKey: ["activity", "today", viewedDay],
     queryFn: () =>
       apiFetch(
-        isToday ? "/activity/today" : `/activity/today?date=${viewedDay}`,
+        isToday ? "/move/today" : `/move/today?date=${viewedDay}`,
         ActivityTodaySchema,
       ),
   });
