@@ -56,7 +56,9 @@ async def create_token(
         name=row.name,
         scopes=list(row.scopes),
         token=raw,
+        last_used_at=row.last_used_at,
         created_at=row.created_at,
+        revoked_at=row.revoked_at,
     )
 
 
@@ -83,8 +85,9 @@ async def list_tokens(
 
 
 @router.delete("/{token_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def revoke_token(
+async def delete_token(
     token_id: uuid.UUID,
+    hard: bool = False,
     user: User = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ) -> None:
@@ -95,6 +98,17 @@ async def revoke_token(
     ).scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
+    if hard:
+        await db.delete(row)
+        await audit(
+            db,
+            actor=f"user:{user.id}",
+            action="token.delete",
+            user_id=user.id,
+            target_type="api_token",
+            target_id=str(token_id),
+        )
+        return
     if row.revoked_at is None:
         row.revoked_at = utcnow()
         await audit(

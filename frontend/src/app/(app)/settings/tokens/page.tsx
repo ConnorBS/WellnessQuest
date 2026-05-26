@@ -55,6 +55,11 @@ export default function TokensPage() {
     await load();
   }
 
+  async function onRemove(id: string) {
+    await apiDelete(`/api-tokens/${id}?hard=true`);
+    await load();
+  }
+
   function toggleScope(s: string) {
     setScopes((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
   }
@@ -129,13 +134,21 @@ export default function TokensPage() {
                 <span>
                   {t.name} <span style={{ color: "#94a3b8", fontSize: 12 }}>· {t.scopes.join(", ")}</span>
                 </span>
-                <button
-                  onClick={() => onRevoke(t.id)}
-                  disabled={t.revoked_at !== null}
-                  style={{ background: "transparent", color: "#fca5a5", border: 0 }}
-                >
-                  {t.revoked_at ? "revoked" : "Revoke"}
-                </button>
+                {t.revoked_at ? (
+                  <button
+                    onClick={() => onRemove(t.id)}
+                    style={{ background: "transparent", color: "#94a3b8", border: 0 }}
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onRevoke(t.id)}
+                    style={{ background: "transparent", color: "#fca5a5", border: 0 }}
+                  >
+                    Revoke
+                  </button>
+                )}
               </li>
             ))}
           </ul>
