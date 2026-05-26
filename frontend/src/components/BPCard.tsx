@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
+import { Modal } from "@/components/Modal";
 import { BPCategoryChip } from "@/components/blood-pressure/BPCategoryChip";
+import { BPForm } from "@/components/blood-pressure/BPForm";
+import { quickLogBtn } from "@/components/quickLogButton";
 import { useBPSummary } from "@/hooks/useBloodPressure";
 import { compareToTarget } from "@/lib/bp";
 
-export function BPCard() {
+export function BPCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
   const summary = useBPSummary();
+  const [showLog, setShowLog] = useState(false);
   const latest = summary.data?.latest;
   const target = summary.data?.current_target ?? null;
   const hasTarget =
@@ -15,11 +20,23 @@ export function BPCard() {
 
   return (
     <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-      <header className="flex items-baseline justify-between">
+      <header className="flex items-baseline justify-between" style={{ gap: 8 }}>
         <h2 className="text-lg font-semibold">Blood pressure</h2>
-        <Link href="/blood-pressure" style={{ fontSize: 13, color: "#10b981" }}>
-          See all →
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {showQuickLog && (
+            <button
+              type="button"
+              onClick={() => setShowLog(true)}
+              data-testid="dashboard-log-bp"
+              style={quickLogBtn}
+            >
+              + Log
+            </button>
+          )}
+          <Link href="/blood-pressure" style={{ fontSize: 13, color: "#10b981" }}>
+            See all →
+          </Link>
+        </div>
       </header>
       {summary.isLoading ? (
         <p className="mt-3 text-sm text-slate-400">Loading…</p>
@@ -67,6 +84,11 @@ export function BPCard() {
           )}
         </>
       )}
+      {showQuickLog && showLog ? (
+        <Modal title="Log a reading" onClose={() => setShowLog(false)}>
+          <BPForm onSaved={() => setShowLog(false)} />
+        </Modal>
+      ) : null}
     </section>
   );
 }

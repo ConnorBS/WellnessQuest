@@ -1,17 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
+import { Modal } from "@/components/Modal";
+import { WeightForm } from "@/components/weight/WeightForm";
 import { WeightSparkline } from "@/components/weight/WeightSparkline";
+import { quickLogBtn } from "@/components/quickLogButton";
 import { useMe } from "@/hooks/useMe";
 import { useWeightHistory, useWeightSummary, useWeightTrend } from "@/hooks/useWeight";
 import { formatTrendDelta, formatWeight, formatWeightDelta } from "@/lib/units";
 
-export function WeightCard() {
+export function WeightCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
   const { data: me } = useMe();
   const summary = useWeightSummary();
   const history = useWeightHistory(30);
   const trend = useWeightTrend(90);
+  const [showLog, setShowLog] = useState(false);
   const unit = me?.weight_unit ?? "kg";
   const showRawDelta = me?.show_raw_weight_delta ?? false;
 
@@ -26,11 +31,23 @@ export function WeightCard() {
 
   return (
     <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-      <header className="flex items-baseline justify-between">
+      <header className="flex items-baseline justify-between" style={{ gap: 8 }}>
         <h2 className="text-lg font-semibold">Weight</h2>
-        <Link href="/weight" style={{ fontSize: 13, color: "#10b981" }}>
-          See all →
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {showQuickLog && (
+            <button
+              type="button"
+              onClick={() => setShowLog(true)}
+              data-testid="dashboard-log-weight"
+              style={quickLogBtn}
+            >
+              + Log
+            </button>
+          )}
+          <Link href="/weight" style={{ fontSize: 13, color: "#10b981" }}>
+            See all →
+          </Link>
+        </div>
       </header>
       {summary.isLoading ? (
         <p className="mt-3 text-sm text-slate-400">Loading…</p>
@@ -76,6 +93,11 @@ export function WeightCard() {
           )}
         </>
       )}
+      {showQuickLog && showLog ? (
+        <Modal title="Log weight" onClose={() => setShowLog(false)}>
+          <WeightForm unit={unit} onSaved={() => setShowLog(false)} />
+        </Modal>
+      ) : null}
     </section>
   );
 }
