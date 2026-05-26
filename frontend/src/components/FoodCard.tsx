@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 import { useDailyValues } from "@/hooks/useDailyValues";
 import { useFoodPresets } from "@/hooks/useFoodPresets";
@@ -9,12 +10,15 @@ import { useRecentFood } from "@/hooks/useRecentFood";
 import { KEY_NUTRIENTS, dvBarColor } from "@/lib/canadianDV";
 import { QuickAddFoodButton } from "@/components/QuickAddFoodButton";
 import { QuickAddRecentButton } from "@/components/QuickAddRecentButton";
+import { FoodLogModal } from "@/components/food/FoodLogModal";
+import { quickLogBtn } from "@/components/quickLogButton";
 
-export function FoodCard() {
+export function FoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
   const { data, isLoading } = useFoodToday();
   const { data: dv } = useDailyValues();
   const presets = useFoodPresets();
   const recent = useRecentFood(6);
+  const [showLog, setShowLog] = useState(false);
   const total = data?.total_kcal ?? 0;
   const target = data?.target_kcal ?? 2000;
   const remaining = target - total;
@@ -37,11 +41,23 @@ export function FoodCard() {
 
   return (
     <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-      <header className="flex items-baseline justify-between">
+      <header className="flex items-baseline justify-between" style={{ gap: 8 }}>
         <h2 className="text-lg font-semibold">Food</h2>
-        <span data-testid="food-total" className="text-slate-300">
-          {total} / {target} kcal
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span data-testid="food-total" className="text-slate-300">
+            {total} / {target} kcal
+          </span>
+          {showQuickLog && (
+            <button
+              type="button"
+              onClick={() => setShowLog(true)}
+              data-testid="dashboard-log-food"
+              style={quickLogBtn}
+            >
+              + Log
+            </button>
+          )}
+        </div>
       </header>
       <div
         className="my-4 h-3 w-full overflow-hidden rounded-full bg-slate-800"
@@ -154,6 +170,7 @@ export function FoodCard() {
         </div>
       )}
       {isLoading && <p className="mt-3 text-sm text-slate-400">Loading...</p>}
+      {showQuickLog && showLog ? <FoodLogModal onClose={() => setShowLog(false)} /> : null}
     </section>
   );
 }

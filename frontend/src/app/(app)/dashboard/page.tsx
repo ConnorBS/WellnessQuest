@@ -19,14 +19,14 @@ export default function DashboardPage() {
   return (
     <>
       <XpBar />
-      <WaterCard />
-      <FoodCard />
-      <ActivityCard />
+      <WaterCard showQuickLog />
+      <FoodCard showQuickLog />
+      <ActivityCard showQuickLog />
       <StepsCard />
       <SleepCard />
       <HabitsCard />
-      {showWeight && <WeightCard />}
-      {showBP && <BPCard />}
+      {showWeight && <WeightCard showQuickLog />}
+      {showBP && <BPCard showQuickLog />}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <StreakBadge metric="water_ml" />
         <StreakBadge metric="active_minutes" />
