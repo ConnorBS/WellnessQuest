@@ -27,7 +27,7 @@ export function useAddActivity() {
   const key = ["activity", "today", viewedDay] as const;
   return useMutation<ActivityAddOut, Error, AddArgs>({
     mutationFn: (args) =>
-      apiPost("/activity", ActivityAddOutSchema, {
+      apiPost("/move", ActivityAddOutSchema, {
         minutes: args.minutes,
         client_id: args.client_id,
         exercise_type: args.exercise_type ?? null,
@@ -78,7 +78,7 @@ export function useDeleteActivity() {
   const qc = useQueryClient();
   const { viewedDay } = useViewedDay();
   return useMutation<void, Error, number>({
-    mutationFn: (entry_id) => apiDelete(`/activity/${entry_id}`),
+    mutationFn: (entry_id) => apiDelete(`/move/${entry_id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["activity", "today", viewedDay] });
       qc.invalidateQueries({ queryKey: ["activity", "recent"] });
@@ -102,7 +102,7 @@ export function useUpdateActivity() {
   const { viewedDay } = useViewedDay();
   return useMutation<ActivityEntry, Error, UpdateActivityArgs>({
     mutationFn: ({ id, patch }) =>
-      apiPatch(`/activity/${id}`, ActivityEntrySchema, patch),
+      apiPatch(`/move/${id}`, ActivityEntrySchema, patch),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["activity", "today", viewedDay] });
       qc.invalidateQueries({ queryKey: ["activity", "recent"] });

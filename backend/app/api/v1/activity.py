@@ -20,7 +20,9 @@ from app.services import activity_service, goal_service
 from app.services.time_utils import day_for_user
 from app.telemetry.recorder import audit
 
-router = APIRouter(prefix="/activity", tags=["activity"])
+# Prefix is applied at include time (see api/v1/__init__.py) so these handlers
+# can be mounted under both /activity and the ad-blocker-safe /move alias.
+router = APIRouter(tags=["activity"])
 
 
 @router.patch("/goal", response_model=ActivityGoalOut)

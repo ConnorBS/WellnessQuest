@@ -101,3 +101,32 @@ async def test_activity_goal_patch_still_matches_first(client, db, unique_email)
     )
     assert r.status_code == 200
     assert r.json()["target_minutes"] == 45
+
+
+@pytest.mark.asyncio
+async def test_move_alias_serves_same_data_as_activity(client, db, unique_email):
+    """The /move alias (used by the PWA to dodge ad-blockers that match the
+    word "activity") and the legacy /activity prefix hit the same handlers and
+    the same rows."""
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    # Log through the alias the PWA now uses.
+    r = await client.post(
+        "/api/v1/move",
+        headers=_auth(access),
+        json={"minutes": 15, "client_id": "m1", "name": "Walk around the block"},
+    )
+    assert r.status_code == 201, r.text
+
+    # Both prefixes report the entry, proving they share one data path.
+    via_move = await client.get("/api/v1/move/today", headers=_auth(access))
+    via_activity = await client.get("/api/v1/activity/today", headers=_auth(access))
+    assert via_move.status_code == 200, via_move.text
+    assert via_activity.status_code == 200, via_activity.text
+    assert via_move.json()["total_minutes"] == 15
+    assert via_activity.json()["total_minutes"] == 15
+
+    # Sub-resources are aliased too.
+    presets = await client.get("/api/v1/move/presets", headers=_auth(access))
+    assert presets.status_code == 200, presets.text

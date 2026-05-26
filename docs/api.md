@@ -87,6 +87,8 @@ Idempotency on POST `/water`: when `client_id` is provided, the same `(user_id, 
 
 ## Activity
 
+Every path in this section is mounted under **two** prefixes: the original `/activity/*` and an alias `/move/*` that serves the identical handlers. Ad/privacy blockers (uBlock, Brave, etc.) match the word "activity" in a URL and silently kill `POST /api/v1/activity` with `ERR_BLOCKED_BY_CLIENT`, so the PWA calls `/move/*` instead. `/activity/*` is retained for API-token / external consumers. The table lists the canonical `/activity` paths; prepend `/move` instead of `/activity` for the alias (e.g. `POST /api/v1/move`, `GET /api/v1/move/today`, `GET /api/v1/move/presets`).
+
 | Method | Path | Body | Notes |
 |---|---|---|---|
 | GET | `/activity/today?date=YYYY-MM-DD` | — | Returns `{ date, total_minutes, goal_minutes, percent, entries[] }`. Each entry: `{ id, minutes, source, occurred_at, client_id, exercise_type, name }`. |

@@ -8,7 +8,7 @@ import { ActivityRecentListSchema, type ActivityRecentEntry } from "@/lib/schema
 export function useRecentActivity(limit = 8) {
   return useQuery<ActivityRecentEntry[]>({
     queryKey: ["activity", "recent", limit],
-    queryFn: () => apiFetch(`/activity/recent?limit=${limit}`, ActivityRecentListSchema),
+    queryFn: () => apiFetch(`/move/recent?limit=${limit}`, ActivityRecentListSchema),
     staleTime: 60_000,
   });
 }

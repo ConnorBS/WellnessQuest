@@ -33,8 +33,15 @@ api_v1.include_router(auth.router)
 api_v1.include_router(users.router)
 api_v1.include_router(water.router)
 api_v1.include_router(water_presets.router)
-api_v1.include_router(activity.router)
-api_v1.include_router(activity_presets.router)
+# Activity endpoints are mounted under two prefixes. /activity is the original
+# path kept for API-token / external consumers; /move is an alias the PWA uses
+# because ad/privacy blockers match the word "activity" in a URL and silently
+# kill POST /api/v1/activity (ERR_BLOCKED_BY_CLIENT). Both serve the same
+# handlers.
+api_v1.include_router(activity.router, prefix="/activity")
+api_v1.include_router(activity.router, prefix="/move")
+api_v1.include_router(activity_presets.router, prefix="/activity/presets")
+api_v1.include_router(activity_presets.router, prefix="/move/presets")
 api_v1.include_router(steps.router)
 api_v1.include_router(sleep.router)
 api_v1.include_router(food.router)

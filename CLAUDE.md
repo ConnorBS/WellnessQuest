@@ -243,6 +243,14 @@ back the outer transaction.
 **Activity has no such constraint** — duplicate `client_id` POSTs to
 `/activity` create duplicate rows today.
 
+**Activity routes are dual-mounted under `/activity` and `/move`** (see
+`api/v1/__init__.py`). They're the same handlers; the PWA calls `/move/*`
+because ad/privacy blockers match the word "activity" in a URL and kill
+`POST /api/v1/activity` with `ERR_BLOCKED_BY_CLIENT`. `/activity/*` stays for
+API-token / external consumers. If you add a new activity endpoint, add the
+route once (the dual prefix is applied at include time) and it's reachable
+under both.
+
 The service worker generates a `client_id = crypto.randomUUID()` before
 queueing offline POSTs so retries dedupe.
 
