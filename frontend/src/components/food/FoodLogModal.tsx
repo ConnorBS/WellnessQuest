@@ -82,6 +82,12 @@ export function FoodLogModal({ onClose }: Props) {
   // pizza", "1 cup"). Defaults to OFF's serving_size string; user can override
   // when OFF has none (or has a wrong one).
   const [servingLabel, setServingLabel] = useState<string>("");
+  // User override for the scanned/searched product's measurement unit (g vs
+  // mL). OFF's unit detection is best-effort and frequently lands on grams for
+  // liquids labelled in mL but stored per-100g (dressings, sauces, drinks), so
+  // this path needs the same g/mL switch the Manual tab has. null = use OFF's
+  // detected unit; a value here wins.
+  const [unitOverride, setUnitOverride] = useState<FoodUnit | null>(null);
   // Raw-grams escape hatch for foods where "1 serving" is meaningless (bulk
   // items, "I ate half of what was in the pan"). Opt-in via "log by g only" —
   // we no longer drop into this mode automatically when OFF lacks a serving
@@ -159,6 +165,7 @@ export function FoodLogModal({ onClose }: Props) {
     setServings(1);
     setServingG(hit.serving_g ?? "");
     setServingLabel(hit.serving_label ?? "");
+    setUnitOverride(null);
     // Always land in servings mode so the per-serving readout is the first
     // thing the user sees. When OFF has no serving_g we auto-expand the
     // override form and keep the Log button disabled until they define
@@ -210,7 +217,7 @@ export function FoodLogModal({ onClose }: Props) {
 
   const computed = useMemo(() => {
     if (!selected) return null;
-    const nativeUnit: FoodUnit = selected.unit ?? DEFAULT_NATIVE_UNIT;
+    const nativeUnit: FoodUnit = unitOverride ?? selected.unit ?? DEFAULT_NATIVE_UNIT;
     const spec = inServingsMode
       ? {
           quantity: servings,
@@ -226,7 +233,7 @@ export function FoodLogModal({ onClose }: Props) {
           servingG: null,
         };
     return resolvePortion(selected, spec);
-  }, [selected, servings, servingG, rawGrams, inServingsMode]);
+  }, [selected, servings, servingG, rawGrams, inServingsMode, unitOverride]);
 
   // Override fields always win when populated — works for both "OFF had no
   // nutrition data" and "user is correcting wrong OFF data" cases. Leaving
@@ -303,7 +310,7 @@ export function FoodLogModal({ onClose }: Props) {
         servings: inServingsMode && hasDefinedPortion ? servings : null,
         serving_g: inServingsMode && hasDefinedPortion ? Number(servingG) : null,
         serving_label: servingLabel.trim() || selected.serving_label || null,
-        unit: selected.unit ?? null,
+        unit: unitOverride ?? selected.unit ?? null,
         nutrients:
           computed.hasNutritionData && Object.keys(computed.nutrients).length
             ? computed.nutrients
@@ -342,7 +349,7 @@ export function FoodLogModal({ onClose }: Props) {
                   ? Number(servingG)
                   : selected.serving_g ?? null,
               serving_label: servingLabel.trim() || selected.serving_label || null,
-              unit: selected.unit ?? null,
+              unit: unitOverride ?? selected.unit ?? null,
               nutrients: Object.keys(presetNutrients).length ? presetNutrients : null,
               meal_type: meal,
               provider: selected.provider,
@@ -727,8 +734,10 @@ export function FoodLogModal({ onClose }: Props) {
 
                 {selected
                   ? (() => {
+                      const effectiveUnit: FoodUnit =
+                        unitOverride ?? selected.unit ?? DEFAULT_NATIVE_UNIT;
                       const servingUnitLabel =
-                        selected.unit === "ml" ? "mL" : "g";
+                        effectiveUnit === "ml" ? "mL" : "g";
                       const totalAmount = computed?.nativeAmount ?? 0;
                       return (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -742,6 +751,19 @@ export function FoodLogModal({ onClose }: Props) {
                               </div>
                             ) : null}
                           </div>
+                          <label>
+                            <span style={fieldLabel}>Unit</span>
+                            <select
+                              value={effectiveUnit}
+                              onChange={(e) =>
+                                setUnitOverride(e.target.value as FoodUnit)
+                              }
+                              style={inputStyle}
+                            >
+                              <option value="g">g (solid)</option>
+                              <option value="ml">mL (liquid)</option>
+                            </select>
+                          </label>
                           {inServingsMode ? (
                             <>
                               {(() => {
@@ -807,7 +829,11 @@ export function FoodLogModal({ onClose }: Props) {
                                           min={0}
                                           step={0.1}
                                           value={servingG}
-                                          placeholder={`grams per serving`}
+                                          placeholder={
+                                            effectiveUnit === "ml"
+                                              ? "mL per serving"
+                                              : "grams per serving"
+                                          }
                                           onChange={(e) =>
                                             setServingG(
                                               e.target.value === "" ? "" : Number(e.target.value),
