@@ -106,3 +106,17 @@ function buttonStyleFor(variant: "primary" | "ghost", busy: boolean): React.CSSP
     cursor: busy ? "not-allowed" : "pointer",
   };
 }
+
+function uploadButtonStyle(busy: boolean): React.CSSProperties {
+  return {
+    background: "transparent",
+    color: "#94a3b8",
+    border: "none",
+    borderRadius: 8,
+    padding: "6px 8px",
+    fontSize: 13,
+    fontWeight: 500,
+    textDecoration: "underline",
+    cursor: busy ? "not-allowed" : "pointer",
+  };
+}
