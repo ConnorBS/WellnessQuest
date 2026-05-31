@@ -21,13 +21,21 @@ interface Props {
  * with `capture="environment"` so mobile users go straight to the rear cam.
  */
 export function NutritionLabelScanner({ onScanned, variant = "ghost", label }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  // Two inputs: one opens the live camera (capture), one opens the photo
+  // library / file picker (no capture) so an existing photo can be uploaded.
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const scan = useFoodScanLabel();
 
-  function pick() {
+  function openCamera() {
     setError(null);
-    inputRef.current?.click();
+    cameraInputRef.current?.click();
+  }
+
+  function openUpload() {
+    setError(null);
+    uploadInputRef.current?.click();
   }
 
   function onChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -46,14 +54,24 @@ export function NutritionLabelScanner({ onScanned, variant = "ghost", label }: P
   const isBusy = scan.isPending;
   return (
     <>
-      <button type="button" onClick={pick} disabled={isBusy} style={buttonStyleFor(variant, isBusy)}>
+      <button type="button" onClick={openCamera} disabled={isBusy} style={buttonStyleFor(variant, isBusy)}>
         {isBusy ? "Reading label…" : label ?? "Scan nutrition label"}
       </button>
+      <button type="button" onClick={openUpload} disabled={isBusy} style={uploadButtonStyle(isBusy)}>
+        Upload a photo instead
+      </button>
       <input
-        ref={inputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
+        onChange={onChange}
+        style={{ display: "none" }}
+      />
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="image/*"
         onChange={onChange}
         style={{ display: "none" }}
       />
@@ -85,6 +103,20 @@ function buttonStyleFor(variant: "primary" | "ghost", busy: boolean): React.CSSP
     padding: "8px 12px",
     fontSize: 13,
     fontWeight: 600,
+    cursor: busy ? "not-allowed" : "pointer",
+  };
+}
+
+function uploadButtonStyle(busy: boolean): React.CSSProperties {
+  return {
+    background: "transparent",
+    color: "#94a3b8",
+    border: "none",
+    borderRadius: 8,
+    padding: "6px 8px",
+    fontSize: 13,
+    fontWeight: 500,
+    textDecoration: "underline",
     cursor: busy ? "not-allowed" : "pointer",
   };
 }
