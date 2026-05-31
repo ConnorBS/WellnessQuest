@@ -155,6 +155,28 @@ NEXT_OUTPUT_MODE=export pnpm build
 
 If that's clean, the GHA build will be clean too.
 
+## When the container can't reach Postgres on boot
+
+On every start the container runs a short preflight (`python -m app.db.wait_for_db`) **before** Alembic and uvicorn. It exists because the image runs `alembic upgrade head` on boot, and a momentarily-unreachable Postgres — host reboot, the operator-owned postgres container still starting, a nightly backup window that stops it — used to make that first connection raise `ConnectionRefusedError` and take the whole container down. With `restart: unless-stopped`/Unraid's auto-restart that became a crash-loop with the real cause buried under asyncpg tracebacks.
+
+Now the preflight retries and logs one structured line per attempt. Two distinct outcomes, so the log tells you which problem you have:
+
+- **`db_wait_retry`** (level `warning`) — Postgres isn't answering yet (connection refused, hostname not resolving, server still in recovery). The container **keeps waiting and logging**; it does not exit. This is the expected log if you reboot Unraid and WQ comes up before your postgres container does — it'll connect on its own once postgres is live. Each line carries `error`, `detail`, `attempt`, and `waited_seconds`.
+- **`db_wait_fatal`** (level `error`) — Postgres answered but **rejected** the connection: wrong password, wrong user, or the database doesn't exist. Retrying wouldn't help, so the container exits with a clear `hint` pointing you at `DATABASE_URL` vs. the postgres container's `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB`.
+- **`db_wait_ready`** (level `info`) — connected; migrations and uvicorn proceed.
+
+So if WQ "stopped overnight", grab the container log and look for these events. A wall of `db_wait_retry` means **Postgres went down** (check your postgres container — it's the thing that needs restarting, see [Diagnostics & recovery](#diagnostics--recovery)); a single `db_wait_fatal` means a **credential/DB-name mismatch** in `DATABASE_URL`.
+
+Tunables (all optional env vars on the WQ container):
+
+| Var | Default | Meaning |
+|---|---|---|
+| `DB_WAIT_MAX_SECONDS` | `0` (wait forever) | Total budget before giving up and exiting `1`. `0` parks the container until Postgres returns instead of exiting. |
+| `DB_WAIT_INTERVAL` | `5` | Seconds between attempts. |
+| `DB_WAIT_TIMEOUT` | `5` | Per-attempt connect timeout. |
+
+The default (`DB_WAIT_MAX_SECONDS=0`) is deliberate: a parked container that auto-recovers when Postgres returns is friendlier than one that exits and relies on the restart policy. Set a finite budget only if you'd rather the container fail loudly than wait.
+
 ## Evolving the template
 
 `unraid/wellnessquest.xml` is the source of truth. When the slice gains a new env var:

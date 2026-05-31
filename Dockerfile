@@ -61,4 +61,8 @@ EXPOSE 8000
 # healthcheck false-failing on a stale port.
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD curl -fsS "http://localhost:${APP_PORT:-8000}/api/v1/healthz" || exit 1
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8000} --proxy-headers"]
+# Wait for Postgres before migrating: a briefly-unreachable DB (host reboot,
+# the operator's separate postgres container still starting, a nightly backup
+# window) should make the container wait and log, not crash-loop. See
+# app/db/wait_for_db.py for the retry/backoff and the env tunables.
+CMD ["sh", "-c", "python -m app.db.wait_for_db && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8000} --proxy-headers"]

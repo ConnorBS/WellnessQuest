@@ -31,4 +31,6 @@ ENV WQ_GIT_SHA=$GIT_SHA \
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD curl -fsS "http://localhost:${APP_PORT:-8000}/api/v1/healthz" || exit 1
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8000} --proxy-headers"]
+# Wait for Postgres before migrating so a briefly-unreachable DB makes the
+# container wait and log instead of crash-looping. See app/db/wait_for_db.py.
+CMD ["sh", "-c", "python -m app.db.wait_for_db && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT:-8000} --proxy-headers"]

@@ -55,4 +55,10 @@ First-time secret generation:&#xD;
   <Config Name="TZ" Target="TZ" Default="America/Toronto" Mode="" Description="IANA timezone for streak and day-rollover calculations." Type="Variable" Display="always" Required="false" Mask="false">America/Toronto</Config>
 
   <Config Name="LOG_LEVEL" Target="LOG_LEVEL" Default="INFO" Mode="" Description="Python logging level (DEBUG / INFO / WARNING / ERROR)." Type="Variable" Display="advanced" Required="false" Mask="false">INFO</Config>
+
+  <Config Name="DB_WAIT_MAX_SECONDS" Target="DB_WAIT_MAX_SECONDS" Default="0" Mode="" Description="On boot the container waits for Postgres before running migrations, so a briefly-unreachable DB (host reboot, postgres container still starting, backup window) makes it wait and log instead of crash-looping. This is the total wait budget in seconds before it gives up and exits. 0 (default) = wait forever, parking the container until Postgres returns. Set a finite value if you'd rather it fail loudly. Watch the log for db_wait_retry (still waiting), db_wait_fatal (wrong credentials/db — won't retry), and db_wait_ready." Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
+
+  <Config Name="DB_WAIT_INTERVAL" Target="DB_WAIT_INTERVAL" Default="5" Mode="" Description="Seconds between Postgres connection attempts during the boot wait." Type="Variable" Display="advanced" Required="false" Mask="false">5</Config>
+
+  <Config Name="DB_WAIT_TIMEOUT" Target="DB_WAIT_TIMEOUT" Default="5" Mode="" Description="Per-attempt connect timeout in seconds during the boot wait." Type="Variable" Display="advanced" Required="false" Mask="false">5</Config>
 </Container>
