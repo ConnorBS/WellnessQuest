@@ -35,9 +35,25 @@ export const REGIONS: RegionDef[] = [
   { key: "right_hand", label: "Right hand", view: "front", shape: { kind: "ellipse", cx: 77, cy: 103, rx: 6, ry: 7 } },
   { key: "left_foot", label: "Left foot", view: "front", shape: { kind: "ellipse", cx: 44, cy: 170, rx: 7, ry: 6 } },
   { key: "right_foot", label: "Right foot", view: "front", shape: { kind: "ellipse", cx: 56, cy: 170, rx: 7, ry: 6 } },
-  // --- back ---
-  { key: "upper_back", label: "Upper back", view: "back", shape: { kind: "rect", x: 36, y: 44, w: 28, h: 24 } },
-  { key: "lower_back", label: "Lower back", view: "back", shape: { kind: "rect", x: 38, y: 68, w: 24, h: 22 } },
+  // --- back (posterior figure, mirrors the front layout) ---
+  { key: "left_arm_back", label: "Left arm (back)", view: "back", shape: { kind: "rect", x: 18, y: 52, w: 10, h: 46 } },
+  { key: "right_arm_back", label: "Right arm (back)", view: "back", shape: { kind: "rect", x: 72, y: 52, w: 10, h: 46 } },
+  { key: "left_hamstring", label: "Left hamstring", view: "back", shape: { kind: "rect", x: 39, y: 104, w: 10, h: 30 } },
+  { key: "right_hamstring", label: "Right hamstring", view: "back", shape: { kind: "rect", x: 51, y: 104, w: 10, h: 30 } },
+  { key: "left_calf", label: "Left calf", view: "back", shape: { kind: "rect", x: 39, y: 134, w: 10, h: 28 } },
+  { key: "right_calf", label: "Right calf", view: "back", shape: { kind: "rect", x: 51, y: 134, w: 10, h: 28 } },
+  { key: "upper_back", label: "Upper back", view: "back", shape: { kind: "rect", x: 36, y: 44, w: 28, h: 22 } },
+  { key: "lower_back", label: "Lower back", view: "back", shape: { kind: "rect", x: 38, y: 66, w: 24, h: 18 } },
+  { key: "left_glute", label: "Left glute", view: "back", shape: { kind: "rect", x: 37, y: 84, w: 13, h: 15 } },
+  { key: "right_glute", label: "Right glute", view: "back", shape: { kind: "rect", x: 50, y: 84, w: 13, h: 15 } },
+  { key: "back_head", label: "Back of head", view: "back", shape: { kind: "ellipse", cx: 50, cy: 18, rx: 12, ry: 15 } },
+  { key: "back_neck", label: "Back of neck", view: "back", shape: { kind: "rect", x: 44, y: 33, w: 12, h: 9 } },
+  { key: "left_shoulder_blade", label: "Left shoulder blade", view: "back", shape: { kind: "ellipse", cx: 31, cy: 47, rx: 8, ry: 7 } },
+  { key: "right_shoulder_blade", label: "Right shoulder blade", view: "back", shape: { kind: "ellipse", cx: 69, cy: 47, rx: 8, ry: 7 } },
+  { key: "left_hand_back", label: "Left hand (back)", view: "back", shape: { kind: "ellipse", cx: 23, cy: 103, rx: 6, ry: 7 } },
+  { key: "right_hand_back", label: "Right hand (back)", view: "back", shape: { kind: "ellipse", cx: 77, cy: 103, rx: 6, ry: 7 } },
+  { key: "left_heel", label: "Left heel", view: "back", shape: { kind: "ellipse", cx: 44, cy: 168, rx: 7, ry: 6 } },
+  { key: "right_heel", label: "Right heel", view: "back", shape: { kind: "ellipse", cx: 56, cy: 168, rx: 7, ry: 6 } },
 ];
 
 export const REGION_LABELS: Record<string, string> = Object.fromEntries(

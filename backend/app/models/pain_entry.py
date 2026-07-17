@@ -20,13 +20,12 @@ from app.db.base import Base
 
 # Body-map regions the user can tap. Fixed vocabulary (front + back combined).
 BODY_REGIONS: tuple[str, ...] = (
+    # front view
     "head",
     "neck",
     "left_shoulder",
     "right_shoulder",
     "chest",
-    "upper_back",
-    "lower_back",
     "abdomen",
     "left_arm",
     "right_arm",
@@ -39,6 +38,25 @@ BODY_REGIONS: tuple[str, ...] = (
     "right_knee",
     "left_foot",
     "right_foot",
+    # back view
+    "back_head",
+    "back_neck",
+    "left_shoulder_blade",
+    "right_shoulder_blade",
+    "upper_back",
+    "lower_back",
+    "left_arm_back",
+    "right_arm_back",
+    "left_hand_back",
+    "right_hand_back",
+    "left_glute",
+    "right_glute",
+    "left_hamstring",
+    "right_hamstring",
+    "left_calf",
+    "right_calf",
+    "left_heel",
+    "right_heel",
 )
 
 
