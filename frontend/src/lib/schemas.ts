@@ -445,6 +445,21 @@ export const PainSummarySchema = z.object({
   latest: PainEntrySchema.nullable(),
 });
 
+export const TinyWinItemSchema = z.object({
+  id: z.number().int(),
+  label: z.string(),
+  sort_order: z.number().int(),
+  done: z.boolean(),
+});
+export type TinyWinItem = z.infer<typeof TinyWinItemSchema>;
+export const TinyWinItemListSchema = z.array(TinyWinItemSchema);
+
+export const TinyWinDayCountSchema = z.object({
+  entry_date: z.string(),
+  done: z.number().int(),
+});
+export const TinyWinCountListSchema = z.array(TinyWinDayCountSchema);
+
 export const MealTypeSchema = z.enum(["breakfast", "lunch", "dinner", "snack"]);
 export type MealType = z.infer<typeof MealTypeSchema>;
 

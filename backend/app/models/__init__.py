@@ -25,6 +25,8 @@ from app.models.steps_entry import StepsEntry
 from app.models.streak import Streak
 from app.models.symptom_catalog import SymptomCatalog
 from app.models.symptom_log import SymptomLog
+from app.models.tiny_win_checkin import TinyWinCheckin
+from app.models.tiny_win_item import TinyWinItem
 from app.models.title import Title
 from app.models.upload_file import UploadFile
 from app.models.user import User
@@ -63,6 +65,8 @@ __all__ = [
     "SleepEntry",
     "StepsEntry",
     "Streak",
+    "TinyWinCheckin",
+    "TinyWinItem",
     "Title",
     "UploadFile",
     "User",
