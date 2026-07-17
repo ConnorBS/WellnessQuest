@@ -10,6 +10,7 @@ import { PeriodCard } from "@/components/PeriodCard";
 import { SleepCard } from "@/components/SleepCard";
 import { StepsCard } from "@/components/StepsCard";
 import { StreakBadge } from "@/components/StreakBadge";
+import { TinyWinsCard } from "@/components/TinyWinsCard";
 import { WaterCard } from "@/components/WaterCard";
 import { WeightCard } from "@/components/WeightCard";
 import { XpBar } from "@/components/XpBar";
@@ -31,6 +32,7 @@ export default function DashboardPage() {
       {isEnabled("mood") && <MoodCard showQuickLog />}
       {isEnabled("period") && <PeriodCard />}
       {isEnabled("pain") && <PainCard />}
+      {isEnabled("tiny_wins") && <TinyWinsCard />}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         {isEnabled("water") && <StreakBadge metric="water_ml" />}
         {isEnabled("activity") && <StreakBadge metric="active_minutes" />}
