@@ -4,6 +4,7 @@ import { ActivityCard } from "@/components/ActivityCard";
 import { BPCard } from "@/components/BPCard";
 import { FoodCard } from "@/components/FoodCard";
 import { HabitsCard } from "@/components/HabitsCard";
+import { MoodCard } from "@/components/MoodCard";
 import { SleepCard } from "@/components/SleepCard";
 import { StepsCard } from "@/components/StepsCard";
 import { StreakBadge } from "@/components/StreakBadge";
@@ -25,6 +26,7 @@ export default function DashboardPage() {
       {isEnabled("habits") && <HabitsCard />}
       {isEnabled("weight") && <WeightCard showQuickLog />}
       {isEnabled("blood_pressure") && <BPCard showQuickLog />}
+      {isEnabled("mood") && <MoodCard showQuickLog />}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         {isEnabled("water") && <StreakBadge metric="water_ml" />}
         {isEnabled("activity") && <StreakBadge metric="active_minutes" />}
