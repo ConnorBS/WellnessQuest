@@ -52,12 +52,26 @@ export const MeSchema = z.object({
   weight_titles_opt_out: z.boolean(),
   bp_titles_opt_out: z.boolean(),
   show_raw_weight_delta: z.boolean(),
+  // Effective enabled state per feature key. Consumers still read defensively
+  // (`me?.features?.[key] ?? true`) so a missing key falls open to "enabled".
+  features: z.record(z.boolean()),
   pending_title_unlocks: z.array(TitleSummarySchema),
   pending_title_unlocks_total: z.number().int().nonnegative(),
 });
 export type Me = z.infer<typeof MeSchema>;
 
 export const MeListSchema = z.array(MeSchema);
+
+export const FeatureItemSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  enabled: z.boolean(),
+});
+export type FeatureItem = z.infer<typeof FeatureItemSchema>;
+
+export const FeaturesResponseSchema = z.object({
+  features: z.array(FeatureItemSchema),
+});
 
 export const TokenPairSchema = z.object({
   access_token: z.string(),

@@ -3,9 +3,11 @@
 import Link from "next/link";
 
 import { useMe } from "@/hooks/useMe";
+import { useFeatures } from "@/hooks/useFeatures";
 
 export default function SettingsPage() {
   const { data } = useMe();
+  const { isEnabled } = useFeatures();
 
   return (
     <>
@@ -30,13 +32,18 @@ export default function SettingsPage() {
       </section>
 
       <nav style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <Link href="/settings/water">Water goal &amp; presets</Link>
-        <Link href="/settings/food">Food ceiling &amp; quick foods</Link>
-        <Link href="/settings/activity">Activity goal &amp; presets</Link>
-        <Link href="/settings/habits">Habits</Link>
+        <Link href="/settings/trackers">Trackers (enable / disable)</Link>
+        {isEnabled("water") && <Link href="/settings/water">Water goal &amp; presets</Link>}
+        {isEnabled("food") && <Link href="/settings/food">Food ceiling &amp; quick foods</Link>}
+        {isEnabled("activity") && (
+          <Link href="/settings/activity">Activity goal &amp; presets</Link>
+        )}
+        {isEnabled("habits") && <Link href="/settings/habits">Habits</Link>}
         <Link href="/settings/titles">Titles</Link>
-        <Link href="/settings/weight">Weight &amp; units</Link>
-        <Link href="/settings/blood-pressure">Blood pressure</Link>
+        {isEnabled("weight") && <Link href="/settings/weight">Weight &amp; units</Link>}
+        {isEnabled("blood_pressure") && (
+          <Link href="/settings/blood-pressure">Blood pressure</Link>
+        )}
         <Link href="/settings/tokens">Home Assistant tokens</Link>
         <Link href="/settings/integrations">Integrations</Link>
         <Link href="/change-password">Change password</Link>

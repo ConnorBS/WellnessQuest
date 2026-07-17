@@ -8,7 +8,7 @@ from app.models.title import Title
 from app.models.user import User
 from app.schemas.auth import MeOut, MePatchIn
 from app.schemas.title import TitleSummary
-from app.services import title_service
+from app.services import feature_service, title_service
 from app.telemetry.recorder import audit
 
 router = APIRouter(tags=["users"])
@@ -29,6 +29,7 @@ async def _build_me_out(db: AsyncSession, user: User) -> MeOut:
     equipped = await title_service.equipped_title(db, user)
     pending = await title_service.pending_unlocks(db, user)
     pending_total = await title_service.count_pending_unlocks(db, user)
+    features = await feature_service.get_features(db, user.id)
     return MeOut(
         id=user.id,
         email=user.email,
@@ -46,6 +47,7 @@ async def _build_me_out(db: AsyncSession, user: User) -> MeOut:
         weight_titles_opt_out=user.weight_titles_opt_out,
         bp_titles_opt_out=user.bp_titles_opt_out,
         show_raw_weight_delta=user.show_raw_weight_delta,
+        features=features,
         pending_title_unlocks=[_to_title_summary(t) for t in pending],
         pending_title_unlocks_total=pending_total,
     )

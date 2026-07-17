@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
+import { useFeatures, useToggleFeature } from "@/hooks/useFeatures";
 import { useMe } from "@/hooks/useMe";
 import { useUpdateMe } from "@/hooks/useUpdateMe";
 import { useWeightSummary } from "@/hooks/useWeight";
@@ -42,6 +43,8 @@ const dangerBtn: React.CSSProperties = {
 export default function WeightSettingsPage() {
   const { data: me } = useMe();
   const updateMe = useUpdateMe();
+  const { isEnabled } = useFeatures();
+  const toggleFeature = useToggleFeature();
   const summary = useWeightSummary();
   const targets = useWeightTargets(60);
   const addTarget = useAddWeightTarget();
@@ -203,14 +206,17 @@ export default function WeightSettingsPage() {
         <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
           <input
             type="checkbox"
-            checked={me.show_weight_card}
-            disabled={updateMe.isPending}
-            onChange={(e) => updateMe.mutate({ show_weight_card: e.target.checked })}
+            checked={isEnabled("weight")}
+            disabled={toggleFeature.isPending}
+            onChange={(e) =>
+              toggleFeature.mutate({ key: "weight", enabled: e.target.checked })
+            }
           />
-          Show Weight card on Dashboard
+          Enable Weight tracker
         </label>
         <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
-          The /weight page is always available from the top nav, regardless of this setting.
+          Turning this off hides the Weight card, nav link, and this settings page. Manage
+          all trackers under Settings → Trackers.
         </p>
       </section>
 

@@ -5,22 +5,26 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { clearTokens } from "@/lib/auth";
+import { useFeatures } from "@/hooks/useFeatures";
 
-const LINKS: { href: string; label: string }[] = [
+// `feature` gates a link on the user's toggle; links without one are always shown.
+const LINKS: { href: string; label: string; feature?: string }[] = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/water", label: "Water" },
-  { href: "/food", label: "Food" },
-  { href: "/activity", label: "Activity" },
-  { href: "/habits", label: "Habits" },
-  { href: "/weight", label: "Weight" },
-  { href: "/blood-pressure", label: "BP" },
+  { href: "/water", label: "Water", feature: "water" },
+  { href: "/food", label: "Food", feature: "food" },
+  { href: "/activity", label: "Activity", feature: "activity" },
+  { href: "/habits", label: "Habits", feature: "habits" },
+  { href: "/weight", label: "Weight", feature: "weight" },
+  { href: "/blood-pressure", label: "BP", feature: "blood_pressure" },
   { href: "/settings", label: "Settings" },
 ];
 
 export function AppNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const { isEnabled } = useFeatures();
   const [open, setOpen] = useState(false);
+  const links = LINKS.filter((l) => !l.feature || isEnabled(l.feature));
 
   // Collapse the mobile menu after navigating so a tap on a link doesn't
   // leave the dropdown covering the page it just opened.
@@ -48,7 +52,7 @@ export function AppNav() {
         {open ? "✕" : "☰"}
       </button>
       <nav className="wq-nav" data-open={open ? "true" : "false"}>
-        {LINKS.map((l) => {
+        {links.map((l) => {
           const active = pathname === l.href || (pathname?.startsWith(l.href + "/") ?? false);
           return (
             <Link

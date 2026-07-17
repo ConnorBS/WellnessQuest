@@ -7,6 +7,7 @@ from app.api.v1 import (
     api_tokens,
     auth,
     blood_pressure,
+    features,
     food,
     food_presets,
     food_recipes,
@@ -31,6 +32,7 @@ api_v1 = APIRouter(prefix="/api/v1")
 api_v1.include_router(setup.router)
 api_v1.include_router(auth.router)
 api_v1.include_router(users.router)
+api_v1.include_router(features.router)
 api_v1.include_router(water.router)
 api_v1.include_router(water_presets.router)
 # Activity endpoints are mounted under two prefixes. /activity is the original
