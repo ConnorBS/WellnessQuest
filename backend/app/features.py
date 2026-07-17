@@ -31,6 +31,7 @@ FEATURES: tuple[FeatureDef, ...] = (
     FeatureDef("habits", "Habits"),
     FeatureDef("weight", "Weight"),
     FeatureDef("blood_pressure", "Blood pressure"),
+    FeatureDef("mood", "Mood"),
 )
 
 FEATURE_KEYS: frozenset[str] = frozenset(f.key for f in FEATURES)

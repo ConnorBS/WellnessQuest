@@ -346,6 +346,42 @@ export const BloodPressureSummarySchema = z.object({
 });
 export type BloodPressureSummary = z.infer<typeof BloodPressureSummarySchema>;
 
+export const MoodValueSchema = z.enum([
+  "happy",
+  "calm",
+  "excited",
+  "motivated",
+  "relaxed",
+  "grateful",
+  "productive",
+  "tired",
+  "sad",
+  "stressed",
+  "anxious",
+  "overwhelmed",
+  "frustrated",
+  "low_energy",
+  "angry",
+]);
+export type MoodValue = z.infer<typeof MoodValueSchema>;
+
+export const MoodEntrySchema = z.object({
+  id: z.number().int(),
+  mood: MoodValueSchema,
+  energy: z.number().int(),
+  occurred_at: z.string(),
+  note: z.string().nullable().optional(),
+});
+export type MoodEntry = z.infer<typeof MoodEntrySchema>;
+
+export const MoodEntryListSchema = z.array(MoodEntrySchema);
+
+export const MoodSummarySchema = z.object({
+  latest: MoodEntrySchema.nullable(),
+  today_count: z.number().int(),
+});
+export type MoodSummary = z.infer<typeof MoodSummarySchema>;
+
 export const MealTypeSchema = z.enum(["breakfast", "lunch", "dinner", "snack"]);
 export type MealType = z.infer<typeof MealTypeSchema>;
 
