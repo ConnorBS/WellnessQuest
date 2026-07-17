@@ -16,6 +16,7 @@ from app.models.habit import Habit
 from app.models.habit_checkin import HabitCheckin
 from app.models.integration import Integration
 from app.models.mood_entry import MoodEntry
+from app.models.period_entry import PeriodEntry
 from app.models.session import Session
 from app.models.sleep_entry import SleepEntry
 from app.models.steps_entry import StepsEntry
@@ -49,6 +50,7 @@ __all__ = [
     "HabitCheckin",
     "Integration",
     "MoodEntry",
+    "PeriodEntry",
     "Session",
     "SleepEntry",
     "StepsEntry",
