@@ -44,6 +44,7 @@ export default function SettingsPage() {
         {isEnabled("blood_pressure") && (
           <Link href="/settings/blood-pressure">Blood pressure</Link>
         )}
+        {isEnabled("pain") && <Link href="/settings/pain">Pain symptom list</Link>}
         <Link href="/settings/tokens">Home Assistant tokens</Link>
         <Link href="/settings/integrations">Integrations</Link>
         <Link href="/change-password">Change password</Link>

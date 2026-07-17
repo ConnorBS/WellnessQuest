@@ -16,11 +16,15 @@ from app.models.habit import Habit
 from app.models.habit_checkin import HabitCheckin
 from app.models.integration import Integration
 from app.models.mood_entry import MoodEntry
+from app.models.pain_entry import PainEntry
+from app.models.pain_location import PainLocation
 from app.models.period_entry import PeriodEntry
 from app.models.session import Session
 from app.models.sleep_entry import SleepEntry
 from app.models.steps_entry import StepsEntry
 from app.models.streak import Streak
+from app.models.symptom_catalog import SymptomCatalog
+from app.models.symptom_log import SymptomLog
 from app.models.title import Title
 from app.models.upload_file import UploadFile
 from app.models.user import User
@@ -50,8 +54,12 @@ __all__ = [
     "HabitCheckin",
     "Integration",
     "MoodEntry",
+    "PainEntry",
+    "PainLocation",
     "PeriodEntry",
     "Session",
+    "SymptomCatalog",
+    "SymptomLog",
     "SleepEntry",
     "StepsEntry",
     "Streak",

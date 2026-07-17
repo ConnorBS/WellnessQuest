@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.activity_preset import ActivityPreset
 from app.models.goal import Goal
 from app.models.habit import Habit
+from app.models.symptom_catalog import DEFAULT_SYMPTOMS, SymptomCatalog
 from app.models.user import User
 from app.models.water_preset import WaterPreset
 from app.services import title_service
@@ -134,6 +135,11 @@ async def _seed_default_habits(db: AsyncSession, user: User) -> None:
         )
 
 
+async def _seed_default_symptoms(db: AsyncSession, user: User) -> None:
+    for sort, name in enumerate(DEFAULT_SYMPTOMS):
+        db.add(SymptomCatalog(user_id=user.id, name=name, sort_order=sort))
+
+
 async def bootstrap_user_assets(db: AsyncSession, user: User) -> None:
     """Create default goals, presets, and habits for a freshly-created user."""
     await _ensure_water_goal(db, user)
@@ -141,6 +147,7 @@ async def bootstrap_user_assets(db: AsyncSession, user: User) -> None:
     await _seed_default_water_presets(db, user)
     await _seed_default_activity_presets(db, user)
     await _seed_default_habits(db, user)
+    await _seed_default_symptoms(db, user)
     # Grant the Newbie title (and any other immediately-eligible titles
     # the catalog already includes). No-op when the catalog is empty.
     await title_service.scan_user(db, user)

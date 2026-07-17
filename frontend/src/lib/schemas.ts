@@ -410,6 +410,41 @@ export type PeriodEntry = z.infer<typeof PeriodEntrySchema>;
 
 export const PeriodEntryListSchema = z.array(PeriodEntrySchema);
 
+export const SeveritySchema = z.enum(["none", "mild", "moderate", "severe"]);
+export type Severity = z.infer<typeof SeveritySchema>;
+
+export const SymptomCatalogSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  sort_order: z.number().int(),
+});
+export type SymptomCatalogItem = z.infer<typeof SymptomCatalogSchema>;
+export const SymptomCatalogListSchema = z.array(SymptomCatalogSchema);
+
+export const SymptomLogSchema = z.object({
+  id: z.number().int(),
+  catalog_id: z.number().int(),
+  name: z.string(),
+  severity: SeveritySchema,
+  duration_minutes: z.number().int().nullable().optional(),
+});
+export type SymptomLog = z.infer<typeof SymptomLogSchema>;
+
+export const PainEntrySchema = z.object({
+  id: z.number().int(),
+  pain_level: z.number().int(),
+  occurred_at: z.string(),
+  note: z.string().nullable().optional(),
+  locations: z.array(z.string()),
+  symptoms: z.array(SymptomLogSchema),
+});
+export type PainEntry = z.infer<typeof PainEntrySchema>;
+export const PainEntryListSchema = z.array(PainEntrySchema);
+
+export const PainSummarySchema = z.object({
+  latest: PainEntrySchema.nullable(),
+});
+
 export const MealTypeSchema = z.enum(["breakfast", "lunch", "dinner", "snack"]);
 export type MealType = z.infer<typeof MealTypeSchema>;
 
