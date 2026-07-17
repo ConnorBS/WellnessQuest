@@ -48,6 +48,7 @@ async def _build_me_out(db: AsyncSession, user: User) -> MeOut:
         bp_titles_opt_out=user.bp_titles_opt_out,
         show_raw_weight_delta=user.show_raw_weight_delta,
         features=features,
+        feature_order=feature_service.effective_order(user),
         pending_title_unlocks=[_to_title_summary(t) for t in pending],
         pending_title_unlocks_total=pending_total,
     )

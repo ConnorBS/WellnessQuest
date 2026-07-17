@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import CITEXT, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, CITEXT, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -54,4 +54,9 @@ class User(Base):
     )
     titles_last_scan_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+    # User-chosen order of dashboard tracker cards, by feature key. NULL = use
+    # the registry default order. Unknown/missing keys are reconciled at read time.
+    feature_order: Mapped[list[str] | None] = mapped_column(
+        ARRAY(String), nullable=True
     )

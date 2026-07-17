@@ -1,10 +1,39 @@
 "use client";
 
-import { useFeatureList, useToggleFeature } from "@/hooks/useFeatures";
+import {
+  useFeatureList,
+  useReorderFeatures,
+  useToggleFeature,
+} from "@/hooks/useFeatures";
+
+const arrowBtn: React.CSSProperties = {
+  padding: "2px 8px",
+  background: "transparent",
+  color: "#cbd5e1",
+  border: "1px solid #334155",
+  borderRadius: 6,
+  fontSize: 12,
+  lineHeight: 1.2,
+};
 
 export default function TrackersSettingsPage() {
   const { data, isLoading } = useFeatureList();
   const toggle = useToggleFeature();
+  const reorder = useReorderFeatures();
+
+  const items = data?.features ?? [];
+
+  function move(index: number, dir: -1 | 1) {
+    const next = [...items];
+    const target = index + dir;
+    if (target < 0 || target >= next.length) return;
+    const a = next[index];
+    const b = next[target];
+    if (!a || !b) return;
+    next[index] = b;
+    next[target] = a;
+    reorder.mutate(next.map((f) => f.key));
+  }
 
   return (
     <>
@@ -14,32 +43,53 @@ export default function TrackersSettingsPage() {
         </h2>
         <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 16 }}>
           Turn a tracker off to hide it everywhere — its dashboard card, its top-nav
-          link, and its settings page all disappear. Your logged data is kept; turn it
-          back on here anytime.
+          link, and its settings page all disappear (your data is kept). Use the arrows
+          to set the order your cards appear on the dashboard.
         </p>
 
         {isLoading || !data ? (
           <p style={{ color: "#94a3b8" }}>Loading...</p>
         ) : (
           <ul style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {data.features.map((f) => (
-              <li key={f.key}>
+            {items.map((f, i) => (
+              <li
+                key={f.key}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <button
+                    type="button"
+                    style={arrowBtn}
+                    aria-label={`Move ${f.label} up`}
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0 || reorder.isPending}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    style={arrowBtn}
+                    aria-label={`Move ${f.label} down`}
+                    onClick={() => move(i, 1)}
+                    disabled={i === items.length - 1 || reorder.isPending}
+                  >
+                    ↓
+                  </button>
+                </div>
                 <label
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: 10,
                     fontSize: 15,
-                    padding: "8px 0",
+                    flex: 1,
                   }}
                 >
                   <input
                     type="checkbox"
                     checked={f.enabled}
                     disabled={toggle.isPending}
-                    onChange={(e) =>
-                      toggle.mutate({ key: f.key, enabled: e.target.checked })
-                    }
+                    onChange={(e) => toggle.mutate({ key: f.key, enabled: e.target.checked })}
                   />
                   {f.label}
                 </label>

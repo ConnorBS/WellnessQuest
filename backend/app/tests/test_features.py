@@ -102,6 +102,40 @@ async def test_toggle_unknown_feature_rejected(client, db, unique_email):
 
 
 @pytest.mark.asyncio
+async def test_me_default_order_is_registry_order(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+    r = await client.get("/api/v1/me", headers=_auth(access))
+    order = r.json()["feature_order"]
+    assert order[0] == "water"
+    assert set(order) == set(FEATURE_KEYS)
+
+
+@pytest.mark.asyncio
+async def test_reorder_features(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    # Put mood + weight first; the rest keep registry order after them.
+    r = await client.post(
+        "/api/v1/features/order",
+        headers=_auth(access),
+        json={"order": ["mood", "weight", "bogus_key"]},
+    )
+    assert r.status_code == 200, r.text
+    keys = [f["key"] for f in r.json()["features"]]
+    assert keys[0] == "mood"
+    assert keys[1] == "weight"
+    # Unknown key dropped; every real feature still present exactly once.
+    assert "bogus_key" not in keys
+    assert set(keys) == set(FEATURE_KEYS)
+
+    # Reflected on /me too.
+    me = await client.get("/api/v1/me", headers=_auth(access))
+    assert me.json()["feature_order"][:2] == ["mood", "weight"]
+
+
+@pytest.mark.asyncio
 async def test_features_require_auth(client):
     r = await client.get("/api/v1/features")
     assert r.status_code == 401
