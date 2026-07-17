@@ -5,6 +5,7 @@ import { BPCard } from "@/components/BPCard";
 import { FoodCard } from "@/components/FoodCard";
 import { HabitsCard } from "@/components/HabitsCard";
 import { MoodCard } from "@/components/MoodCard";
+import { PainCard } from "@/components/PainCard";
 import { PeriodCard } from "@/components/PeriodCard";
 import { SleepCard } from "@/components/SleepCard";
 import { StepsCard } from "@/components/StepsCard";
@@ -29,6 +30,7 @@ export default function DashboardPage() {
       {isEnabled("blood_pressure") && <BPCard showQuickLog />}
       {isEnabled("mood") && <MoodCard showQuickLog />}
       {isEnabled("period") && <PeriodCard />}
+      {isEnabled("pain") && <PainCard />}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         {isEnabled("water") && <StreakBadge metric="water_ml" />}
         {isEnabled("activity") && <StreakBadge metric="active_minutes" />}

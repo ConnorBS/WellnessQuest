@@ -18,6 +18,7 @@ const LINKS: { href: string; label: string; feature?: string }[] = [
   { href: "/blood-pressure", label: "BP", feature: "blood_pressure" },
   { href: "/mood", label: "Mood", feature: "mood" },
   { href: "/period", label: "Period", feature: "period" },
+  { href: "/pain", label: "Pain", feature: "pain" },
   { href: "/settings", label: "Settings" },
 ];
 
