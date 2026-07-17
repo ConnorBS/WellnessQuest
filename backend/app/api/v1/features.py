@@ -6,19 +6,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.deps import current_user, get_db
 from app.features import FEATURES
 from app.models.user import User
-from app.schemas.feature import FeatureItem, FeaturePatchIn, FeaturesOut
+from app.schemas.feature import (
+    FeatureItem,
+    FeatureOrderIn,
+    FeaturePatchIn,
+    FeaturesOut,
+)
 from app.services import feature_service
 from app.telemetry.recorder import audit
 
 router = APIRouter(tags=["features"])
 
+_LABELS = {f.key: f.label for f in FEATURES}
+
 
 async def _features_out(db: AsyncSession, user: User) -> FeaturesOut:
     enabled = await feature_service.get_features(db, user.id)
+    # Return in the user's chosen dashboard order.
     return FeaturesOut(
         features=[
-            FeatureItem(key=f.key, label=f.label, enabled=enabled[f.key])
-            for f in FEATURES
+            FeatureItem(key=key, label=_LABELS[key], enabled=enabled[key])
+            for key in feature_service.effective_order(user)
         ]
     )
 
@@ -49,5 +57,22 @@ async def patch_features(
         action="user.features.update",
         user_id=user.id,
         meta={"feature_key": payload.feature_key, "enabled": payload.enabled},
+    )
+    return await _features_out(db, user)
+
+
+@router.post("/features/order", response_model=FeaturesOut)
+async def set_feature_order(
+    payload: FeatureOrderIn,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> FeaturesOut:
+    await feature_service.set_order(db, user, payload.order)
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="user.features.reorder",
+        user_id=user.id,
+        meta={"order": user.feature_order or []},
     )
     return await _features_out(db, user)

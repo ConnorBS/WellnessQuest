@@ -16,3 +16,7 @@ class FeaturesOut(BaseModel):
 class FeaturePatchIn(BaseModel):
     feature_key: str
     enabled: bool
+
+
+class FeatureOrderIn(BaseModel):
+    order: list[str]

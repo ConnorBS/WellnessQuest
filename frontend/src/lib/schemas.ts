@@ -55,6 +55,8 @@ export const MeSchema = z.object({
   // Effective enabled state per feature key. Consumers still read defensively
   // (`me?.features?.[key] ?? true`) so a missing key falls open to "enabled".
   features: z.record(z.boolean()),
+  // User-chosen dashboard order of feature keys (registry order for unplaced).
+  feature_order: z.array(z.string()),
   pending_title_unlocks: z.array(TitleSummarySchema),
   pending_title_unlocks_total: z.number().int().nonnegative(),
 });

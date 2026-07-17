@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { apiFetch, apiPatch } from "@/lib/api";
+import { apiFetch, apiPatch, apiPost } from "@/lib/api";
 import { FeaturesResponseSchema } from "@/lib/schemas";
 import { useMe } from "@/hooks/useMe";
 
@@ -15,6 +15,7 @@ export function useFeatures() {
   const features = me?.features ?? {};
   return {
     features,
+    order: me?.feature_order ?? [],
     isEnabled: (key: string) => features[key] ?? true,
   };
 }
@@ -38,6 +39,19 @@ export function useToggleFeature() {
     onSuccess: (data) => {
       qc.setQueryData(["features"], data);
       // /me carries the features map that gates nav + dashboard cards.
+      qc.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
+}
+
+export function useReorderFeatures() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (order: string[]) =>
+      apiPost("/features/order", FeaturesResponseSchema, { order }),
+    onSuccess: (data) => {
+      qc.setQueryData(["features"], data);
+      // /me carries feature_order that drives the dashboard card order.
       qc.invalidateQueries({ queryKey: ["me"] });
     },
   });

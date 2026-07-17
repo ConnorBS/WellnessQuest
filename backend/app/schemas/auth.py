@@ -45,6 +45,9 @@ class MeOut(BaseModel):
     # Effective enabled state per feature key (registry defaults merged with the
     # user's overrides). Drives dashboard/nav/settings visibility on the client.
     features: dict[str, bool] = Field(default_factory=dict)
+    # User-chosen dashboard order of feature keys (registry order for anything
+    # unplaced). Drives the order of cards on the dashboard.
+    feature_order: list[str] = Field(default_factory=list)
     pending_title_unlocks: list[TitleSummary] = Field(default_factory=list)
     # True count of un-acknowledged unlocks. `pending_title_unlocks` is
     # capped at PENDING_UNLOCKS_LIMIT (5) so the popup can show one at a
