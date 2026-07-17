@@ -382,6 +382,34 @@ export const MoodSummarySchema = z.object({
 });
 export type MoodSummary = z.infer<typeof MoodSummarySchema>;
 
+export const FlowValueSchema = z.enum(["spotting", "light", "medium", "heavy"]);
+export type FlowValue = z.infer<typeof FlowValueSchema>;
+
+export const PeriodSymptomSchema = z.enum([
+  "cramps",
+  "headache",
+  "mood_swings",
+  "bloating",
+  "fatigue",
+  "backache",
+  "nausea",
+  "tender_breasts",
+  "acne",
+  "cravings",
+]);
+export type PeriodSymptom = z.infer<typeof PeriodSymptomSchema>;
+
+export const PeriodEntrySchema = z.object({
+  id: z.number().int(),
+  entry_date: z.string(),
+  flow: FlowValueSchema,
+  symptoms: z.array(PeriodSymptomSchema),
+  note: z.string().nullable().optional(),
+});
+export type PeriodEntry = z.infer<typeof PeriodEntrySchema>;
+
+export const PeriodEntryListSchema = z.array(PeriodEntrySchema);
+
 export const MealTypeSchema = z.enum(["breakfast", "lunch", "dinner", "snack"]);
 export type MealType = z.infer<typeof MealTypeSchema>;
 
