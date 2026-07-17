@@ -136,18 +136,23 @@ async def add_entry(
     )
     # De-dup tapped regions while keeping order stable.
     seen: set[str] = set()
+    locs: list[PainLocation] = []
     for region in locations:
         if region not in seen:
             seen.add(region)
-            entry.locations.append(PainLocation(region_key=region))
-    for s in symptoms:
-        entry.symptoms.append(
-            SymptomLog(
-                catalog_id=s.catalog_id,
-                severity=s.severity,
-                duration_minutes=s.duration_minutes,
-            )
+            locs.append(PainLocation(region_key=region))
+    # Assign the collections directly (even when empty) so they are marked
+    # loaded in-session — otherwise building the response after flush would
+    # trigger a lazy load outside async context (greenlet_spawn error).
+    entry.locations = locs
+    entry.symptoms = [
+        SymptomLog(
+            catalog_id=s.catalog_id,
+            severity=s.severity,
+            duration_minutes=s.duration_minutes,
         )
+        for s in symptoms
+    ]
     db.add(entry)
     await db.flush()
     return entry

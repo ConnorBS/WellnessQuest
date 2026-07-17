@@ -155,6 +155,22 @@ async def test_delete_pain_entry_cascades(client, db, unique_email):
 
 
 @pytest.mark.asyncio
+async def test_add_pain_with_back_regions(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+    r = await client.post(
+        "/api/v1/pain",
+        headers=_auth(access),
+        json={
+            "pain_level": 4,
+            "locations": ["left_glute", "left_hamstring", "back_head"],
+        },
+    )
+    assert r.status_code == 201, r.text
+    assert sorted(r.json()["locations"]) == ["back_head", "left_glute", "left_hamstring"]
+
+
+@pytest.mark.asyncio
 async def test_pain_feature_registered(client, db, unique_email):
     data = await _signup(client, db, unique_email)
     access = data["tokens"]["access_token"]

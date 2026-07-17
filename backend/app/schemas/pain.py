@@ -10,13 +10,12 @@ from app.models.symptom_log import SEVERITY_VALUES
 
 Severity = Literal["none", "mild", "moderate", "severe"]
 RegionKey = Literal[
+    # front view
     "head",
     "neck",
     "left_shoulder",
     "right_shoulder",
     "chest",
-    "upper_back",
-    "lower_back",
     "abdomen",
     "left_arm",
     "right_arm",
@@ -29,6 +28,25 @@ RegionKey = Literal[
     "right_knee",
     "left_foot",
     "right_foot",
+    # back view
+    "back_head",
+    "back_neck",
+    "left_shoulder_blade",
+    "right_shoulder_blade",
+    "upper_back",
+    "lower_back",
+    "left_arm_back",
+    "right_arm_back",
+    "left_hand_back",
+    "right_hand_back",
+    "left_glute",
+    "right_glute",
+    "left_hamstring",
+    "right_hamstring",
+    "left_calf",
+    "right_calf",
+    "left_heel",
+    "right_heel",
 ]
 
 # Guard the typed literals against the model vocabularies drifting.
