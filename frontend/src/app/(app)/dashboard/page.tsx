@@ -10,28 +10,26 @@ import { StreakBadge } from "@/components/StreakBadge";
 import { WaterCard } from "@/components/WaterCard";
 import { WeightCard } from "@/components/WeightCard";
 import { XpBar } from "@/components/XpBar";
-import { useMe } from "@/hooks/useMe";
+import { useFeatures } from "@/hooks/useFeatures";
 
 export default function DashboardPage() {
-  const { data: me } = useMe();
-  const showWeight = me?.show_weight_card ?? true;
-  const showBP = me?.show_bp_card ?? true;
+  const { isEnabled } = useFeatures();
   return (
     <>
       <XpBar />
-      <WaterCard showQuickLog />
-      <FoodCard showQuickLog />
-      <ActivityCard showQuickLog />
-      <StepsCard />
-      <SleepCard />
-      <HabitsCard />
-      {showWeight && <WeightCard showQuickLog />}
-      {showBP && <BPCard showQuickLog />}
+      {isEnabled("water") && <WaterCard showQuickLog />}
+      {isEnabled("food") && <FoodCard showQuickLog />}
+      {isEnabled("activity") && <ActivityCard showQuickLog />}
+      {isEnabled("steps") && <StepsCard />}
+      {isEnabled("sleep") && <SleepCard />}
+      {isEnabled("habits") && <HabitsCard />}
+      {isEnabled("weight") && <WeightCard showQuickLog />}
+      {isEnabled("blood_pressure") && <BPCard showQuickLog />}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <StreakBadge metric="water_ml" />
-        <StreakBadge metric="active_minutes" />
-        <StreakBadge metric="steps" />
-        <StreakBadge metric="sleep_minutes" />
+        {isEnabled("water") && <StreakBadge metric="water_ml" />}
+        {isEnabled("activity") && <StreakBadge metric="active_minutes" />}
+        {isEnabled("steps") && <StreakBadge metric="steps" />}
+        {isEnabled("sleep") && <StreakBadge metric="sleep_minutes" />}
       </div>
     </>
   );

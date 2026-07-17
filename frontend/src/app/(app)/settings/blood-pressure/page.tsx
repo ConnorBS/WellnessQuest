@@ -8,6 +8,7 @@ import {
   useBPTargets,
   useDeleteBPTarget,
 } from "@/hooks/useBPTargets";
+import { useFeatures, useToggleFeature } from "@/hooks/useFeatures";
 import { useMe } from "@/hooks/useMe";
 import { useUpdateMe } from "@/hooks/useUpdateMe";
 
@@ -46,6 +47,8 @@ const numberInput: React.CSSProperties = {
 export default function BPSettingsPage() {
   const { data: me } = useMe();
   const updateMe = useUpdateMe();
+  const { isEnabled } = useFeatures();
+  const toggleFeature = useToggleFeature();
   const summary = useBPSummary();
   const targets = useBPTargets(60);
   const addTarget = useAddBPTarget();
@@ -252,14 +255,17 @@ export default function BPSettingsPage() {
         <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
           <input
             type="checkbox"
-            checked={me.show_bp_card}
-            disabled={updateMe.isPending}
-            onChange={(e) => updateMe.mutate({ show_bp_card: e.target.checked })}
+            checked={isEnabled("blood_pressure")}
+            disabled={toggleFeature.isPending}
+            onChange={(e) =>
+              toggleFeature.mutate({ key: "blood_pressure", enabled: e.target.checked })
+            }
           />
-          Show Blood pressure card on Dashboard
+          Enable Blood pressure tracker
         </label>
         <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
-          The /blood-pressure page is always available from the top nav, regardless of this setting.
+          Turning this off hides the Blood pressure card, nav link, and this settings page.
+          Manage all trackers under Settings → Trackers.
         </p>
       </section>
 

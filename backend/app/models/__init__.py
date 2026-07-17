@@ -22,6 +22,7 @@ from app.models.streak import Streak
 from app.models.title import Title
 from app.models.upload_file import UploadFile
 from app.models.user import User
+from app.models.user_feature_pref import UserFeaturePref
 from app.models.user_title import UserTitle
 from app.models.water_entry import WaterEntry
 from app.models.water_preset import WaterPreset
@@ -53,6 +54,7 @@ __all__ = [
     "Title",
     "UploadFile",
     "User",
+    "UserFeaturePref",
     "UserTitle",
     "WaterEntry",
     "WaterPreset",
