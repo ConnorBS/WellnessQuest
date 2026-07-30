@@ -158,6 +158,41 @@ async def test_manual_sleep_delete(client, db, unique_email):
 
 
 @pytest.mark.asyncio
+async def test_sleep_goal_can_be_configured(client, db, unique_email):
+    access = await _signup(client, db, unique_email)
+
+    r = await client.get("/api/v1/sleep/last", headers=_auth(access))
+    assert r.json()["goal_minutes"] == 420  # DEFAULT_SLEEP_MINUTES_PER_NIGHT
+
+    r = await client.patch(
+        "/api/v1/sleep/goal", headers=_auth(access), json={"target_minutes": 480}
+    )
+    assert r.status_code == 200, r.text
+    assert r.json() == {"target_minutes": 480}
+
+    r = await client.get("/api/v1/sleep/last", headers=_auth(access))
+    assert r.json()["goal_minutes"] == 480
+
+    # A 7h night no longer meets an 8h goal.
+    r = await client.post(
+        "/api/v1/sleep", headers=_auth(access), json={**_night(7), "client_id": "u1"}
+    )
+    assert r.json()["goal_minutes"] == 480
+    assert r.json()["goal_met"] is False
+
+
+@pytest.mark.asyncio
+async def test_sleep_goal_rejects_out_of_range(client, db, unique_email):
+    access = await _signup(client, db, unique_email)
+
+    for target in (0, -1, 1441):
+        r = await client.patch(
+            "/api/v1/sleep/goal", headers=_auth(access), json={"target_minutes": target}
+        )
+        assert r.status_code == 422, target
+
+
+@pytest.mark.asyncio
 async def test_sleep_entries_are_per_user(client, db, unique_email):
     mine = await _signup(client, db, unique_email)
     theirs = await _signup(client, db, f"other-{unique_email}")

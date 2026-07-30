@@ -12,7 +12,16 @@ import { useMe } from "@/hooks/useMe";
 import { isLoggedIn } from "@/lib/auth";
 import { DayProvider, useViewedDay } from "@/lib/day-context";
 
-const PATHS_WITH_DAY_HEADER = ["/dashboard", "/water", "/food", "/activity", "/habits", "/tiny-wins"];
+const PATHS_WITH_DAY_HEADER = [
+  "/dashboard",
+  "/water",
+  "/food",
+  "/activity",
+  "/steps",
+  "/sleep",
+  "/habits",
+  "/tiny-wins",
+];
 
 function shouldShowDayHeader(pathname: string | null): boolean {
   if (!pathname) return false;

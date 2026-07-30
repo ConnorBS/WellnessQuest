@@ -211,6 +211,8 @@ export const StepsTodaySchema = z.object({
 });
 export type StepsToday = z.infer<typeof StepsTodaySchema>;
 
+export const StepsGoalOutSchema = z.object({ target_steps: z.number().int() });
+
 export const StepsAddOutSchema = z.object({
   entry: StepsEntrySchema,
   total: z.number().int(),
@@ -238,6 +240,8 @@ export const SleepLastSchema = z.object({
 export type SleepLast = z.infer<typeof SleepLastSchema>;
 
 export const SleepListSchema = z.array(SleepEntrySchema);
+
+export const SleepGoalOutSchema = z.object({ target_minutes: z.number().int() });
 
 export const SleepAddOutSchema = z.object({
   entry: SleepEntrySchema,

@@ -8,7 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.deps import current_user, get_db
 from app.models.sleep_entry import SleepEntry
 from app.models.user import User
-from app.schemas.sleep import SleepAddIn, SleepAddOut, SleepEntryOut, SleepLastOut
+from app.schemas.sleep import (
+    SleepAddIn,
+    SleepAddOut,
+    SleepEntryOut,
+    SleepGoalOut,
+    SleepGoalUpdate,
+    SleepLastOut,
+)
 from app.services import goal_service, sleep_service
 from app.services.time_utils import utcnow
 from app.telemetry.recorder import audit
@@ -30,6 +37,27 @@ def _entry_out(entry: SleepEntry) -> SleepEntryOut:
         source=entry.source,
         client_id=entry.client_id,
     )
+
+
+@router.patch("/goal", response_model=SleepGoalOut)
+async def update_sleep_goal(
+    payload: SleepGoalUpdate,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> SleepGoalOut:
+    goal = await goal_service.get_or_create_default_sleep(db, user_id=user.id)
+    goal.target = payload.target_minutes
+    await db.flush()
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="sleep.goal.update",
+        user_id=user.id,
+        target_type="goal",
+        target_id=str(goal.id),
+        meta={"target_minutes": payload.target_minutes},
+    )
+    return SleepGoalOut(target_minutes=int(goal.target))
 
 
 @router.get("/last", response_model=SleepLastOut)

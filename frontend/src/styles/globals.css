@@ -116,6 +116,10 @@ button:focus-visible {
 .bg-emerald-500 { background: #10b981; }
 .bg-sky-500 { background: #0ea5e9; }
 .bg-amber-400 { background: #fbbf24; }
+/* Steps and sleep progress fills. This is a hand-written utility sheet, not
+   Tailwind — a class that isn't defined here silently renders as nothing. */
+.bg-amber-500 { background: #f59e0b; }
+.bg-indigo-500 { background: #6366f1; }
 .p-5 { padding: 20px; }
 .p-4 { padding: 16px; }
 .px-4 { padding-left: 16px; padding-right: 16px; }

@@ -17,7 +17,7 @@ function formatEnded(iso: string): string {
   });
 }
 
-export function SleepCard() {
+export function SleepCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
   const { data, isLoading } = useSleepLast();
   const del = useDeleteSleep();
   const [logOpen, setLogOpen] = useState(false);
@@ -47,23 +47,27 @@ export function SleepCard() {
       </div>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <button
-          type="button"
-          onClick={() => setLogOpen(true)}
-          data-testid="sleep-log-open"
-          style={{
-            padding: "8px 12px",
-            background: "#1e293b",
-            color: "#e2e8f0",
-            border: "1px solid #334155",
-            borderRadius: 6,
-            fontSize: 14,
-            cursor: "pointer",
-          }}
-        >
-          + Log sleep
-        </button>
-        {entry && entry.source === "pwa" && (
+        {/* The Sleep page has its own log button in the history header, so the
+            card only offers one on the dashboard. */}
+        {showQuickLog && (
+          <button
+            type="button"
+            onClick={() => setLogOpen(true)}
+            data-testid="sleep-log-open"
+            style={{
+              padding: "8px 12px",
+              background: "#1e293b",
+              color: "#e2e8f0",
+              border: "1px solid #334155",
+              borderRadius: 6,
+              fontSize: 14,
+              cursor: "pointer",
+            }}
+          >
+            + Log sleep
+          </button>
+        )}
+        {showQuickLog && entry && entry.source === "pwa" && (
           <button
             type="button"
             onClick={() => del.mutate(entry.id)}
@@ -92,7 +96,7 @@ export function SleepCard() {
       ) : (
         !isLoading && (
           <p className="mt-3 text-sm text-slate-400">
-            No sleep data yet — log a night above, or connect{" "}
+            No sleep data yet — log a night, or connect{" "}
             <Link href="/settings/integrations" style={{ color: "#10b981" }}>
               Home Assistant
             </Link>{" "}
@@ -102,7 +106,7 @@ export function SleepCard() {
       )}
       {isLoading && <p className="mt-3 text-sm text-slate-400">Loading...</p>}
 
-      {logOpen && <SleepLogModal onClose={() => setLogOpen(false)} />}
+      {showQuickLog && logOpen && <SleepLogModal onClose={() => setLogOpen(false)} />}
     </section>
   );
 }

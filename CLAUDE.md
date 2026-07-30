@@ -302,6 +302,18 @@ under both.
 The service worker generates a `client_id = crypto.randomUUID()` before
 queueing offline POSTs so retries dedupe.
 
+### The utility classes are hand-written, not Tailwind
+
+`frontend/src/styles/globals.css` defines a small set of Tailwind-*looking*
+utilities by hand. There is no Tailwind, no PostCSS config and no JIT scan, so
+a class that isn't in that file **silently renders as nothing** — no build
+error, no console warning, just an element with no styling.
+
+This is how the Steps and Sleep progress bars shipped invisible: the cards used
+`bg-amber-500` / `bg-indigo-500`, neither of which existed (the file had
+`bg-amber-400`). If you reach for a colour/spacing utility, grep
+`globals.css` for it first and add it there if it's missing.
+
 ### Service worker (`frontend/public/sw.js`)
 
 - Caches: `wq-shell-v2` (app shell precache for `/`, `/dashboard`, `/water`, `/login`, manifest), `wq-api-v1` (network-first for `/api/v1/**` GETs with stale fallback). Bump the shell cache name whenever the precache list changes.

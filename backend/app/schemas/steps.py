@@ -28,6 +28,14 @@ class StepsTodayOut(BaseModel):
     entries: list[StepsEntryOut] = Field(default_factory=list)
 
 
+class StepsGoalUpdate(BaseModel):
+    target_steps: int = Field(gt=0, le=200_000)
+
+
+class StepsGoalOut(BaseModel):
+    target_steps: int
+
+
 class StepsAddOut(BaseModel):
     entry: StepsEntryOut
     total: int
