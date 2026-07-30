@@ -136,11 +136,13 @@ is the canonical "easy to get wrong" reference.
 
 ### `source` field on entries
 
-`water_entries.source`, `food_entries.source`, and `activity_entries.source` all
-carry the same enum (column comment lives in the models). Values:
+`water_entries.source`, `food_entries.source`, `activity_entries.source`,
+`steps_entries.source` and `sleep_entries.source` all carry the same enum
+(column comment lives in the models). Values:
 
-- `'pwa'` — written by the web app (`POST /api/v1/water|food|activity`). UI shows this label next to each entry in the day list (e.g. `12:00 · pwa`).
-- `'ha'` — written by Home Assistant via `POST /api/v1/ha/water/add`. **Only water has an HA write endpoint** — activity and food entries cannot have `source='ha'` today.
+- `'pwa'` — written by the web app (`POST /api/v1/water|food|activity|steps|sleep`). UI shows this label next to each entry in the day list (e.g. `12:00 · pwa`).
+- `'ha'` — written by Home Assistant via `POST /api/v1/ha/water/add`, `/ha/steps/add`, `/ha/sleep/add`. **Water, steps and sleep have HA write endpoints; activity and food do not** — they cannot have `source='ha'` today.
+- `'ha_pull'` — written by the HA pull worker, which polls entity states rather than being pushed to (steps and sleep only).
 - `'manual'` — reserved for direct DB inserts / future admin tooling. No code path currently writes it; treat it as "this row predates the source field" if you ever see it in the wild.
 
 There's no UI to filter or relabel by source; the frontend just renders the raw string.
@@ -154,6 +156,8 @@ Per-entry XP with per-metric daily caps in the user's local day:
 | `water_entry` | `floor(ml / 100)` | 20 |
 | `activity_entry` | `minutes` (1:1) | 30 |
 | `food_entry` | 1 per log (not kcal-weighted, on purpose — would reward over-eating) | 5 |
+| `steps_entry` | `floor(count / 500)` | 20 |
+| `sleep_entry` | 10 flat per session (not duration-weighted) | n/a |
 | `goal_met:<metric>` | +50, one-shot on the crossing entry | n/a |
 
 Level curve: `100 * level * (level + 1) / 2` cumulative to enter the next
@@ -170,11 +174,13 @@ now_exceeded=true` for food). Subsequent entries the same day don't refire.
 Deleting an entry that pulls the total back below the goal does NOT "uncross"
 — there's no `goal_unmet` event.
 
-The three events that exist are:
+The events that exist are:
 
 - `water.goal_met` — payload `{ goal_ml, total_ml, date }`
 - `activity.goal_met` — payload `{ goal_minutes, total_minutes, date }`
 - `food.target_exceeded` — payload `{ target_kcal, total_kcal, date }`
+- `steps.daily_goal_met` — payload `{ count, goal, date }`
+- `sleep.session_logged` — payload `{ duration_minutes, quality_score, goal_met, goal_minutes, ended_at }`; unlike the others this fires on **every** session, not just on a crossing
 
 These are the **only** events the webhook dispatcher sees. Habits, weight, BP
 emit nothing. If a feature request needs a habit/weight/BP webhook, the event
@@ -182,10 +188,16 @@ needs to be added in the service layer first.
 
 ### Streaks (`backend/app/services/streak_service.py`)
 
-Only `water_ml` and `active_minutes` have streaks. The function is
-idempotent within a day; extends by 1 if `last_hit_date == today - 1`, resets
-to 1 on any gap, no-op if already counted today. Doesn't decrement on entry
-delete.
+`water_ml`, `active_minutes`, `steps` and `sleep_minutes` have streaks. The
+function is idempotent within a day; extends by 1 if `last_hit_date == today -
+1`, resets to 1 on any gap, no-op if already counted today. Doesn't decrement
+on entry delete.
+
+Back-dated entries never touch streaks: `steps_service.add` and
+`sleep_service.add` only call `extend_if_goal_met` when the entry's own day
+(steps: `occurred_at`; sleep: `ended_at`) is today. Goal/XP math still follows
+the entry's day, so logging steps for last Tuesday reports Tuesday's total —
+not today's.
 
 ### Habits
 
@@ -292,11 +304,41 @@ queueing offline POSTs so retries dedupe.
 
 ### Service worker (`frontend/public/sw.js`)
 
-- Caches: `wq-shell-v1` (app shell precache for `/`, `/dashboard`, `/water`, `/login`, manifest), `wq-api-v1` (network-first for `/api/v1/**` GETs with stale fallback).
+- Caches: `wq-shell-v2` (app shell precache for `/`, `/dashboard`, `/water`, `/login`, manifest), `wq-api-v1` (network-first for `/api/v1/**` GETs with stale fallback). Bump the shell cache name whenever the precache list changes.
 - **Only `POST /api/v1/water` is offline-queueable.** Activity, food, habits, weight, BP are not. If an offline-logging feature request comes in for one of those, the SW needs new branches in `fetch` and `drainQueue`.
 - Offline POST returns synthetic `202 Accepted` with header `x-wq-queued: 1` and a body containing `entry: { id: -1, source: 'pwa', ... }`. **UI code must tolerate `id === -1`** (it's used in `useAddWater` to swap in the real entry once sync completes).
 - Drained on Background Sync (`tag = "wq-water-sync"`) or explicit `navigator.serviceWorker.controller.postMessage("wq-drain")`. Background Sync isn't supported in all browsers; the postMessage fallback is what most platforms actually hit.
 - Only registers in secure contexts (HTTPS or `localhost`).
+
+### The "raw JavaScript gibberish instead of a page" report
+
+If the operator says a link — typically a card's "See all" — dumped a wall of
+`1:"$Sreact.fragment"` / `static/chunks/...` text into the browser, that's the
+static export's RSC payload being rendered as a document. It is **not** a 404,
+even though the payload text contains `404: This page could not be found`
+(every Next payload embeds the not-found boilerplate).
+
+What happens: the frontend is built with `output: "export"`, so each page has a
+sibling `.txt` RSC payload (`/period/index.txt`). `:edge` republishes on every
+push to any `claude/*` branch, so the operator's container updates underneath
+tabs that are still open. On the next client-side navigation the App Router
+fetches the payload, sees a build id that doesn't match the one the tab booted
+with, and bails out to a **full browser navigation to the `.txt` URL** — the
+user lands on the payload itself.
+
+Two guards now catch it, and both must stay:
+
+- `static_shell_middleware` in `backend/app/main.py` — redirects a `.txt`
+  request whose `Sec-Fetch-Dest` is `document` back to the HTML page, and marks
+  HTML/RSC responses `no-cache` (hashed `_next/static/*` stays `immutable`).
+  Gate on the document check: the router's own payload fetches must still get
+  the file, and they're identified by `Sec-Fetch-Dest: empty` / the `RSC`
+  header.
+- The matching `.txt` branch in `sw.js`'s navigate handler, for when the SW is
+  the one answering.
+
+Reproduce with `curl -H 'Sec-Fetch-Dest: document' .../period/index.txt` —
+expect a 307, not a payload.
 
 ### Default user bootstrap (`backend/app/services/user_bootstrap.py`)
 

@@ -105,6 +105,37 @@ Every path in this section is mounted under **two** prefixes: the original `/act
 
 Note: activity does NOT enforce a `(user_id, client_id)` unique constraint today, so retried POSTs with the same `client_id` will create duplicate rows. Water and food do enforce it.
 
+## Steps
+
+Steps are stored as append-only **deltas**, not as a running total — the daily figure is a SUM over the user's local day. The Home Assistant pull worker converts its cumulative sensor into deltas before insert; a manual log adds a delta the same way ("add 3,000 steps", not "the day is now 3,000").
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/steps/today?date=YYYY-MM-DD` | — | `{ date, total, goal, percent, entries[] }`. Each entry: `{ id, count, source, occurred_at, client_id }`. |
+| POST | `/steps` | `{ count, client_id?, occurred_at? }` | 201, `StepsAddOut`. Writes `source='pwa'`. `count` is 1..200,000. |
+| DELETE | `/steps/{id}` | — | 204, 404 if it isn't yours. |
+
+XP: `floor(count / 500)` per entry, capped at 20/day, plus the one-shot +50 when the daily goal is crossed. Default goal 8,000/day (`DEFAULT_STEPS_PER_DAY`); there's no endpoint to change it yet.
+
+`(user_id, client_id)` is unique, so a retried POST returns the existing row with `xp_delta: 0`.
+
+Goal, XP and the `steps.daily_goal_met` event follow the day the entry's `occurred_at` lands on, so back-filling an older day reports that day's total rather than today's. Streaks are only extended when the entry belongs to today — back-filling must not rewrite streak history.
+
+## Sleep
+
+One row per session; `ended_at` is what "last night" is keyed on. A session belongs to the day it *ended*.
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/sleep/last?date=YYYY-MM-DD` | — | `{ entry, goal_minutes }`. Without `date`, the most recent session whenever it was. With `date`, the latest session that ended that local day, or `entry: null`. |
+| GET | `/sleep/recent?limit=N` | — | `SleepEntryOut[]`, newest first (default 14, max 60). |
+| POST | `/sleep` | `{ started_at, ended_at, quality_score?, client_id? }` | 201, `SleepAddOut`. Writes `source='pwa'`. |
+| DELETE | `/sleep/{id}` | — | 204, 404 if it isn't yours. |
+
+`ended_at` must be after `started_at` (422 otherwise) and no more than 10 minutes into the future (`400 future_time`). Duration is derived, never sent, and clamped to 24h. XP is flat per session, plus the +50 goal bonus when the session meets the goal (default 420 min).
+
+`(user_id, client_id)` is unique, so a retried POST returns the existing row with `xp_delta: 0`.
+
 ## Food
 
 The food module's daily goal is a **ceiling** (compliant = total ≤ target). XP per food log is a flat +1 (max 5/day) regardless of kcal — it doesn't reward over-eating.
@@ -254,7 +285,13 @@ Header: `X-WQ-Token: wq_ha_...`. Rate-limited.
 |---|---|---|---|---|
 | POST | `/ha/water/add` | `water:write` | `{ ml, client_id?, name? }` | `WaterAddOut` |
 | GET | `/ha/water/today` | `water:read` | — | `WaterTodayOut` (entries omitted) |
-| GET | `/ha/me/stats` | `water:read` | — | `{ xp_total, level, streaks }` |
+| POST | `/ha/steps/add` | `steps:write` | `{ count, client_id?, occurred_at? }` | `StepsAddOut` |
+| GET | `/ha/steps/today` | `steps:read` | — | `StepsTodayOut` (entries omitted) |
+| POST | `/ha/sleep/add` | `sleep:write` | `{ started_at, ended_at, quality_score?, client_id? }` | `SleepAddOut` |
+| GET | `/ha/sleep/last` | `sleep:read` | — | `SleepLastOut` |
+| GET | `/ha/me/stats` | `me:read` | — | `{ xp_total, level, streaks, water_today, steps_today, sleep_last_night, … }` |
+
+These write `source='ha'`. The user-facing `POST /steps` and `POST /sleep` above are the manual equivalents and write `source='pwa'` — Home Assistant is one way to fill these in, not the only one.
 
 ## Telemetry
 

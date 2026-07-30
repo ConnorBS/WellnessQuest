@@ -193,13 +193,32 @@ export const ActivityRecentEntrySchema = z.object({
 export type ActivityRecentEntry = z.infer<typeof ActivityRecentEntrySchema>;
 export const ActivityRecentListSchema = z.array(ActivityRecentEntrySchema);
 
+export const StepsEntrySchema = z.object({
+  id: z.number().int(),
+  count: z.number().int(),
+  source: z.string(),
+  occurred_at: z.string(),
+  client_id: z.string().nullable().optional(),
+});
+export type StepsEntry = z.infer<typeof StepsEntrySchema>;
+
 export const StepsTodaySchema = z.object({
   date: z.string(),
   total: z.number().int(),
   goal: z.number().int(),
   percent: z.number().int(),
+  entries: z.array(StepsEntrySchema),
 });
 export type StepsToday = z.infer<typeof StepsTodaySchema>;
+
+export const StepsAddOutSchema = z.object({
+  entry: StepsEntrySchema,
+  total: z.number().int(),
+  goal: z.number().int(),
+  xp_delta: z.number().int(),
+  goal_met: z.boolean(),
+});
+export type StepsAddOut = z.infer<typeof StepsAddOutSchema>;
 
 export const SleepEntrySchema = z.object({
   id: z.number().int(),
@@ -217,6 +236,16 @@ export const SleepLastSchema = z.object({
   goal_minutes: z.number().int(),
 });
 export type SleepLast = z.infer<typeof SleepLastSchema>;
+
+export const SleepListSchema = z.array(SleepEntrySchema);
+
+export const SleepAddOutSchema = z.object({
+  entry: SleepEntrySchema,
+  goal_minutes: z.number().int(),
+  xp_delta: z.number().int(),
+  goal_met: z.boolean(),
+});
+export type SleepAddOut = z.infer<typeof SleepAddOutSchema>;
 
 export const ActivityPresetSchema = z.object({
   id: z.string().uuid(),

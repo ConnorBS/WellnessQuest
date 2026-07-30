@@ -24,6 +24,8 @@ class StepsTodayOut(BaseModel):
     total: int
     goal: int
     percent: int
+    # Empty on the HA rollup endpoints, which only care about the total.
+    entries: list[StepsEntryOut] = Field(default_factory=list)
 
 
 class StepsAddOut(BaseModel):

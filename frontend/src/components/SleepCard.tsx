@@ -1,16 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
+import { SleepLogModal } from "@/components/sleep/SleepLogModal";
+import { useDeleteSleep } from "@/hooks/useAddSleep";
 import { useSleepLast } from "@/hooks/useSleepLast";
-
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
-}
+import { formatDuration } from "@/lib/duration";
 
 function formatEnded(iso: string): string {
   const d = new Date(iso);
@@ -23,6 +19,9 @@ function formatEnded(iso: string): string {
 
 export function SleepCard() {
   const { data, isLoading } = useSleepLast();
+  const del = useDeleteSleep();
+  const [logOpen, setLogOpen] = useState(false);
+
   const entry = data?.entry ?? null;
   const goalMin = data?.goal_minutes ?? 420;
   const durMin = entry?.duration_minutes ?? 0;
@@ -46,15 +45,54 @@ export function SleepCard() {
           data-testid="sleep-progress"
         />
       </div>
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={() => setLogOpen(true)}
+          data-testid="sleep-log-open"
+          style={{
+            padding: "8px 12px",
+            background: "#1e293b",
+            color: "#e2e8f0",
+            border: "1px solid #334155",
+            borderRadius: 6,
+            fontSize: 14,
+            cursor: "pointer",
+          }}
+        >
+          + Log sleep
+        </button>
+        {entry && entry.source === "pwa" && (
+          <button
+            type="button"
+            onClick={() => del.mutate(entry.id)}
+            data-testid="sleep-delete"
+            style={{
+              padding: "8px 12px",
+              background: "transparent",
+              color: "#fca5a5",
+              border: "1px solid #7f1d1d",
+              borderRadius: 6,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            Delete
+          </button>
+        )}
+      </div>
+
       {entry ? (
-        <p className="text-sm text-slate-400">
+        <p className="mt-3 text-sm text-slate-400">
           Last session ended {formatEnded(entry.ended_at)}
           {entry.quality_score != null && ` · quality ${entry.quality_score}/100`}
+          {` · ${entry.source}`}
         </p>
       ) : (
         !isLoading && (
-          <p className="text-sm text-slate-400">
-            No sleep data yet — connect{" "}
+          <p className="mt-3 text-sm text-slate-400">
+            No sleep data yet — log a night above, or connect{" "}
             <Link href="/settings/integrations" style={{ color: "#10b981" }}>
               Home Assistant
             </Link>{" "}
@@ -63,6 +101,8 @@ export function SleepCard() {
         )
       )}
       {isLoading && <p className="mt-3 text-sm text-slate-400">Loading...</p>}
+
+      {logOpen && <SleepLogModal onClose={() => setLogOpen(false)} />}
     </section>
   );
 }

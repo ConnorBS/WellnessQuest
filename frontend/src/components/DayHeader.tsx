@@ -1,10 +1,11 @@
 "use client";
 
-import { formatViewedDay, useViewedDay } from "@/lib/day-context";
+import { formatViewedDate, formatViewedDay, useViewedDay } from "@/lib/day-context";
 
 export function DayHeader() {
   const { viewedDay, today, isToday, goToPrev, goToNext, goToToday } = useViewedDay();
   const label = formatViewedDay(viewedDay, today);
+  const dateLabel = formatViewedDate(viewedDay, today);
 
   const arrowBtn: React.CSSProperties = {
     width: 36,
@@ -33,7 +34,15 @@ export function DayHeader() {
         ←
       </button>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, flex: 1 }}>
-        <span style={{ fontWeight: 600, fontSize: 15 }}>{label}</span>
+        <span style={{ fontWeight: 600, fontSize: 15 }} data-testid="day-header-label">
+          {label}
+        </span>
+        <span
+          style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}
+          data-testid="day-header-date"
+        >
+          {dateLabel}
+        </span>
         {!isToday && (
           <button
             type="button"

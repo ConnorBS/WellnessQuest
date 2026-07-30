@@ -44,6 +44,35 @@ async def total_today(db: AsyncSession, *, user: User, for_date: date | None = N
     return int((await db.execute(stmt)).scalar_one())
 
 
+async def list_for_day(
+    db: AsyncSession, *, user: User, for_date: date | None = None
+) -> list[StepsEntry]:
+    day = for_date or day_for_user(user.timezone)
+    start, end = day_bounds_for_user(user.timezone, day)
+    stmt = (
+        select(StepsEntry)
+        .where(
+            StepsEntry.user_id == user.id,
+            StepsEntry.occurred_at >= start,
+            StepsEntry.occurred_at < end,
+        )
+        .order_by(StepsEntry.occurred_at.desc(), StepsEntry.id.desc())
+    )
+    return list((await db.execute(stmt)).scalars().all())
+
+
+async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:
+    stmt = select(StepsEntry).where(
+        StepsEntry.id == entry_id, StepsEntry.user_id == user.id
+    )
+    entry = (await db.execute(stmt)).scalar_one_or_none()
+    if entry is None:
+        return False
+    await db.delete(entry)
+    await db.flush()
+    return True
+
+
 async def add(
     db: AsyncSession,
     *,
@@ -54,7 +83,13 @@ async def add(
     occurred_at: datetime | None,
 ) -> StepsAddResult:
     today = day_for_user(user.timezone)
-    before_total = await total_today(db, user=user)
+    at = occurred_at or utcnow()
+    # Manual entries can be backdated via the day switcher, so goal/streak math
+    # follows the day the entry lands on rather than always "today". Streaks are
+    # still only extended for today (see below) — back-filling an old day must
+    # not rewrite streak history.
+    entry_day = day_for_user(user.timezone, at)
+    before_total = await total_today(db, user=user, for_date=entry_day)
     goal = await goal_service.get_or_create_default_steps(db, user_id=user.id)
     goal_target = int(goal.target)
     was_met = before_total >= goal_target
@@ -63,7 +98,7 @@ async def add(
         user_id=user.id,
         count=count,
         source=source,
-        occurred_at=occurred_at or utcnow(),
+        occurred_at=at,
         client_id=client_id,
     )
     try:
@@ -81,9 +116,10 @@ async def add(
     if newly_met:
         xp_delta += await xp_service.grant_goal_met(db, user=user, metric="steps")
 
-    await streak_service.extend_if_goal_met(
-        db, user=user, metric="steps", today=today, goal_met=now_met
-    )
+    if entry_day == today:
+        await streak_service.extend_if_goal_met(
+            db, user=user, metric="steps", today=today, goal_met=now_met
+        )
 
     await db.flush()
 
@@ -91,7 +127,7 @@ async def add(
         await events.emit(
             user.id,
             "steps.daily_goal_met",
-            {"count": new_total, "goal": goal_target, "date": today.isoformat()},
+            {"count": new_total, "goal": goal_target, "date": entry_day.isoformat()},
         )
 
     return StepsAddResult(

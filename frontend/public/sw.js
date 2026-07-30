@@ -3,7 +3,7 @@
 // - network-first for /api/v1/** GETs with stale fallback
 // - offline IndexedDB queue for POST /api/v1/water, drained on background sync
 
-const SHELL_CACHE = "wq-shell-v1";
+const SHELL_CACHE = "wq-shell-v2";
 const API_CACHE = "wq-api-v1";
 const SHELL_URLS = ["/", "/dashboard", "/water", "/login", "/manifest.webmanifest"];
 
@@ -42,9 +42,23 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (req.method === "GET" && req.mode === "navigate") {
+    // Next ships each page with a sibling `.txt` RSC payload. If the app was
+    // rebuilt under an open tab, the App Router gives up on the client-side
+    // transition and does a full browser navigation to that `.txt` URL, which
+    // renders as a wall of raw flight payload. Send those back to the page.
+    if (url.pathname.endsWith(".txt")) {
+      event.respondWith(Response.redirect(htmlPathForRsc(url.pathname) + url.search, 302));
+      return;
+    }
     event.respondWith(networkFirst(req, SHELL_CACHE));
   }
 });
+
+// "/period/index.txt" -> "/period/", "/period.txt" -> "/period"
+function htmlPathForRsc(pathname) {
+  if (pathname.endsWith("/index.txt")) return pathname.slice(0, -"index.txt".length);
+  return pathname.slice(0, -".txt".length) || "/";
+}
 
 async function networkFirst(req, cacheName = API_CACHE) {
   const cache = await caches.open(cacheName);

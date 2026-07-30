@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.sleep_entry import SleepEntry
 from app.models.user import User
 from app.services import events, goal_service, streak_service, xp_service
-from app.services.time_utils import day_for_user
+from app.services.time_utils import day_bounds_for_user, day_for_user
 
 
 class SleepAddResult:
@@ -29,14 +29,38 @@ class SleepAddResult:
         self.goal_met = goal_met
 
 
-async def last_session(db: AsyncSession, *, user: User) -> SleepEntry | None:
+async def last_session(
+    db: AsyncSession, *, user: User, for_date: date | None = None
+) -> SleepEntry | None:
+    """Most recent session; scoped to sessions that *ended* on `for_date` if given."""
+    stmt = select(SleepEntry).where(SleepEntry.user_id == user.id)
+    if for_date is not None:
+        start, end = day_bounds_for_user(user.timezone, for_date)
+        stmt = stmt.where(SleepEntry.ended_at >= start, SleepEntry.ended_at < end)
+    stmt = stmt.order_by(SleepEntry.ended_at.desc()).limit(1)
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def list_recent(db: AsyncSession, *, user: User, limit: int = 14) -> list[SleepEntry]:
     stmt = (
         select(SleepEntry)
         .where(SleepEntry.user_id == user.id)
         .order_by(SleepEntry.ended_at.desc())
-        .limit(1)
+        .limit(limit)
     )
-    return (await db.execute(stmt)).scalar_one_or_none()
+    return list((await db.execute(stmt)).scalars().all())
+
+
+async def delete(db: AsyncSession, *, user: User, entry_id: int) -> bool:
+    stmt = select(SleepEntry).where(
+        SleepEntry.id == entry_id, SleepEntry.user_id == user.id
+    )
+    entry = (await db.execute(stmt)).scalar_one_or_none()
+    if entry is None:
+        return False
+    await db.delete(entry)
+    await db.flush()
+    return True
 
 
 async def add(
@@ -57,6 +81,9 @@ async def add(
     goal = await goal_service.get_or_create_default_sleep(db, user_id=user.id)
     goal_minutes = int(goal.target)
     today = day_for_user(user.timezone)
+    # A session belongs to the day it ended on. Back-filled nights still get XP
+    # but must not rewrite today's streak.
+    ended_day = day_for_user(user.timezone, ended_at)
 
     entry = SleepEntry(
         user_id=user.id,
@@ -83,9 +110,10 @@ async def add(
     if goal_met:
         xp_delta += await xp_service.grant_goal_met(db, user=user, metric="sleep_minutes")
 
-    await streak_service.extend_if_goal_met(
-        db, user=user, metric="sleep_minutes", today=today, goal_met=goal_met
-    )
+    if ended_day == today:
+        await streak_service.extend_if_goal_met(
+            db, user=user, metric="sleep_minutes", today=today, goal_met=goal_met
+        )
 
     await db.flush()
 
