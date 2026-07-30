@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { Modal } from "@/components/Modal";
+import { OccurredAtField } from "@/components/forms/OccurredAtField";
 import { MoodForm } from "@/components/mood/MoodForm";
 import {
   useDeleteMood,
@@ -98,11 +99,17 @@ function MonthlyOverview({ entries }: { entries: MoodEntry[] }) {
   );
 }
 
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 function EditMoodModal({ entry, onClose }: { entry: MoodEntry; onClose: () => void }) {
   const update = useUpdateMood();
   const [mood, setMood] = useState<MoodValue>(entry.mood);
   const [energy, setEnergy] = useState(entry.energy);
   const [note, setNote] = useState(entry.note ?? "");
+  // null = "keep the original time" — the picker stays collapsed until opened.
+  const [occurredAt, setOccurredAt] = useState<string | null>(null);
 
   return (
     <Modal title="Edit check-in" onClose={onClose}>
@@ -170,13 +177,27 @@ function EditMoodModal({ entry, onClose }: { entry: MoodEntry; onClose: () => vo
           placeholder="Optional note"
           maxLength={500}
         />
+        <OccurredAtField
+          value={occurredAt}
+          onChange={setOccurredAt}
+          defaultLabel={formatTime(entry.occurred_at)}
+          initialPickerIso={entry.occurred_at}
+        />
         <button
           type="button"
           disabled={update.isPending}
           style={primaryBtn}
           onClick={() =>
             update.mutate(
-              { id: entry.id, patch: { mood, energy, note: note.trim() || null } },
+              {
+                id: entry.id,
+                patch: {
+                  mood,
+                  energy,
+                  note: note.trim() || null,
+                  ...(occurredAt !== null ? { occurred_at: occurredAt } : {}),
+                },
+              },
               { onSuccess: onClose },
             )
           }

@@ -88,6 +88,27 @@ export function useAddPain() {
   });
 }
 
+export interface UpdatePainArgs {
+  id: number;
+  // `locations` / `symptoms` replace the whole collection when present; omit a
+  // key to leave that collection untouched.
+  patch: {
+    pain_level?: number;
+    note?: string | null;
+    occurred_at?: string;
+    locations?: string[];
+    symptoms?: { catalog_id: number; severity: Severity; duration_minutes?: number | null }[];
+  };
+}
+
+export function useUpdatePain() {
+  const qc = useQueryClient();
+  return useMutation<PainEntry, Error, UpdatePainArgs>({
+    mutationFn: ({ id, patch }) => apiPatch(`/pain/${id}`, PainEntrySchema, patch),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["pain"] }),
+  });
+}
+
 export function useDeletePain() {
   const qc = useQueryClient();
   return useMutation({

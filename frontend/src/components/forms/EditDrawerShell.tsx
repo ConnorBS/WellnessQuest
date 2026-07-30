@@ -55,7 +55,7 @@ export function EditDrawerShell({
           </button>
         </header>
 
-        {children}
+        <div style={bodyStyle}>{children}</div>
 
         {errorMessage ? (
           <p style={{ fontSize: 12, color: "#fca5a5", margin: 0 }}>
@@ -119,9 +119,20 @@ const panelStyle: CSSProperties = {
   padding: 16,
   width: "100%",
   maxWidth: 440,
+  maxHeight: "90vh",
   display: "flex",
   flexDirection: "column",
   gap: 12,
+};
+
+// Only the fields scroll, so the header and the Save/Cancel row stay reachable
+// on a phone when a drawer body is tall (the pain drawer carries a body map).
+const bodyStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+  overflowY: "auto",
+  minHeight: 0,
 };
 
 const headerStyle: CSSProperties = {

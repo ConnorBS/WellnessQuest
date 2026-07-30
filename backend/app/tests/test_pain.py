@@ -129,6 +129,162 @@ async def test_add_pain_rejects_bad_inputs(client, db, unique_email):
 
 
 @pytest.mark.asyncio
+async def test_update_pain_entry(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+    catalog = (await client.get("/api/v1/pain/symptoms", headers=_auth(access))).json()
+    first, second = catalog[0]["id"], catalog[1]["id"]
+
+    created = (
+        await client.post(
+            "/api/v1/pain",
+            headers=_auth(access),
+            json={
+                "pain_level": 7,
+                "note": "rough day",
+                "locations": ["lower_back", "neck"],
+                "symptoms": [{"catalog_id": first, "severity": "moderate"}],
+            },
+        )
+    ).json()
+    eid = created["id"]
+
+    # Partial patch: only the fields sent change.
+    r = await client.patch(
+        f"/api/v1/pain/{eid}",
+        headers=_auth(access),
+        json={"pain_level": 2, "occurred_at": "2026-01-02T03:04:05Z"},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["pain_level"] == 2
+    assert body["occurred_at"].startswith("2026-01-02T03:04:05")
+    assert body["note"] == "rough day"
+    assert sorted(body["locations"]) == ["lower_back", "neck"]
+    assert [s["catalog_id"] for s in body["symptoms"]] == [first]
+
+    # Collections are replace-whole, and locations still de-dup.
+    r = await client.patch(
+        f"/api/v1/pain/{eid}",
+        headers=_auth(access),
+        json={
+            "locations": ["head", "head"],
+            "symptoms": [{"catalog_id": second, "severity": "severe", "duration_minutes": 30}],
+            "note": "  ",
+        },
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["locations"] == ["head"]
+    assert body["note"] is None
+    assert [(s["catalog_id"], s["severity"], s["duration_minutes"]) for s in body["symptoms"]] == [
+        (second, "severe", 30)
+    ]
+
+    # Clearing both collections.
+    body = (
+        await client.patch(
+            f"/api/v1/pain/{eid}",
+            headers=_auth(access),
+            json={"locations": [], "symptoms": []},
+        )
+    ).json()
+    assert body["locations"] == []
+    assert body["symptoms"] == []
+
+    # Persisted, not just echoed back.
+    listed = (await client.get("/api/v1/pain", headers=_auth(access))).json()
+    assert listed[0]["pain_level"] == 2
+    assert listed[0]["locations"] == []
+
+
+@pytest.mark.asyncio
+async def test_update_pain_rejects_bad_inputs(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+    eid = (
+        await client.post("/api/v1/pain", headers=_auth(access), json={"pain_level": 3})
+    ).json()["id"]
+
+    r = await client.patch(
+        f"/api/v1/pain/{eid}", headers=_auth(access), json={"pain_level": 11}
+    )
+    assert r.status_code == 422
+
+    r = await client.patch(
+        f"/api/v1/pain/{eid}", headers=_auth(access), json={"locations": ["nose"]}
+    )
+    assert r.status_code == 422
+
+    r = await client.patch(
+        f"/api/v1/pain/{eid}",
+        headers=_auth(access),
+        json={"symptoms": [{"catalog_id": 999999, "severity": "mild"}]},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "unknown_symptom"
+
+    r = await client.patch(
+        "/api/v1/pain/999999", headers=_auth(access), json={"pain_level": 1}
+    )
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_pain_keeps_archived_symptom(client, db, unique_email):
+    """Archiving a symptom must not lock the entries that already use it."""
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+    catalog = (await client.get("/api/v1/pain/symptoms", headers=_auth(access))).json()
+    sid = catalog[0]["id"]
+    eid = (
+        await client.post(
+            "/api/v1/pain",
+            headers=_auth(access),
+            json={
+                "pain_level": 4,
+                "symptoms": [{"catalog_id": sid, "severity": "mild"}],
+            },
+        )
+    ).json()["id"]
+
+    assert (
+        await client.delete(f"/api/v1/pain/symptoms/{sid}", headers=_auth(access))
+    ).status_code == 204
+
+    r = await client.patch(
+        f"/api/v1/pain/{eid}",
+        headers=_auth(access),
+        json={
+            "pain_level": 6,
+            "symptoms": [{"catalog_id": sid, "severity": "severe"}],
+        },
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["symptoms"][0]["severity"] == "severe"
+
+
+@pytest.mark.asyncio
+async def test_update_pain_scoped_to_owner(client, db, unique_email):
+    owner = await _signup(client, db, unique_email)
+    other = await _signup(client, db, f"other-{unique_email}")
+    eid = (
+        await client.post(
+            "/api/v1/pain",
+            headers=_auth(owner["tokens"]["access_token"]),
+            json={"pain_level": 3},
+        )
+    ).json()["id"]
+
+    r = await client.patch(
+        f"/api/v1/pain/{eid}",
+        headers=_auth(other["tokens"]["access_token"]),
+        json={"pain_level": 9},
+    )
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_delete_pain_entry_cascades(client, db, unique_email):
     data = await _signup(client, db, unique_email)
     access = data["tokens"]["access_token"]
