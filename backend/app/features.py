@@ -34,6 +34,7 @@ FEATURES: tuple[FeatureDef, ...] = (
     FeatureDef("mood", "Mood"),
     FeatureDef("period", "Period"),
     FeatureDef("pain", "Pain & symptoms"),
+    FeatureDef("medications", "Medications"),
     FeatureDef("tiny_wins", "Tiny wins"),
 )
 

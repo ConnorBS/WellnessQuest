@@ -19,6 +19,7 @@ const LINKS: { href: string; label: string; feature?: string }[] = [
   { href: "/mood", label: "Mood", feature: "mood" },
   { href: "/period", label: "Period", feature: "period" },
   { href: "/pain", label: "Pain", feature: "pain" },
+  { href: "/medications", label: "Meds", feature: "medications" },
   { href: "/tiny-wins", label: "Tiny wins", feature: "tiny_wins" },
   { href: "/settings", label: "Settings" },
 ];

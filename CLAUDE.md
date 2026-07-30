@@ -213,6 +213,35 @@ the index in the array; unknown IDs are silently ignored.
 
 Toggle accepts past `date=` query params; future dates return `400 future_date`.
 
+### Medications
+
+Two tables: `medications` (identity — name, form, reason, prescriber, notes,
+`started_on`, `ended_on`) and `medication_changes` (the append-only timeline).
+
+**The current dose is never stored.** `medication_service.fold_current` replays
+a medication's change rows oldest → newest and carries the last non-null value
+of each field forward, so each row only records what actually changed and a
+backdated row can't clobber a newer one. Don't add cached `current_dose_*`
+columns — that's the two-sources-of-truth footgun this design avoids.
+
+`active` is exactly `ended_on IS NULL`; "past medications" is the same table
+filtered the other way. `POST /medications/{id}/stop` sets `ended_on` **and**
+appends a `stopped` row; `/resume` clears it and appends `resumed`, leaving the
+`stopped` row in place — the gap is the history the user came for.
+
+`started` rows are written on create and can't be deleted (`400
+cannot_delete_started`); `stopped` / `resumed` are written only by their
+endpoints, so `POST /changes` accepts just `dose_change`, `schedule_change`,
+`paused`, `note`. All dates are the user's local calendar dates and reject the
+future.
+
+`DELETE /medications/{id}` is a **hard** delete (cascades the timeline) — it's
+the typo escape hatch, not the way to retire a medication. Medications grant no
+XP, emit no events, have no streaks, and nothing is seeded on user creation.
+
+There's no per-dose "did I take it today" logging yet — this module is the
+register and its history, not adherence tracking.
+
 ### Weight & blood pressure targets are append-only history
 
 Both `weight_targets` and `blood_pressure_targets` are versioned audit trails,
