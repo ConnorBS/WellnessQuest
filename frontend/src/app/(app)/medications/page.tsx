@@ -55,7 +55,7 @@ const label: React.CSSProperties = { color: "#94a3b8", fontSize: 12, display: "b
 function MedRow({ med, today }: { med: Medication; today: string }) {
   const dose = doseText(med);
   return (
-    <Link href={`/medications/${med.id}`} style={card}>
+    <Link href={`/medications/detail?id=${med.id}`} style={card}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
         <strong style={{ fontSize: 15 }}>{med.name}</strong>
         <span style={{ color: "#64748b", fontSize: 12 }}>
@@ -356,7 +356,7 @@ export default function MedicationsPage() {
                   <span style={{ color: "#64748b", fontSize: 12 }}>
                     {formatDay(c.effective_on)}
                   </span>{" "}
-                  <Link href={`/medications/${c.medication_id}`} style={{ color: "#10b981" }}>
+                  <Link href={`/medications/detail?id=${c.medication_id}`} style={{ color: "#10b981" }}>
                     {c.medication_name}
                   </Link>{" "}
                   <span style={{ color: "#cbd5e1" }}>— {changeSummary(c)}</span>

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 import {
   useAddMedicationChange,
@@ -375,10 +375,13 @@ function EditForm({ med, onDone }: { med: MedicationDetail; onDone: () => void }
   );
 }
 
-export default function MedicationDetailPage() {
-  const params = useParams<{ id: string }>();
+// The frontend ships as a static export (`output: "export"`), which has no
+// server to resolve a `/medications/[id]` segment at request time. The
+// medication id therefore travels as a query param on a static route.
+function MedicationDetail() {
+  const search = useSearchParams();
   const router = useRouter();
-  const id = Number(params?.id);
+  const id = Number(search.get("id"));
   const q = useMedication(id);
   const resume = useResumeMedication();
   const removeMed = useDeleteMedication();
@@ -586,5 +589,14 @@ export default function MedicationDetailPage() {
         </ul>
       </section>
     </>
+  );
+}
+
+// `useSearchParams` needs a Suspense boundary to prerender under static export.
+export default function MedicationDetailPage() {
+  return (
+    <Suspense fallback={<p style={{ color: "#94a3b8" }}>Loading…</p>}>
+      <MedicationDetail />
+    </Suspense>
   );
 }

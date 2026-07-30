@@ -242,6 +242,13 @@ XP, emit no events, have no streaks, and nothing is seeded on user creation.
 There's no per-dose "did I take it today" logging yet — this module is the
 register and its history, not adherence tracking.
 
+The detail view is `/medications/detail?id=N`, **not** `/medications/[id]`:
+the Dockerfile builds the frontend with `NEXT_OUTPUT_MODE=export`, and a
+dynamic route segment under `output: "export"` fails the build with "missing
+generateStaticParams()". A plain `next build` (standalone mode) doesn't catch
+it — reproduce CI with `NEXT_OUTPUT_MODE=export pnpm build` before pushing any
+new route.
+
 ### Weight & blood pressure targets are append-only history
 
 Both `weight_targets` and `blood_pressure_targets` are versioned audit trails,
