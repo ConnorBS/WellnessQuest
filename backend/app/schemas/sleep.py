@@ -33,6 +33,14 @@ class SleepLastOut(BaseModel):
     goal_minutes: int
 
 
+class SleepGoalUpdate(BaseModel):
+    target_minutes: int = Field(gt=0, le=1440)
+
+
+class SleepGoalOut(BaseModel):
+    target_minutes: int
+
+
 class SleepAddOut(BaseModel):
     entry: SleepEntryOut
     goal_minutes: int

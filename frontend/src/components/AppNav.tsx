@@ -13,6 +13,8 @@ const LINKS: { href: string; label: string; feature?: string }[] = [
   { href: "/water", label: "Water", feature: "water" },
   { href: "/food", label: "Food", feature: "food" },
   { href: "/activity", label: "Activity", feature: "activity" },
+  { href: "/steps", label: "Steps", feature: "steps" },
+  { href: "/sleep", label: "Sleep", feature: "sleep" },
   { href: "/habits", label: "Habits", feature: "habits" },
   { href: "/weight", label: "Weight", feature: "weight" },
   { href: "/blood-pressure", label: "BP", feature: "blood_pressure" },

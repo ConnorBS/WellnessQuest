@@ -8,7 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.deps import current_user, get_db
 from app.models.steps_entry import StepsEntry
 from app.models.user import User
-from app.schemas.steps import StepsAddIn, StepsAddOut, StepsEntryOut, StepsTodayOut
+from app.schemas.steps import (
+    StepsAddIn,
+    StepsAddOut,
+    StepsEntryOut,
+    StepsGoalOut,
+    StepsGoalUpdate,
+    StepsTodayOut,
+)
 from app.services import goal_service, steps_service
 from app.services.time_utils import day_for_user
 from app.telemetry.recorder import audit
@@ -24,6 +31,27 @@ def _entry_out(entry: StepsEntry) -> StepsEntryOut:
         occurred_at=entry.occurred_at,
         client_id=entry.client_id,
     )
+
+
+@router.patch("/goal", response_model=StepsGoalOut)
+async def update_steps_goal(
+    payload: StepsGoalUpdate,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> StepsGoalOut:
+    goal = await goal_service.get_or_create_default_steps(db, user_id=user.id)
+    goal.target = payload.target_steps
+    await db.flush()
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="steps.goal.update",
+        user_id=user.id,
+        target_type="goal",
+        target_id=str(goal.id),
+        meta={"target_steps": payload.target_steps},
+    )
+    return StepsGoalOut(target_steps=int(goal.target))
 
 
 @router.get("/today", response_model=StepsTodayOut)

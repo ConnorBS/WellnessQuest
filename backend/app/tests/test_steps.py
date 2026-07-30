@@ -152,6 +152,41 @@ async def test_steps_goal_met_grants_bonus_once(client, db, unique_email):
 
 
 @pytest.mark.asyncio
+async def test_steps_goal_can_be_configured(client, db, unique_email):
+    access = await _signup(client, db, unique_email)
+
+    r = await client.get("/api/v1/steps/today", headers=_auth(access))
+    assert r.json()["goal"] == 8000  # DEFAULT_STEPS_PER_DAY
+
+    r = await client.patch(
+        "/api/v1/steps/goal", headers=_auth(access), json={"target_steps": 12000}
+    )
+    assert r.status_code == 200, r.text
+    assert r.json() == {"target_steps": 12000}
+
+    r = await client.get("/api/v1/steps/today", headers=_auth(access))
+    assert r.json()["goal"] == 12000
+
+    # The new goal is what goal_met is judged against.
+    r = await client.post(
+        "/api/v1/steps", headers=_auth(access), json={"count": 9000, "client_id": "u1"}
+    )
+    assert r.json()["goal"] == 12000
+    assert r.json()["goal_met"] is False
+
+
+@pytest.mark.asyncio
+async def test_steps_goal_rejects_out_of_range(client, db, unique_email):
+    access = await _signup(client, db, unique_email)
+
+    for target in (0, -1, 500_000):
+        r = await client.patch(
+            "/api/v1/steps/goal", headers=_auth(access), json={"target_steps": target}
+        )
+        assert r.status_code == 422, target
+
+
+@pytest.mark.asyncio
 async def test_steps_rejects_nonsense_counts(client, db, unique_email):
     access = await _signup(client, db, unique_email)
 

@@ -38,6 +38,8 @@ export default function SettingsPage() {
         {isEnabled("activity") && (
           <Link href="/settings/activity">Activity goal &amp; presets</Link>
         )}
+        {isEnabled("steps") && <Link href="/settings/steps">Steps goal</Link>}
+        {isEnabled("sleep") && <Link href="/settings/sleep">Sleep goal</Link>}
         {isEnabled("habits") && <Link href="/settings/habits">Habits</Link>}
         <Link href="/settings/titles">Titles</Link>
         {isEnabled("weight") && <Link href="/settings/weight">Weight &amp; units</Link>}

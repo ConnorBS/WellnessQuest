@@ -114,8 +114,9 @@ Steps are stored as append-only **deltas**, not as a running total — the daily
 | GET | `/steps/today?date=YYYY-MM-DD` | — | `{ date, total, goal, percent, entries[] }`. Each entry: `{ id, count, source, occurred_at, client_id }`. |
 | POST | `/steps` | `{ count, client_id?, occurred_at? }` | 201, `StepsAddOut`. Writes `source='pwa'`. `count` is 1..200,000. |
 | DELETE | `/steps/{id}` | — | 204, 404 if it isn't yours. |
+| PATCH | `/steps/goal` | `{ target_steps }` | Returns `{ target_steps }`. 1..200,000. |
 
-XP: `floor(count / 500)` per entry, capped at 20/day, plus the one-shot +50 when the daily goal is crossed. Default goal 8,000/day (`DEFAULT_STEPS_PER_DAY`); there's no endpoint to change it yet.
+XP: `floor(count / 500)` per entry, capped at 20/day, plus the one-shot +50 when the daily goal is crossed. Default goal 8,000/day (`DEFAULT_STEPS_PER_DAY`), editable via `PATCH /steps/goal` (Settings → Steps goal).
 
 `(user_id, client_id)` is unique, so a retried POST returns the existing row with `xp_delta: 0`.
 
@@ -131,8 +132,9 @@ One row per session; `ended_at` is what "last night" is keyed on. A session belo
 | GET | `/sleep/recent?limit=N` | — | `SleepEntryOut[]`, newest first (default 14, max 60). |
 | POST | `/sleep` | `{ started_at, ended_at, quality_score?, client_id? }` | 201, `SleepAddOut`. Writes `source='pwa'`. |
 | DELETE | `/sleep/{id}` | — | 204, 404 if it isn't yours. |
+| PATCH | `/sleep/goal` | `{ target_minutes }` | Returns `{ target_minutes }`. 1..1440. |
 
-`ended_at` must be after `started_at` (422 otherwise) and no more than 10 minutes into the future (`400 future_time`). Duration is derived, never sent, and clamped to 24h. XP is flat per session, plus the +50 goal bonus when the session meets the goal (default 420 min).
+`ended_at` must be after `started_at` (422 otherwise) and no more than 10 minutes into the future (`400 future_time`). Duration is derived, never sent, and clamped to 24h. XP is flat per session, plus the +50 goal bonus when the session meets the goal (default 420 min, editable via `PATCH /sleep/goal` — Settings → Sleep goal, which takes hours + minutes and converts).
 
 `(user_id, client_id)` is unique, so a retried POST returns the existing row with `xp_delta: 0`.
 
