@@ -10,7 +10,7 @@ from app.models.pain_location import PainLocation
 from app.models.symptom_catalog import SymptomCatalog
 from app.models.symptom_log import SymptomLog
 from app.models.user import User
-from app.schemas.pain import SymptomLogIn
+from app.schemas.pain import PainEntryPatch, SymptomLogIn
 from app.services.time_utils import utcnow
 
 
@@ -101,6 +101,58 @@ async def _get_catalog(
 
 # --- pain entries ----------------------------------------------------------
 
+async def _check_symptoms(
+    db: AsyncSession,
+    *,
+    user: User,
+    symptoms: list[SymptomLogIn],
+    grandfathered: set[int] | None = None,
+) -> None:
+    """Raise InvalidPain if any symptom references a catalog row the user can't
+    use. `grandfathered` ids stay valid even once archived, so editing an old
+    entry doesn't fail just because one of its symptoms was archived since."""
+    if not symptoms:
+        return
+    wanted = {s.catalog_id for s in symptoms}
+    found = {
+        r.id
+        for r in (
+            await db.execute(
+                select(SymptomCatalog).where(
+                    SymptomCatalog.user_id == user.id,
+                    SymptomCatalog.id.in_(wanted),
+                    SymptomCatalog.archived_at.is_(None),
+                )
+            )
+        ).scalars()
+    }
+    if wanted - found - (grandfathered or set()):
+        raise InvalidPain("unknown_symptom")
+
+
+def _locations_for(regions: list[str]) -> list[PainLocation]:
+    """De-dup tapped regions while keeping order stable — the table has a
+    (pain_entry_id, region_key) unique constraint."""
+    seen: set[str] = set()
+    out: list[PainLocation] = []
+    for region in regions:
+        if region not in seen:
+            seen.add(region)
+            out.append(PainLocation(region_key=region))
+    return out
+
+
+def _symptom_logs_for(symptoms: list[SymptomLogIn]) -> list[SymptomLog]:
+    return [
+        SymptomLog(
+            catalog_id=s.catalog_id,
+            severity=s.severity,
+            duration_minutes=s.duration_minutes,
+        )
+        for s in symptoms
+    ]
+
+
 async def add_entry(
     db: AsyncSession,
     *,
@@ -111,22 +163,7 @@ async def add_entry(
     locations: list[str],
     symptoms: list[SymptomLogIn],
 ) -> PainEntry:
-    if symptoms:
-        wanted = {s.catalog_id for s in symptoms}
-        found = {
-            r.id
-            for r in (
-                await db.execute(
-                    select(SymptomCatalog).where(
-                        SymptomCatalog.user_id == user.id,
-                        SymptomCatalog.id.in_(wanted),
-                        SymptomCatalog.archived_at.is_(None),
-                    )
-                )
-            ).scalars()
-        }
-        if wanted - found:
-            raise InvalidPain("unknown_symptom")
+    await _check_symptoms(db, user=user, symptoms=symptoms)
 
     entry = PainEntry(
         user_id=user.id,
@@ -134,28 +171,52 @@ async def add_entry(
         occurred_at=occurred_at or utcnow(),
         note=(note.strip() or None) if isinstance(note, str) else note,
     )
-    # De-dup tapped regions while keeping order stable.
-    seen: set[str] = set()
-    locs: list[PainLocation] = []
-    for region in locations:
-        if region not in seen:
-            seen.add(region)
-            locs.append(PainLocation(region_key=region))
     # Assign the collections directly (even when empty) so they are marked
     # loaded in-session — otherwise building the response after flush would
     # trigger a lazy load outside async context (greenlet_spawn error).
-    entry.locations = locs
-    entry.symptoms = [
-        SymptomLog(
-            catalog_id=s.catalog_id,
-            severity=s.severity,
-            duration_minutes=s.duration_minutes,
-        )
-        for s in symptoms
-    ]
+    entry.locations = _locations_for(locations)
+    entry.symptoms = _symptom_logs_for(symptoms)
     db.add(entry)
     await db.flush()
     return entry
+
+
+async def update_entry(
+    db: AsyncSession, *, user: User, entry_id: int, patch: PainEntryPatch
+) -> PainEntry | None:
+    row = (
+        await db.execute(
+            select(PainEntry).where(
+                PainEntry.id == entry_id, PainEntry.user_id == user.id
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        return None
+
+    fields = patch.model_fields_set
+    if patch.symptoms is not None:
+        await _check_symptoms(
+            db,
+            user=user,
+            symptoms=patch.symptoms,
+            grandfathered={s.catalog_id for s in row.symptoms},
+        )
+
+    if patch.pain_level is not None:
+        row.pain_level = patch.pain_level
+    if patch.occurred_at is not None:
+        row.occurred_at = patch.occurred_at
+    if "note" in fields:
+        row.note = patch.note.strip() or None if patch.note is not None else None
+    if patch.locations is not None:
+        # delete-orphan cascade drops the rows that fall out of the collection.
+        row.locations = _locations_for(list(patch.locations))
+    if patch.symptoms is not None:
+        row.symptoms = _symptom_logs_for(patch.symptoms)
+
+    await db.flush()
+    return row
 
 
 async def latest(db: AsyncSession, *, user: User) -> PainEntry | None:

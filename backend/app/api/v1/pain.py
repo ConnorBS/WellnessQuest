@@ -10,6 +10,7 @@ from app.models.user import User
 from app.schemas.pain import (
     PainEntryIn,
     PainEntryOut,
+    PainEntryPatch,
     PainSummaryOut,
     SymptomCatalogIn,
     SymptomCatalogOut,
@@ -165,6 +166,34 @@ async def add_pain(
         target_type="pain_entry",
         target_id=str(entry.id),
         meta={"pain_level": entry.pain_level},
+    )
+    names = await pain_service.catalog_names(db, user=user)
+    return _entry_to_out(entry, names)
+
+
+@router.patch("/{entry_id}", response_model=PainEntryOut)
+async def update_pain(
+    entry_id: int,
+    payload: PainEntryPatch,
+    user: User = Depends(current_user),
+    db: AsyncSession = Depends(get_db),
+) -> PainEntryOut:
+    try:
+        entry = await pain_service.update_entry(
+            db, user=user, entry_id=entry_id, patch=payload
+        )
+    except InvalidPain as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.code) from e
+    if entry is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not_found")
+    await audit(
+        db,
+        actor=f"user:{user.id}",
+        action="pain.update",
+        user_id=user.id,
+        target_type="pain_entry",
+        target_id=str(entry.id),
+        meta={"fields": sorted(payload.model_fields_set)},
     )
     names = await pain_service.catalog_names(db, user=user)
     return _entry_to_out(entry, names)

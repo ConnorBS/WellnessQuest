@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { BodyMap } from "@/components/pain/BodyMap";
+import { EditPainEntryDrawer } from "@/components/pain/EditPainEntryDrawer";
 import { OccurredAtField } from "@/components/forms/OccurredAtField";
 import {
   useAddPain,
@@ -33,6 +34,15 @@ const dangerBtn: React.CSSProperties = {
   background: "transparent",
   color: "#fca5a5",
   border: "1px solid #7f1d1d",
+  borderRadius: 6,
+  fontSize: 12,
+};
+
+const subtleBtn: React.CSSProperties = {
+  padding: "4px 8px",
+  background: "transparent",
+  color: "#cbd5e1",
+  border: "1px solid #334155",
   borderRadius: 6,
   fontSize: 12,
 };
@@ -266,6 +276,7 @@ export default function PainPage() {
   const history = usePainHistory(200);
   const del = useDeletePain();
   const [showForm, setShowForm] = useState(true);
+  const [editing, setEditing] = useState<PainEntry | null>(null);
   const entries = history.data ?? [];
 
   return (
@@ -354,20 +365,29 @@ export default function PainPage() {
                     </span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm("Delete this check-in?")) del.mutate(e.id);
-                  }}
-                  style={dangerBtn}
-                >
-                  Delete
-                </button>
+                <div style={{ display: "flex", gap: 6, alignSelf: "start", flexShrink: 0 }}>
+                  <button type="button" onClick={() => setEditing(e)} style={subtleBtn}>
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm("Delete this check-in?")) del.mutate(e.id);
+                    }}
+                    style={dangerBtn}
+                  >
+                    Delete
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      {editing ? (
+        <EditPainEntryDrawer entry={editing} onClose={() => setEditing(null)} />
+      ) : null}
     </>
   );
 }

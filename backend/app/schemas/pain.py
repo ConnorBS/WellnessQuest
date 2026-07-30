@@ -98,6 +98,20 @@ class PainEntryIn(BaseModel):
     symptoms: list[SymptomLogIn] = Field(default_factory=list)
 
 
+class PainEntryPatch(BaseModel):
+    """Partial edit of a pain check-in.
+
+    `locations` / `symptoms` are *replace-whole-collection* when supplied —
+    omitting a key leaves that collection untouched, sending `[]` clears it.
+    """
+
+    pain_level: int | None = Field(default=None, ge=0, le=10)
+    occurred_at: datetime | None = None
+    note: str | None = Field(default=None, max_length=500)
+    locations: list[RegionKey] | None = None
+    symptoms: list[SymptomLogIn] | None = None
+
+
 class PainEntryOut(BaseModel):
     id: int
     pain_level: int
