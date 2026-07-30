@@ -15,6 +15,8 @@ from app.models.goal import Goal
 from app.models.habit import Habit
 from app.models.habit_checkin import HabitCheckin
 from app.models.integration import Integration
+from app.models.medication import Medication
+from app.models.medication_change import MedicationChange
 from app.models.mood_entry import MoodEntry
 from app.models.pain_entry import PainEntry
 from app.models.pain_location import PainLocation
@@ -55,6 +57,8 @@ __all__ = [
     "Habit",
     "HabitCheckin",
     "Integration",
+    "Medication",
+    "MedicationChange",
     "MoodEntry",
     "PainEntry",
     "PainLocation",

@@ -182,6 +182,37 @@ The list endpoint returns `HabitWithStatusOut`: each item has `{ habit, status }
 
 Category (Normal / Elevated / Stage 1 / Stage 2 / Crisis) is computed client-side per AHA 2017 thresholds — the API does not include it on entries, so a guideline update never requires a backfill.
 
+## Medications
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/medications?status=active\|past\|all` | — | Default `all`. Active first (by `sort_order`), then past most-recently-ended first. |
+| GET | `/medications/options` | — | `{ forms, dose_units, change_kinds }` — the picker vocabularies, served so the UI can't drift from the DB CHECK constraints. |
+| GET | `/medications/history?limit=N` | — | Every change across every medication, newest first (default 50, max 500). Each row is a `MedicationChange` plus `medication_name`. |
+| POST | `/medications` | `MedicationIn` | 201. Also writes the opening `started` change row from the dose fields. |
+| GET | `/medications/{id}` | — | `MedicationDetailOut` — the medication plus its `changes`, newest first. |
+| PATCH | `/medications/{id}` | `MedicationPatch` | Identity fields only (`name`, `form`, `reason`, `prescriber`, `notes`, `started_on`). Appends nothing to the timeline. |
+| DELETE | `/medications/{id}` | — | 204. Hard delete, cascades the timeline — for typos. Use `/stop` to retire a medication you actually took. |
+| POST | `/medications/{id}/changes` | `MedicationChangeIn` | 201, returns the full detail. `kind` ∈ `dose_change`, `schedule_change`, `paused`, `note`. |
+| DELETE | `/medications/{id}/changes/{change_id}` | — | 204. `400 cannot_delete_started` for the opening row. |
+| POST | `/medications/{id}/stop` | `{ ended_on?, reason? }` | Sets `ended_on` (moves it to the past list) and appends a `stopped` row. `400 already_stopped`. |
+| POST | `/medications/{id}/resume` | `{ effective_on?, note? }` | Clears `ended_on` and appends a `resumed` row; the `stopped` row stays. `400 not_stopped`. |
+| POST | `/medications/reorder` | `{ ids: [int, …] }` | 204. Sets `sort_order` to the index in the array; unknown ids ignored. |
+
+`MedicationIn`: `{ name, form?, reason?, prescriber?, notes?, started_on?, dose_amount?, dose_unit?, frequency? }`. `started_on` defaults to the user's local today.
+
+`MedicationOut`: `{ id, name, form, reason, prescriber, notes, started_on, ended_on, stopped_reason, sort_order, active, dose_amount, dose_unit, frequency, change_count }`.
+
+`MedicationChange`: `{ id, medication_id, kind, effective_on, dose_amount, dose_unit, frequency, note }`.
+
+`medication_changes` is the append-only timeline, same spirit as the weight/BP target tables. **The current dose and schedule are not stored** — they're folded from the timeline in date order (`medication_service.fold_current`), each row carrying only what changed and nulls meaning "unchanged, carry forward". So a backdated row never overwrites a newer one.
+
+`active` is exactly `ended_on IS NULL`. A stopped medication keeps its last known dose so the past list still shows what it was.
+
+Dates are the user's local calendar dates and **may not be in the future** — `started_on`, `effective_on`, and `ended_on` all return `400 future_date`. Other 400 codes: `invalid_form`, `invalid_kind`, `ended_before_started`, `already_stopped`, `not_stopped`, `cannot_delete_started`.
+
+Medications grant no XP and emit no webhook events, and nothing is seeded on user creation.
+
 ## Uploads (custom icons)
 
 | Method | Path | Body | Notes |

@@ -724,3 +724,58 @@ export const LabelScanOutSchema = z.object({
   language: z.enum(["en", "fr", "mixed"]),
 });
 export type LabelScanOut = z.infer<typeof LabelScanOutSchema>;
+
+// --- Medications ----------------------------------------------------------
+// `dose_amount` is Numeric server-side, so it arrives as a JSON string —
+// coerce like the other decimal fields.
+
+export const MedicationChangeSchema = z.object({
+  id: z.number().int(),
+  medication_id: z.number().int(),
+  kind: z.string(),
+  effective_on: z.string(),
+  dose_amount: z.coerce.number().nullable(),
+  dose_unit: z.string().nullable(),
+  frequency: z.string().nullable(),
+  note: z.string().nullable(),
+});
+export type MedicationChange = z.infer<typeof MedicationChangeSchema>;
+
+export const MedicationSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  form: z.string().nullable(),
+  reason: z.string().nullable(),
+  prescriber: z.string().nullable(),
+  notes: z.string().nullable(),
+  started_on: z.string(),
+  ended_on: z.string().nullable(),
+  stopped_reason: z.string().nullable(),
+  sort_order: z.number().int(),
+  active: z.boolean(),
+  // Folded from the change timeline server-side, not stored on the row.
+  dose_amount: z.coerce.number().nullable(),
+  dose_unit: z.string().nullable(),
+  frequency: z.string().nullable(),
+  change_count: z.number().int(),
+});
+export type Medication = z.infer<typeof MedicationSchema>;
+export const MedicationListSchema = z.array(MedicationSchema);
+
+export const MedicationDetailSchema = MedicationSchema.extend({
+  changes: z.array(MedicationChangeSchema),
+});
+export type MedicationDetail = z.infer<typeof MedicationDetailSchema>;
+
+export const MedicationHistoryEntrySchema = MedicationChangeSchema.extend({
+  medication_name: z.string(),
+});
+export type MedicationHistoryEntry = z.infer<typeof MedicationHistoryEntrySchema>;
+export const MedicationHistoryListSchema = z.array(MedicationHistoryEntrySchema);
+
+export const MedicationOptionsSchema = z.object({
+  forms: z.array(z.string()),
+  dose_units: z.array(z.string()),
+  change_kinds: z.array(z.string()),
+});
+export type MedicationOptions = z.infer<typeof MedicationOptionsSchema>;
