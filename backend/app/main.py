@@ -3,13 +3,13 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import integrations as _integrations  # noqa: F401 - register channels
@@ -25,6 +25,28 @@ from app.telemetry.middleware import RequestContextMiddleware
 log = get_logger(__name__)
 
 STATIC_DIR = Path(os.environ.get("WQ_STATIC_DIR", "/app/static"))
+
+
+def html_path_for_rsc(path: str) -> str:
+    """Map a Next RSC payload path back to the HTML page it belongs to.
+
+    ``/period/index.txt`` -> ``/period/``, ``/period.txt`` -> ``/period``.
+    """
+    if path.endswith("/index.txt"):
+        return path[: -len("index.txt")]
+    return path[: -len(".txt")] or "/"
+
+
+def is_document_request(request: Request) -> bool:
+    """True when the browser is loading this URL as a top-level page."""
+    dest = request.headers.get("sec-fetch-dest")
+    if dest is not None:
+        return dest == "document"
+    # Older browsers don't send Sec-Fetch-*. The App Router's RSC fetches always
+    # carry an `RSC` header and never ask for HTML, so this stays off their path.
+    if "rsc" in request.headers:
+        return False
+    return "text/html" in request.headers.get("accept", "")
 
 
 @asynccontextmanager
@@ -69,6 +91,49 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
         expose_headers=["x-request-id"],
     )
+
+    @app.middleware("http")
+    async def static_shell_middleware(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        """Guard rails for the exported Next.js frontend.
+
+        The frontend ships as a static export, so every page has a sibling
+        `.txt` RSC payload. When the container is rebuilt under a still-open
+        tab (`:edge` republishes on every push), the App Router notices the
+        build id no longer matches and falls back to a *browser* navigation to
+        that `.txt` URL — the user lands on a page of raw flight payload
+        instead of the page they tapped. Bounce those navigations to the real
+        HTML page, and keep browsers from holding onto a stale shell in the
+        first place.
+        """
+        path = request.url.path
+        if path.startswith("/api/"):
+            return await call_next(request)
+
+        if (
+            request.method in ("GET", "HEAD")
+            and path.endswith(".txt")
+            and is_document_request(request)
+        ):
+            target = html_path_for_rsc(path)
+            if request.url.query:
+                target = f"{target}?{request.url.query}"
+            return RedirectResponse(
+                target, status_code=307, headers={"Cache-Control": "no-store"}
+            )
+
+        response = await call_next(request)
+        if path.startswith("/_next/static/"):
+            # Content-hashed filenames — safe to keep forever.
+            response.headers.setdefault(
+                "Cache-Control", "public, max-age=31536000, immutable"
+            )
+        elif path.endswith(("/", ".html", ".txt")):
+            # Rewritten by every image build; a cached copy is what lets a tab
+            # drift out of sync with the server in the first place.
+            response.headers["Cache-Control"] = "no-cache"
+        return response
 
     app.include_router(api_v1)
 
