@@ -271,6 +271,27 @@ export default function BPSettingsPage() {
 
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
         <h2 className="text-lg font-semibold" style={{ marginBottom: 12 }}>
+          Reading display
+        </h2>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={me.show_bp_category}
+            disabled={updateMe.isPending}
+            onChange={(e) => updateMe.mutate({ show_bp_category: e.target.checked })}
+          />
+          Tag readings with a category
+        </label>
+        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+          Shows the coloured Normal / Elevated / Stage 1 / Stage 2 / Crisis chip
+          (AHA 2017 ranges) next to each reading on the dashboard card and the
+          history list. Turn it off to see just the numbers — your readings and
+          target comparison are unchanged either way.
+        </p>
+      </section>
+
+      <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+        <h2 className="text-lg font-semibold" style={{ marginBottom: 12 }}>
           Achievements
         </h2>
         <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>

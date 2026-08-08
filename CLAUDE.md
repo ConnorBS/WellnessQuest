@@ -280,6 +280,11 @@ is **frontend-computed** at render time in `frontend/src/lib/bp.ts`. The
 backend keeps `services/blood_pressure_categories.py` only as a parity test
 fixture; the API never returns category.
 
+The category chip is opt-out per user via `users.show_bp_category` (default
+true, exposed on `MeOut` / `MePatchIn`, toggled under Settings → Blood
+pressure). The check lives inside `BPCategoryChip` itself, not at its call
+sites, so any new place that renders a reading inherits it.
+
 ### Idempotency contract
 
 Water (`UniqueConstraint("user_id", "client_id", name="user_client")`) and food
