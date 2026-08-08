@@ -324,3 +324,22 @@ def test_classify_parity():
     assert classify(150, 95) is BPCategory.STAGE_2
     assert classify(190, 121) is BPCategory.CRISIS
     assert classify(140, 60) is BPCategory.STAGE_2
+
+
+@pytest.mark.asyncio
+async def test_me_show_bp_category_defaults_true_and_patches(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    r = await client.get("/api/v1/me", headers=_auth(access))
+    assert r.status_code == 200
+    assert r.json()["show_bp_category"] is True
+
+    r = await client.patch(
+        "/api/v1/me", headers=_auth(access), json={"show_bp_category": False}
+    )
+    assert r.status_code == 200
+    assert r.json()["show_bp_category"] is False
+
+    r = await client.get("/api/v1/me", headers=_auth(access))
+    assert r.json()["show_bp_category"] is False

@@ -52,6 +52,12 @@ class User(Base):
     show_raw_weight_delta: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+    # Render the AHA category chip ("Normal" / "Stage 1" / …) alongside blood
+    # pressure readings. Display-only — categorisation itself is computed in
+    # the frontend and nothing else keys off this.
+    show_bp_category: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
     titles_last_scan_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

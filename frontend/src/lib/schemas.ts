@@ -52,6 +52,7 @@ export const MeSchema = z.object({
   weight_titles_opt_out: z.boolean(),
   bp_titles_opt_out: z.boolean(),
   show_raw_weight_delta: z.boolean(),
+  show_bp_category: z.boolean(),
   // Effective enabled state per feature key. Consumers still read defensively
   // (`me?.features?.[key] ?? true`) so a missing key falls open to "enabled".
   features: z.record(z.boolean()),
