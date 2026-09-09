@@ -14,6 +14,7 @@ from app.api.v1 import (
     ha,
     habits,
     integrations,
+    journal,
     medications,
     mood,
     pain,
@@ -62,6 +63,7 @@ api_v1.include_router(period.router)
 api_v1.include_router(pain.router)
 api_v1.include_router(medications.router)
 api_v1.include_router(tiny_wins.router)
+api_v1.include_router(journal.router)
 api_v1.include_router(titles.router)
 api_v1.include_router(uploads.router)
 api_v1.include_router(api_tokens.router)

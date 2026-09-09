@@ -23,6 +23,7 @@ const LINKS: { href: string; label: string; feature?: string }[] = [
   { href: "/pain", label: "Pain", feature: "pain" },
   { href: "/medications", label: "Meds", feature: "medications" },
   { href: "/tiny-wins", label: "Tiny wins", feature: "tiny_wins" },
+  { href: "/journal", label: "Journal", feature: "journal" },
   { href: "/settings", label: "Settings" },
 ];
 

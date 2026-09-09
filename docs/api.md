@@ -246,6 +246,27 @@ Dates are the user's local calendar dates and **may not be in the future** — `
 
 Medications grant no XP and emit no webhook events, and nothing is seeded on user creation.
 
+## Journal
+
+Free-text notes about a day — what happened, what was worth remembering. Several notes per day are expected.
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/journal?date=YYYY-MM-DD` | — | The notes filed under that day, **oldest first** (the order they were written). Defaults to the user's local today. |
+| GET | `/journal/recent?limit=N` | — | Notes across every day, newest day first (default 50, max 365). |
+| GET | `/journal/summary?date=YYYY-MM-DD` | — | `{ entry_date, count, latest }` for one day — what the dashboard card renders. |
+| POST | `/journal` | `{ entry_date?, body }` | 201. `entry_date` defaults to the user's local today. |
+| PATCH | `/journal/{id}` | `{ entry_date?, body? }` | Only the supplied fields change; nulls are ignored (a note has nothing that can be cleared). |
+| DELETE | `/journal/{id}` | — | 204. Hard delete. |
+
+`JournalEntryOut`: `{ id, entry_date, body, created_at, updated_at }`.
+
+`entry_date` is the day the note is *about* (the user's local calendar date) and is what the day switcher filters on; `created_at` only orders notes within that day. Back-dating is therefore just picking an earlier `entry_date` — and it may not be in the future (`400 future_date`, on both POST and PATCH). `body` is 1–4000 chars, trimmed on write; empty or oversized bodies are `422`.
+
+A note is unedited exactly while `updated_at == created_at` (both are the insert transaction's `now()`), which is what the UI's "edited" marker keys off.
+
+Journal entries grant no XP, emit no webhook events, have no streaks, and nothing is seeded on user creation. Audit rows record the date and body length, never the note itself.
+
 ## Uploads (custom icons)
 
 | Method | Path | Body | Notes |

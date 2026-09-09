@@ -6,6 +6,7 @@ import { ActivityCard } from "@/components/ActivityCard";
 import { BPCard } from "@/components/BPCard";
 import { FoodCard } from "@/components/FoodCard";
 import { HabitsCard } from "@/components/HabitsCard";
+import { JournalCard } from "@/components/JournalCard";
 import { MedicationsCard } from "@/components/MedicationsCard";
 import { MoodCard } from "@/components/MoodCard";
 import { PainCard } from "@/components/PainCard";
@@ -35,6 +36,7 @@ const CARDS: Record<string, ReactNode> = {
   pain: <PainCard />,
   medications: <MedicationsCard />,
   tiny_wins: <TinyWinsCard />,
+  journal: <JournalCard showQuickLog />,
 };
 
 export default function DashboardPage() {

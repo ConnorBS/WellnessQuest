@@ -813,3 +813,21 @@ export const MedicationOptionsSchema = z.object({
   change_kinds: z.array(z.string()),
 });
 export type MedicationOptions = z.infer<typeof MedicationOptionsSchema>;
+
+export const JournalEntrySchema = z.object({
+  id: z.number().int(),
+  // The day the note is about (user-local), not when it was typed.
+  entry_date: z.string(),
+  body: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+export type JournalEntry = z.infer<typeof JournalEntrySchema>;
+export const JournalEntryListSchema = z.array(JournalEntrySchema);
+
+export const JournalSummarySchema = z.object({
+  entry_date: z.string(),
+  count: z.number().int(),
+  latest: JournalEntrySchema.nullable(),
+});
+export type JournalSummary = z.infer<typeof JournalSummarySchema>;

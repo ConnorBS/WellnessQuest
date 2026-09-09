@@ -261,6 +261,25 @@ generateStaticParams()". A plain `next build` (standalone mode) doesn't catch
 it — reproduce CI with `NEXT_OUTPUT_MODE=export pnpm build` before pushing any
 new route.
 
+### Journal
+
+`journal_entries` is a plain free-text log: several notes per day, `entry_date`
+being the day the note is *about* (the user's local calendar date) and
+`created_at` only ordering notes within that day. So back-dating is just picking
+an earlier `entry_date`, and the day switcher filters on `entry_date` alone —
+there is no "occurred_at" concept here and no `source` column.
+
+`updated_at == created_at` means "never edited" (postgres `now()` is stable
+within the insert transaction, so both land identical); the UI's "edited" marker
+reads exactly that. `journal_service.update_entry` has to `db.refresh` after the
+flush — the server-side `onupdate` leaves the attribute expired, and serialising
+it from sync context otherwise dies with `greenlet_spawn has not been called`.
+
+Journal entries grant **no XP**, emit **no events**, have **no streaks**, and
+nothing is seeded on user creation. Audit rows deliberately carry only the date
+and the body length — the note text is the private part and stays out of the
+audit log.
+
 ### Weight & blood pressure targets are append-only history
 
 Both `weight_targets` and `blood_pressure_targets` are versioned audit trails,
