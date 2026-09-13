@@ -446,6 +446,52 @@ export type PeriodEntry = z.infer<typeof PeriodEntrySchema>;
 
 export const PeriodEntryListSchema = z.array(PeriodEntrySchema);
 
+// Sexual-activity log ("intimacy" in paths and keys — ad/privacy filters match
+// the word "sex" in a URL; see backend/app/api/v1/intimacy.py).
+export const IntimacyKindSchema = z.enum(["partnered", "solo"]);
+export type IntimacyKind = z.infer<typeof IntimacyKindSchema>;
+
+export const ProtectionSchema = z.enum([
+  "protected",
+  "unprotected",
+  "withdrawal",
+  "unspecified",
+]);
+export type ProtectionValue = z.infer<typeof ProtectionSchema>;
+
+export const IntimacyTagSchema = z.enum([
+  "orgasm",
+  "no_orgasm",
+  "high_drive",
+  "low_drive",
+  "painful",
+  "toys",
+  "fantasies",
+  "bleeding",
+]);
+export type IntimacyTag = z.infer<typeof IntimacyTagSchema>;
+
+export const IntimacyEntrySchema = z.object({
+  id: z.number().int(),
+  entry_date: z.string(),
+  kind: IntimacyKindSchema,
+  protection: ProtectionSchema,
+  tags: z.array(IntimacyTagSchema),
+  note: z.string().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+export type IntimacyEntry = z.infer<typeof IntimacyEntrySchema>;
+
+export const IntimacyEntryListSchema = z.array(IntimacyEntrySchema);
+
+export const IntimacySummarySchema = z.object({
+  days: z.number().int(),
+  count: z.number().int(),
+  last_entry_date: z.string().nullable(),
+});
+export type IntimacySummary = z.infer<typeof IntimacySummarySchema>;
+
 export const SeveritySchema = z.enum(["none", "mild", "moderate", "severe"]);
 export type Severity = z.infer<typeof SeveritySchema>;
 

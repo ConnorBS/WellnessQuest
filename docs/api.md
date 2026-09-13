@@ -267,6 +267,44 @@ A note is unedited exactly while `updated_at == created_at` (both are the insert
 
 Journal entries grant no XP, emit no webhook events, have no streaks, and nothing is seeded on user creation. Audit rows record the date and body length, never the note itself.
 
+## Sexual activity (paths say `intimacy`)
+
+The sexual-activity log that lives inside the period section. Paths, the table
+and the feature key all say `intimacy` rather than `sex` for the same reason
+activity is aliased to `/move`: ad, privacy and DNS filters match the word in a
+URL and kill the request with no useful error.
+
+Gated on the `intimacy` feature key, which is the one tracker that is **off by
+default** — it only appears once the user turns it on under Settings → Trackers.
+The API itself is not gated; the toggle is a UI concern, like every other
+feature key.
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/period/intimacy?days=N` | — | Entries within the window, newest first (default 180, max 730). |
+| GET | `/period/intimacy/day?date=YYYY-MM-DD` | — | One day's entries, **oldest first** (the order they were logged). Defaults to the user's local today. |
+| GET | `/period/intimacy/summary?days=N` | — | `{ days, count, last_entry_date }` — counts only, nothing about what was logged. |
+| POST | `/period/intimacy` | `{ entry_date?, kind?, protection?, tags?, note? }` | 201. Everything is optional: defaults are the user's local today, `partnered`, `unspecified`, `[]`, `null`. |
+| PATCH | `/period/intimacy/{id}` | any subset of the above | Only supplied fields change. An explicit `note: null` clears the note — the only field that can be emptied. |
+| DELETE | `/period/intimacy/{id}` | — | 204. Hard delete. |
+
+`IntimacyEntryOut`: `{ id, entry_date, kind, protection, tags, note, created_at, updated_at }`.
+
+- `kind`: `partnered | solo`. `solo` covers masturbation — Clue and Flo keep it in the same log.
+- `protection`: `protected | unprotected | withdrawal | unspecified`. `unspecified` means "logged it, didn't say" and is deliberately distinct from `unprotected`.
+- `tags`: any of `orgasm`, `no_orgasm`, `high_drive`, `low_drive`, `painful`, `toys`, `fantasies`, `bleeding`. Deduped and sorted on write.
+- `note`: ≤500 chars, trimmed; empty becomes `null`.
+
+Unlike `period_entries` (one upserted row per date, because a day has one flow)
+this is a plain log: **several entries per day are allowed**, ordered by
+`created_at` within the day. `entry_date` is the user's local calendar date and
+may not be in the future (`400 future_date`, on POST and PATCH). Unknown `kind`,
+`protection` or tag values are `422`.
+
+No XP, no webhook events, no streaks, nothing seeded on user creation. Audit rows
+carry the `entry_date` and nothing else — kind, protection, tags and the note
+never reach the audit log.
+
 ## Uploads (custom icons)
 
 | Method | Path | Body | Notes |

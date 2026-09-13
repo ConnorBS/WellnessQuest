@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from app.auth.passwords import hash_password
-from app.features import FEATURE_KEYS
+from app.features import FEATURE_KEYS, default_features
 from app.models.user import User
 from app.services.user_bootstrap import bootstrap_user_assets
 
@@ -34,7 +34,10 @@ def _auth(token: str) -> dict:
 
 
 @pytest.mark.asyncio
-async def test_features_default_all_enabled(client, db, unique_email):
+async def test_features_default_to_the_registry(client, db, unique_email):
+    """A fresh user has no override rows, so every key comes back at its
+    registry default — which is on for most trackers and off for the ones that
+    are opt-in (see FeatureDef.default_enabled)."""
     data = await _signup(client, db, unique_email)
     access = data["tokens"]["access_token"]
 
@@ -43,7 +46,7 @@ async def test_features_default_all_enabled(client, db, unique_email):
     items = r.json()["features"]
     keys = {i["key"] for i in items}
     assert keys == set(FEATURE_KEYS)
-    assert all(i["enabled"] for i in items)
+    assert {i["key"]: i["enabled"] for i in items} == default_features()
 
 
 @pytest.mark.asyncio

@@ -14,6 +14,7 @@ from app.api.v1 import (
     ha,
     habits,
     integrations,
+    intimacy,
     journal,
     medications,
     mood,
@@ -60,6 +61,10 @@ api_v1.include_router(weight.router)
 api_v1.include_router(blood_pressure.router)
 api_v1.include_router(mood.router)
 api_v1.include_router(period.router)
+# Sexual-activity log, mounted under the period prefix because that is the
+# section it belongs to in the UI. See app/api/v1/intimacy.py for why the
+# path avoids the word "sex".
+api_v1.include_router(intimacy.router)
 api_v1.include_router(pain.router)
 api_v1.include_router(medications.router)
 api_v1.include_router(tiny_wins.router)
