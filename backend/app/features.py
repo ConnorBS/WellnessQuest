@@ -33,6 +33,10 @@ FEATURES: tuple[FeatureDef, ...] = (
     FeatureDef("blood_pressure", "Blood pressure"),
     FeatureDef("mood", "Mood"),
     FeatureDef("period", "Period"),
+    # Off by default: a sexual-activity log is not something to surface in
+    # someone's app without them asking for it. Opt in under
+    # Settings -> Trackers.
+    FeatureDef("intimacy", "Sexual activity", default_enabled=False),
     FeatureDef("pain", "Pain & symptoms"),
     FeatureDef("medications", "Medications"),
     FeatureDef("tiny_wins", "Tiny wins"),

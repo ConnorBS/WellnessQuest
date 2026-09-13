@@ -280,6 +280,47 @@ nothing is seeded on user creation. Audit rows deliberately carry only the date
 and the body length — the note text is the private part and stays out of the
 audit log.
 
+### Sexual activity lives under `intimacy`
+
+The sexual-activity log inside the period section is named `intimacy`
+everywhere it could appear in a URL, a table name or a feature key —
+`/api/v1/period/intimacy`, `intimacy_entries`, feature key `intimacy`. That is
+not coyness: ad, privacy and DNS filters match the word "sex" in a path and kill
+the request with `ERR_BLOCKED_BY_CLIENT`, the exact failure that forced the
+`/move` alias for activity. User-facing labels still read "Sexual activity".
+
+Shape differs from `period_entries` on purpose. A period day has exactly one
+flow, so that table upserts one row per date; sexual activity can happen more
+than once a day (Apple Health's one-per-day cap is a long-standing complaint),
+so `intimacy_entries` is a plain log — `entry_date` for the day, `created_at`
+only ordering within it, the same shape as `journal_entries`.
+
+Vocabulary, modelled on what Clue / Flo / Apple Health actually offer:
+
+- `kind`: `partnered | solo` (`solo` is masturbation; both apps keep it in the same log)
+- `protection`: `protected | unprotected | withdrawal | unspecified` — `unspecified` is "logged it, didn't say" and must stay distinct from `unprotected`; the fertile-window hint below keys off exactly that difference
+- `tags`: free-standing chips (`orgasm`, `no_orgasm`, `high_drive`, `low_drive`, `painful`, `toys`, `fantasies`, `bleeding`) stored as an array like period symptoms, so adding an idea doesn't need a migration
+
+The `intimacy` feature key is the **only one that defaults to off** (see
+`FeatureDef.default_enabled` in `backend/app/features.py`). Don't "fix" that:
+the section should appear when a user asks for it, not before. `test_features.py`
+asserts the `/features` payload matches `default_features()` rather than
+"everything is on", so a second opt-in tracker needs no test change.
+
+Privacy rules that are load-bearing:
+
+- Audit rows carry `entry_date` and nothing else — not kind, not protection, not tags, not the note. Same call journal makes for note bodies.
+- No dashboard card, by design. The log is reachable from `/period` only, so a glance at someone's dashboard doesn't surface it.
+- No XP, no webhook events, no streaks, nothing seeded on user creation.
+
+`frontend/src/lib/intimacy.ts` adds the one piece of cycle context worth
+showing: `isFertileWindowRisk` marks a *partnered* entry whose protection was
+explicitly `unprotected` or `withdrawal` and that fell inside
+`computeCycleStats`' estimated fertile window. Withdrawal counts as unprotected;
+`unspecified` never gets flagged, because guessing there would be both wrong and
+alarming. The window is an average-based estimate, so the copy says estimate and
+never implies a verdict.
+
 ### Weight & blood pressure targets are append-only history
 
 Both `weight_targets` and `blood_pressure_targets` are versioned audit trails,

@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 
 import { Modal } from "@/components/Modal";
+import { IntimacyLog } from "@/components/period/IntimacyLog";
+import { useFeatures } from "@/hooks/useFeatures";
+import { useIntimacyHistory } from "@/hooks/useIntimacy";
 import {
   useDeletePeriod,
   usePeriodHistory,
@@ -18,6 +21,7 @@ import {
   SYMPTOM_LABELS,
   SYMPTOM_ORDER,
 } from "@/lib/cycle";
+import { loggedDayKeys } from "@/lib/intimacy";
 import type { FlowValue, PeriodEntry, PeriodSymptom } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
@@ -171,6 +175,15 @@ function DayEditor({
 export default function PeriodPage() {
   const history = usePeriodHistory(365);
   const entries = useMemo(() => history.data ?? [], [history.data]);
+  // Sexual activity is opt-in (off by default), so skip the request entirely
+  // when the tracker is disabled.
+  const { isEnabled } = useFeatures();
+  const intimacyOn = isEnabled("intimacy");
+  const intimacy = useIntimacyHistory(365, intimacyOn);
+  const intimacyDays = useMemo(
+    () => loggedDayKeys(intimacy.data ?? []),
+    [intimacy.data],
+  );
   const [monthOffset, setMonthOffset] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -252,6 +265,7 @@ export default function PeriodPage() {
             const d = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), day);
             const key = dayKey(d);
             const entry = byDate.get(key);
+            const hasIntimacy = intimacyOn && intimacyDays.has(key);
             const isPredicted = predictedKeys.has(key);
             const isFertile = fertileKeys.has(key);
             const isToday = key === todayKey;
@@ -280,6 +294,21 @@ export default function PeriodPage() {
                 }}
               >
                 {day}
+                {hasIntimacy && (
+                  <span
+                    aria-label="Sexual activity logged"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 3,
+                      fontSize: 10,
+                      lineHeight: 1.2,
+                      color: entry ? "#fff" : "#f472b6",
+                    }}
+                  >
+                    ♥
+                  </span>
+                )}
                 {entry && entry.symptoms.length > 0 && (
                   <span
                     style={{
@@ -313,6 +342,12 @@ export default function PeriodPage() {
             <span style={{ width: 10, height: 10, borderRadius: 3, border: "1px dashed #a855f7", display: "inline-block" }} />
             Fertile
           </span>
+          {intimacyOn && (
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ color: "#f472b6" }}>♥</span>
+              Sexual activity
+            </span>
+          )}
         </div>
       </section>
 
@@ -337,6 +372,8 @@ export default function PeriodPage() {
           reliable form of contraception.
         </p>
       </section>
+
+      {intimacyOn && <IntimacyLog stats={stats} />}
 
       {selected ? (
         <DayEditor date={selected} existing={byDate.get(selected)} onClose={() => setSelected(null)} />
