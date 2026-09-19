@@ -485,6 +485,44 @@ export type IntimacyEntry = z.infer<typeof IntimacyEntrySchema>;
 
 export const IntimacyEntryListSchema = z.array(IntimacyEntrySchema);
 
+export const RefluxSeveritySchema = z.enum(["mild", "moderate", "severe"]);
+export type RefluxSeverity = z.infer<typeof RefluxSeveritySchema>;
+
+export const RefluxTriggerSchema = z.enum([
+  "caffeine",
+  "alcohol",
+  "chocolate",
+  "spicy",
+  "fatty_fried",
+  "citrus",
+  "tomato",
+  "carbonated",
+  "mint",
+  "onion_garlic",
+  "dairy",
+  "large_meal",
+  "late_meal",
+]);
+export type RefluxTrigger = z.infer<typeof RefluxTriggerSchema>;
+
+export const RefluxEntrySchema = z.object({
+  id: z.number().int(),
+  severity: RefluxSeveritySchema,
+  occurred_at: z.string(),
+  triggers: z.array(RefluxTriggerSchema),
+  note: z.string().nullable().optional(),
+});
+export type RefluxEntry = z.infer<typeof RefluxEntrySchema>;
+
+export const RefluxEntryListSchema = z.array(RefluxEntrySchema);
+
+export const RefluxSummarySchema = z.object({
+  latest: RefluxEntrySchema.nullable(),
+  today_count: z.number().int(),
+  week_count: z.number().int(),
+});
+export type RefluxSummary = z.infer<typeof RefluxSummarySchema>;
+
 export const IntimacySummarySchema = z.object({
   days: z.number().int(),
   count: z.number().int(),

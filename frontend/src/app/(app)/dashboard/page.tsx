@@ -11,6 +11,7 @@ import { MedicationsCard } from "@/components/MedicationsCard";
 import { MoodCard } from "@/components/MoodCard";
 import { PainCard } from "@/components/PainCard";
 import { PeriodCard } from "@/components/PeriodCard";
+import { RefluxCard } from "@/components/RefluxCard";
 import { SleepCard } from "@/components/SleepCard";
 import { StepsCard } from "@/components/StepsCard";
 import { StreakBadge } from "@/components/StreakBadge";
@@ -34,6 +35,7 @@ const CARDS: Record<string, ReactNode> = {
   mood: <MoodCard showQuickLog />,
   period: <PeriodCard />,
   pain: <PainCard />,
+  reflux: <RefluxCard showQuickLog />,
   medications: <MedicationsCard />,
   tiny_wins: <TinyWinsCard />,
   journal: <JournalCard showQuickLog />,

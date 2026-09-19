@@ -38,6 +38,7 @@ FEATURES: tuple[FeatureDef, ...] = (
     # Settings -> Trackers.
     FeatureDef("intimacy", "Sexual activity", default_enabled=False),
     FeatureDef("pain", "Pain & symptoms"),
+    FeatureDef("reflux", "Acid reflux"),
     FeatureDef("medications", "Medications"),
     FeatureDef("tiny_wins", "Tiny wins"),
     FeatureDef("journal", "Journal"),
