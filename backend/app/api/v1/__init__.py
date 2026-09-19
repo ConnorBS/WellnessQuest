@@ -20,6 +20,7 @@ from app.api.v1 import (
     mood,
     pain,
     period,
+    reflux,
     setup,
     sleep,
     steps,
@@ -66,6 +67,7 @@ api_v1.include_router(period.router)
 # path avoids the word "sex".
 api_v1.include_router(intimacy.router)
 api_v1.include_router(pain.router)
+api_v1.include_router(reflux.router)
 api_v1.include_router(medications.router)
 api_v1.include_router(tiny_wins.router)
 api_v1.include_router(journal.router)

@@ -280,6 +280,24 @@ nothing is seeded on user creation. Audit rows deliberately carry only the date
 and the body length — the note text is the private part and stays out of the
 audit log.
 
+### Acid reflux
+
+`reflux_entries` is the mood shape, not the period shape: append-only,
+`occurred_at` timestamptz (the user picks date *and* time; defaults to now),
+several episodes a day expected. `severity` is `mild | moderate | severe` — the
+same three words the pain symptom log uses, chosen over a 0-10 slider because
+an episode is logged one-handed while it's happening. `triggers` is an array
+from a fixed vocabulary (`REFLUX_TRIGGERS` in the model), the standard GERD
+handout list; adding one is a code change in model + schema + `schemas.ts` +
+`lib/reflux.ts`, not a migration. Free text goes in `note`.
+
+The payoff of the checklist is `topTriggers` in `frontend/src/lib/reflux.ts`:
+how often each trigger was ticked across the last 30 days, rendered as the
+"Usual suspects" section on `/reflux`. It's frontend-computed from the raw
+history, like BP categories — don't add a backend aggregate for it until
+someone needs it outside the page. No XP, no events, no streaks, nothing
+seeded.
+
 ### Sexual activity lives under `intimacy`
 
 The sexual-activity log inside the period section is named `intimacy`

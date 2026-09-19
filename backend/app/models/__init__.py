@@ -23,6 +23,7 @@ from app.models.mood_entry import MoodEntry
 from app.models.pain_entry import PainEntry
 from app.models.pain_location import PainLocation
 from app.models.period_entry import PeriodEntry
+from app.models.reflux_entry import RefluxEntry
 from app.models.session import Session
 from app.models.sleep_entry import SleepEntry
 from app.models.steps_entry import StepsEntry
@@ -67,6 +68,7 @@ __all__ = [
     "PainEntry",
     "PainLocation",
     "PeriodEntry",
+    "RefluxEntry",
     "Session",
     "SymptomCatalog",
     "SymptomLog",

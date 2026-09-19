@@ -305,6 +305,33 @@ No XP, no webhook events, no streaks, nothing seeded on user creation. Audit row
 carry the `entry_date` and nothing else — kind, protection, tags and the note
 never reach the audit log.
 
+## Acid reflux
+
+An episode log: when it happened, how bad, and which of the usual trigger foods
+were in play. Several episodes a day are normal for someone tracking this.
+Gated on the `reflux` feature key (on by default).
+
+| Method | Path | Body | Notes |
+|---|---|---|---|
+| GET | `/reflux?limit=N` | — | Episodes newest first (default 90, max 366). |
+| GET | `/reflux/summary` | — | `{ latest, today_count, week_count }` — what the dashboard card renders. `week_count` is the last 7 local days including today. |
+| POST | `/reflux` | `{ severity, occurred_at?, triggers?, note? }` | 201. `occurred_at` defaults to now. |
+| PATCH | `/reflux/{id}` | any subset of the above | Only supplied fields change. An explicit `note: null` clears the note; a null anywhere else means "leave it". |
+| DELETE | `/reflux/{id}` | — | 204. Hard delete. |
+
+`RefluxEntryOut`: `{ id, severity, occurred_at, triggers, note }`.
+
+- `severity`: `mild | moderate | severe` — three taps, not a slider, because an episode is logged one-handed while it's happening.
+- `triggers`: any of `caffeine`, `alcohol`, `chocolate`, `spicy`, `fatty_fried`, `citrus`, `tomato`, `carbonated`, `mint`, `onion_garlic`, `dairy`, `large_meal`, `late_meal`. Deduped and sorted on write. Anything else goes in the note.
+- `note`: ≤500 chars, trimmed; empty becomes `null`.
+
+The "usual suspects" ranking on `/reflux` (how often each trigger was ticked in
+the last 30 days) is frontend-computed from the raw history, like BP
+categories; the API never returns it. Unknown severity or trigger values are
+`422`.
+
+No XP, no webhook events, no streaks, nothing seeded on user creation.
+
 ## Uploads (custom icons)
 
 | Method | Path | Body | Notes |
