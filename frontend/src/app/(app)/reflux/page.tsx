@@ -129,7 +129,8 @@ export default function RefluxPage() {
           Usual suspects
         </h2>
         <p style={{ color: "#94a3b8", fontSize: 12, marginBottom: 12 }}>
-          How often each trigger was ticked across the {recentCount} episode
+          Ranked by how often each trigger was ticked, weighted by how bad the
+          episode was, across the {recentCount} episode
           {recentCount === 1 ? "" : "s"} in the last 30 days.
         </p>
         {triggers.length === 0 ? (
@@ -141,10 +142,13 @@ export default function RefluxPage() {
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             {triggers.map((t) => (
               <li key={t.trigger} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, gap: 8 }}>
                   <span>{TRIGGER_LABELS[t.trigger]}</span>
-                  <span style={{ color: "#94a3b8" }}>
-                    {t.count} · {Math.round(t.share * 100)}%
+                  <span style={{ color: "#94a3b8", whiteSpace: "nowrap" }}>
+                    {t.count}× ·{" "}
+                    <span style={{ color: SEVERITY_META[t.typicalSeverity].color }}>
+                      {SEVERITY_META[t.typicalSeverity].label.toLowerCase()}
+                    </span>
                   </span>
                 </div>
                 <div style={{ height: 6, borderRadius: 3, background: "#1e293b", overflow: "hidden" }}>
@@ -152,7 +156,7 @@ export default function RefluxPage() {
                     style={{
                       width: `${Math.round(t.share * 100)}%`,
                       height: "100%",
-                      background: "#f97316",
+                      background: SEVERITY_META[t.typicalSeverity].color,
                     }}
                   />
                 </div>

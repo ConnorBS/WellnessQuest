@@ -40,17 +40,42 @@ export const TRIGGER_ORDER: RefluxTrigger[] = [
   "late_meal",
 ];
 
+// How much a tick counts for, by how bad the episode was. A trigger that keeps
+// showing up on severe episodes should outrank one that only ever precedes a
+// mild one, even at equal frequency.
+export const SEVERITY_WEIGHT: Record<RefluxSeverity, number> = {
+  mild: 1,
+  moderate: 2,
+  severe: 3,
+};
+
 export interface TriggerCount {
   trigger: RefluxTrigger;
+  /** Episodes in the window that named this trigger. */
   count: number;
-  /** Share of episodes in the window that named this trigger, 0..1. */
+  /** Sum of SEVERITY_WEIGHT over those episodes — what the ranking sorts on. */
+  score: number;
+  /** Mean severity when this trigger was in play, on the 1..3 weight scale. */
+  avgSeverity: number;
+  /** The severity bucket `avgSeverity` rounds to, for the label and colour. */
+  typicalSeverity: RefluxSeverity;
+  /** `score` relative to the top trigger's, 0..1 — the bar width. */
   share: number;
 }
 
+/** Nearest severity for a mean weight: <1.5 mild, <2.5 moderate, else severe. */
+export function severityForWeight(avg: number): RefluxSeverity {
+  if (avg < 1.5) return "mild";
+  if (avg < 2.5) return "moderate";
+  return "severe";
+}
+
 /**
- * How often each trigger was ticked across the episodes in the last `days`
- * days, most frequent first. This is the whole point of the checklist: after a
- * few weeks the top of this list is the answer to "what should I cut out".
+ * Rank the triggers ticked across the episodes in the last `days` days by
+ * frequency weighted by severity. This is the whole point of the checklist:
+ * after a few weeks the top of this list is the answer to "what should I cut
+ * out" — and a trigger behind one severe episode belongs above one behind a
+ * single mild episode, which a plain tick count can't say.
  * Computed client-side from the raw history, like BP categories.
  */
 export function topTriggers(
@@ -61,13 +86,31 @@ export function topTriggers(
   const cutoff = now.getTime() - days * 86_400_000;
   const recent = entries.filter((e) => new Date(e.occurred_at).getTime() >= cutoff);
   if (recent.length === 0) return [];
-  const counts = new Map<RefluxTrigger, number>();
+  const acc = new Map<RefluxTrigger, { count: number; score: number }>();
   for (const e of recent) {
-    for (const t of e.triggers) counts.set(t, (counts.get(t) ?? 0) + 1);
+    const weight = SEVERITY_WEIGHT[e.severity];
+    for (const t of e.triggers) {
+      const cur = acc.get(t) ?? { count: 0, score: 0 };
+      acc.set(t, { count: cur.count + 1, score: cur.score + weight });
+    }
   }
-  return [...counts.entries()]
-    .map(([trigger, count]) => ({ trigger, count, share: count / recent.length }))
-    .sort((a, b) => b.count - a.count || a.trigger.localeCompare(b.trigger));
+  const maxScore = Math.max(0, ...[...acc.values()].map((v) => v.score));
+  return [...acc.entries()]
+    .map(([trigger, { count, score }]) => {
+      const avgSeverity = score / count;
+      return {
+        trigger,
+        count,
+        score,
+        avgSeverity,
+        typicalSeverity: severityForWeight(avgSeverity),
+        share: maxScore > 0 ? score / maxScore : 0,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.score - a.score || b.count - a.count || a.trigger.localeCompare(b.trigger),
+    );
 }
 
 /** One line for a list row: "Moderate · Spicy food, Coffee / caffeine". */
