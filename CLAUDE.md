@@ -292,8 +292,13 @@ handout list; adding one is a code change in model + schema + `schemas.ts` +
 `lib/reflux.ts`, not a migration. Free text goes in `note`.
 
 The payoff of the checklist is `topTriggers` in `frontend/src/lib/reflux.ts`:
-how often each trigger was ticked across the last 30 days, rendered as the
-"Usual suspects" section on `/reflux`. It's frontend-computed from the raw
+each trigger's ticks across the last 30 days, **weighted by the episode's
+severity** (mild 1, moderate 2, severe 3 — `SEVERITY_WEIGHT`), ranked by that
+score and rendered as the "Usual suspects" section on `/reflux`. A plain tick
+count was the first version and got the obvious complaint: a trigger behind
+one severe episode tied with one behind a single mild episode. Each row shows
+the tick count and the severity bucket its mean rounds to; the bar is the
+score relative to the top trigger. It's frontend-computed from the raw
 history, like BP categories — don't add a backend aggregate for it until
 someone needs it outside the page. No XP, no events, no streaks, nothing
 seeded.

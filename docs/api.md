@@ -325,9 +325,10 @@ Gated on the `reflux` feature key (on by default).
 - `triggers`: any of `caffeine`, `alcohol`, `chocolate`, `spicy`, `fatty_fried`, `citrus`, `tomato`, `carbonated`, `mint`, `onion_garlic`, `dairy`, `large_meal`, `late_meal`. Deduped and sorted on write. Anything else goes in the note.
 - `note`: ≤500 chars, trimmed; empty becomes `null`.
 
-The "usual suspects" ranking on `/reflux` (how often each trigger was ticked in
-the last 30 days) is frontend-computed from the raw history, like BP
-categories; the API never returns it. Unknown severity or trigger values are
+The "usual suspects" ranking on `/reflux` (each trigger's ticks in the last 30
+days weighted by episode severity — mild 1, moderate 2, severe 3) is
+frontend-computed from the raw history, like BP categories; the API never
+returns it. Unknown severity or trigger values are
 `422`.
 
 No XP, no webhook events, no streaks, nothing seeded on user creation.
