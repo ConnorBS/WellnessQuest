@@ -291,6 +291,11 @@ while keeping order and rejects an empty list.
 `MoodEntryIn` still accepts the pre-multi-select `mood: "<value>"` and
 `MoodEntryOut` still returns `mood` (= `moods[0]`), so API-token consumers
 written against the old shape don't break. `PATCH` takes `moods` only.
+The vocabulary is ~45 feelings in seven picker sections (`MOOD_GROUPS` in
+`lib/mood.ts`). Adding one is a code change in model + schema + `schemas.ts` +
+`lib/mood.ts` **plus a migration**, because `ck_mood_values` lists the values;
+`lib/mood.test.ts` fails if a value is missing from a group or from `MOOD_META`.
+
 The note is a multi-line reflection capped at 4000 chars (`MOOD_NOTE_MAX`,
 same cap as a journal entry), shown in full under each check-in in history.
 Migration `0032` backfilled `moods = ARRAY[mood]`; its downgrade keeps only
