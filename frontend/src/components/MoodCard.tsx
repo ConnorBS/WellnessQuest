@@ -7,7 +7,7 @@ import { Modal } from "@/components/Modal";
 import { MoodForm } from "@/components/mood/MoodForm";
 import { quickLogBtn } from "@/components/quickLogButton";
 import { useMoodSummary } from "@/hooks/useMood";
-import { ENERGY_LABELS, MOOD_META } from "@/lib/mood";
+import { ENERGY_LABELS, MOOD_META, moodsLabel } from "@/lib/mood";
 
 export function MoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
   const summary = useMoodSummary();
@@ -48,10 +48,12 @@ export function MoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
-            <span style={{ fontSize: 28 }}>{MOOD_META[latest.mood].emoji}</span>
+            <span style={{ fontSize: 28, whiteSpace: "nowrap" }}>
+              {latest.moods.map((m) => MOOD_META[m].emoji).join("")}
+            </span>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontSize: 18, fontWeight: 600 }}>
-                {MOOD_META[latest.mood].label}
+                {moodsLabel(latest.moods)}
               </span>
               <span style={{ color: "#94a3b8", fontSize: 12 }}>
                 {ENERGY_LABELS[latest.energy]} energy ·{" "}

@@ -403,7 +403,8 @@ export type MoodValue = z.infer<typeof MoodValueSchema>;
 
 export const MoodEntrySchema = z.object({
   id: z.number().int(),
-  mood: MoodValueSchema,
+  // Strongest feeling first. `mood` from the API mirrors moods[0]; not read here.
+  moods: z.tuple([MoodValueSchema]).rest(MoodValueSchema),
   energy: z.number().int(),
   occurred_at: z.string(),
   note: z.string().nullable().optional(),

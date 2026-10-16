@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime
 
 from sqlalchemy import func, select
@@ -15,14 +16,14 @@ async def add(
     db: AsyncSession,
     *,
     user: User,
-    mood: str,
+    moods: Sequence[str],
     energy: int,
     occurred_at: datetime | None = None,
     note: str | None = None,
 ) -> MoodEntry:
     entry = MoodEntry(
         user_id=user.id,
-        mood=mood,
+        moods=list(moods),
         energy=energy,
         occurred_at=occurred_at or utcnow(),
         note=(note.strip() or None) if isinstance(note, str) else note,

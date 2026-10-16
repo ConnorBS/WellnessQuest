@@ -53,3 +53,14 @@ export const ENERGY_LABELS: Record<number, string> = {
 export function moodMeta(mood: MoodValue): MoodMeta {
   return MOOD_META[mood];
 }
+
+// "Anxious, grateful & tired" — label for a check-in with several feelings.
+// The strongest (first) keeps its capital; the rest read as a list after it.
+export function moodsLabel(moods: MoodValue[]): string {
+  const [first, ...rest] = moods.map((m) => MOOD_META[m].label);
+  if (first === undefined) return "";
+  if (rest.length === 0) return first;
+  const tail = rest.map((l) => l.toLowerCase());
+  const last = tail.pop();
+  return tail.length ? `${first}, ${tail.join(", ")} & ${last}` : `${first} & ${last}`;
+}

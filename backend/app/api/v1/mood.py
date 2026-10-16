@@ -22,7 +22,8 @@ router = APIRouter(prefix="/mood", tags=["mood"])
 def _to_out(row: MoodEntry) -> MoodEntryOut:
     return MoodEntryOut(
         id=row.id,
-        mood=row.mood,
+        moods=list(row.moods),
+        mood=row.moods[0],
         energy=row.energy,
         occurred_at=row.occurred_at,
         note=row.note,
@@ -61,7 +62,7 @@ async def add_mood(
     row = await mood_service.add(
         db,
         user=user,
-        mood=payload.mood,
+        moods=payload.moods or [],
         energy=payload.energy,
         occurred_at=payload.occurred_at or utcnow(),
         note=payload.note,
@@ -73,7 +74,7 @@ async def add_mood(
         user_id=user.id,
         target_type="mood_entry",
         target_id=str(row.id),
-        meta={"mood": row.mood, "energy": row.energy},
+        meta={"moods": list(row.moods), "energy": row.energy},
     )
     return _to_out(row)
 

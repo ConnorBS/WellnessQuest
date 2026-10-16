@@ -5,12 +5,13 @@ import { useMemo, useState } from "react";
 import { Modal } from "@/components/Modal";
 import { OccurredAtField } from "@/components/forms/OccurredAtField";
 import { MoodForm } from "@/components/mood/MoodForm";
+import { MoodPicker } from "@/components/mood/MoodPicker";
 import {
   useDeleteMood,
   useMoodHistory,
   useUpdateMood,
 } from "@/hooks/useMood";
-import { ENERGY_LABELS, MOOD_META, MOOD_ORDER } from "@/lib/mood";
+import { ENERGY_LABELS, MOOD_META, moodsLabel } from "@/lib/mood";
 import type { MoodEntry, MoodValue } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
@@ -52,7 +53,7 @@ function MonthlyOverview({ entries }: { entries: MoodEntry[] }) {
     const map = new Map<string, MoodValue>();
     for (const e of entries) {
       const key = localDayKey(e.occurred_at);
-      if (!map.has(key)) map.set(key, e.mood);
+      if (!map.has(key)) map.set(key, e.moods[0]);
     }
     return map;
   }, [entries]);
@@ -105,7 +106,7 @@ function formatTime(iso: string): string {
 
 function EditMoodModal({ entry, onClose }: { entry: MoodEntry; onClose: () => void }) {
   const update = useUpdateMood();
-  const [mood, setMood] = useState<MoodValue>(entry.mood);
+  const [moods, setMoods] = useState<MoodValue[]>(entry.moods);
   const [energy, setEnergy] = useState(entry.energy);
   const [note, setNote] = useState(entry.note ?? "");
   // null = "keep the original time" — the picker stays collapsed until opened.
@@ -114,41 +115,7 @@ function EditMoodModal({ entry, onClose }: { entry: MoodEntry; onClose: () => vo
   return (
     <Modal title="Edit check-in" onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(84px, 1fr))",
-            gap: 6,
-          }}
-        >
-          {MOOD_ORDER.map((m) => {
-            const meta = MOOD_META[m];
-            const selected = mood === m;
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMood(m)}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 2,
-                  padding: "8px 4px",
-                  borderRadius: 8,
-                  border: selected ? `2px solid ${meta.color}` : "1px solid #334155",
-                  background: selected ? `${meta.color}22` : "transparent",
-                  color: "#e2e8f0",
-                  fontSize: 12,
-                  cursor: "pointer",
-                }}
-              >
-                <span style={{ fontSize: 20 }}>{meta.emoji}</span>
-                {meta.label}
-              </button>
-            );
-          })}
-        </div>
+        <MoodPicker value={moods} onChange={setMoods} />
         <div style={{ display: "flex", gap: 6 }}>
           {[1, 2, 3].map((lvl) => (
             <button
@@ -185,14 +152,14 @@ function EditMoodModal({ entry, onClose }: { entry: MoodEntry; onClose: () => vo
         />
         <button
           type="button"
-          disabled={update.isPending}
+          disabled={update.isPending || moods.length === 0}
           style={primaryBtn}
           onClick={() =>
             update.mutate(
               {
                 id: entry.id,
                 patch: {
-                  mood,
+                  moods,
                   energy,
                   note: note.trim() || null,
                   ...(occurredAt !== null ? { occurred_at: occurredAt } : {}),
@@ -250,7 +217,7 @@ export default function MoodPage() {
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             {entries.map((e) => {
-              const meta = MOOD_META[e.mood];
+              const meta = MOOD_META[e.moods[0]];
               return (
                 <li
                   key={e.id}
@@ -264,10 +231,12 @@ export default function MoodPage() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                    <span style={{ fontSize: 22 }}>{meta.emoji}</span>
+                    <span style={{ fontSize: 22, whiteSpace: "nowrap" }}>
+                      {e.moods.map((m) => MOOD_META[m].emoji).join("")}
+                    </span>
                     <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
                       <span style={{ fontWeight: 600 }}>
-                        {meta.label}
+                        {moodsLabel(e.moods)}
                         <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 12 }}>
                           {" "}· {ENERGY_LABELS[e.energy]} energy
                         </span>

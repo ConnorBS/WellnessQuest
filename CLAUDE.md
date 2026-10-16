@@ -280,6 +280,20 @@ nothing is seeded on user creation. Audit rows deliberately carry only the date
 and the body length — the note text is the private part and stays out of the
 audit log.
 
+### Mood check-ins carry several feelings
+
+`mood_entries.moods` is an ordered array, not a single value: feelings rarely
+come one at a time, so a check-in can hold as many as apply. **The first element
+is the strongest** — it's what the dashboard card and the 30-day grid colour by,
+and the picker marks it with ★ (tap order = strength order). The API dedupes
+while keeping order and rejects an empty list.
+
+`MoodEntryIn` still accepts the pre-multi-select `mood: "<value>"` and
+`MoodEntryOut` still returns `mood` (= `moods[0]`), so API-token consumers
+written against the old shape don't break. `PATCH` takes `moods` only.
+Migration `0032` backfilled `moods = ARRAY[mood]`; its downgrade keeps only
+the first feeling.
+
 ### Acid reflux
 
 `reflux_entries` is the mood shape, not the period shape: append-only,
