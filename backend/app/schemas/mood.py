@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.models.mood_entry import MOOD_VALUES
+from app.models.mood_entry import MOOD_NOTE_MAX, MOOD_VALUES
 
 # A typed alias so FastAPI returns 422 on an unknown mood.
 MoodValue = Literal[
@@ -42,7 +42,7 @@ class MoodEntryIn(BaseModel):
     mood: MoodValue | None = None
     energy: int = Field(..., ge=1, le=3)
     occurred_at: datetime | None = None
-    note: str | None = Field(default=None, max_length=500)
+    note: str | None = Field(default=None, max_length=MOOD_NOTE_MAX)
 
     _dedupe_moods = field_validator("moods")(_dedupe)
 
@@ -69,7 +69,7 @@ class MoodEntryPatch(BaseModel):
     moods: list[MoodValue] | None = Field(default=None, min_length=1)
     energy: int | None = Field(default=None, ge=1, le=3)
     occurred_at: datetime | None = None
-    note: str | None = Field(default=None, max_length=500)
+    note: str | None = Field(default=None, max_length=MOOD_NOTE_MAX)
 
     _dedupe_moods = field_validator("moods")(_dedupe)
 

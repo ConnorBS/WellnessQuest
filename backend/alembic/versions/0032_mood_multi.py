@@ -1,4 +1,4 @@
-"""mood_entries.mood -> moods[] — several feelings per check-in
+"""mood_entries.mood -> moods[] (several feelings per check-in); note 500 -> 4000
 
 Revision ID: 0032_mood_multi
 Revises: 0031_reflux_entries
@@ -38,6 +38,7 @@ _MOODS = (
 )
 _MOOD_IN = ", ".join(f"'{m}'" for m in _MOODS)
 _MOOD_ARRAY = f"ARRAY[{_MOOD_IN}]::varchar[]"
+_NOTE_MAX = 4000
 
 
 def upgrade() -> None:
@@ -55,10 +56,26 @@ def upgrade() -> None:
     op.create_check_constraint(
         "ck_mood_values_nonempty", "mood_entries", "cardinality(moods) >= 1"
     )
+    op.alter_column(
+        "mood_entries",
+        "note",
+        type_=sa.String(_NOTE_MAX),
+        existing_type=sa.String(500),
+        existing_nullable=True,
+    )
 
 
 def downgrade() -> None:
-    # Lossy: only the first (strongest) feeling survives.
+    # Lossy: only the first (strongest) feeling survives, and notes are cut
+    # back to 500 characters.
+    op.execute("UPDATE mood_entries SET note = left(note, 500) WHERE length(note) > 500")
+    op.alter_column(
+        "mood_entries",
+        "note",
+        type_=sa.String(500),
+        existing_type=sa.String(_NOTE_MAX),
+        existing_nullable=True,
+    )
     op.add_column(
         "mood_entries", sa.Column("mood", sa.String(20), nullable=True)
     )

@@ -39,6 +39,10 @@ MOOD_VALUES: tuple[str, ...] = (
     "angry",
 )
 
+# Room for an actual reflection on the moment, not just a tag line; same cap
+# as a journal entry. Mirrored by the pydantic max_length.
+MOOD_NOTE_MAX = 4000
+
 _MOOD_IN = ", ".join(f"'{m}'" for m in MOOD_VALUES)
 _MOOD_ARRAY = f"ARRAY[{_MOOD_IN}]::varchar[]"
 
@@ -72,7 +76,7 @@ class MoodEntry(Base):
     occurred_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    note: Mapped[str | None] = mapped_column(String(MOOD_NOTE_MAX), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

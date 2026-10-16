@@ -191,3 +191,25 @@ async def test_moods_validation(client, db, unique_email):
         f"/api/v1/mood/{created['id']}", headers=_auth(access), json={"moods": []}
     )
     assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_mood_note_holds_a_reflection(client, db, unique_email):
+    data = await _signup(client, db, unique_email)
+    access = data["tokens"]["access_token"]
+
+    note = "Tight chest before the meeting.\n" + "x" * 3900
+    r = await client.post(
+        "/api/v1/mood",
+        headers=_auth(access),
+        json={"moods": ["anxious"], "energy": 2, "note": note},
+    )
+    assert r.status_code == 201, r.text
+    assert r.json()["note"] == note
+
+    r = await client.patch(
+        f"/api/v1/mood/{r.json()['id']}",
+        headers=_auth(access),
+        json={"note": "y" * 4001},
+    )
+    assert r.status_code == 422

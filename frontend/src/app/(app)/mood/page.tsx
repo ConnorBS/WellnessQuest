@@ -11,7 +11,7 @@ import {
   useMoodHistory,
   useUpdateMood,
 } from "@/hooks/useMood";
-import { ENERGY_LABELS, MOOD_META, moodsLabel } from "@/lib/mood";
+import { ENERGY_LABELS, MOOD_META, MOOD_NOTE_MAX, moodsLabel, noteTextarea } from "@/lib/mood";
 import type { MoodEntry, MoodValue } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
@@ -137,12 +137,12 @@ function EditMoodModal({ entry, onClose }: { entry: MoodEntry; onClose: () => vo
             </button>
           ))}
         </div>
-        <input
-          type="text"
+        <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="Optional note"
-          maxLength={500}
+          placeholder="Notes (optional)"
+          maxLength={MOOD_NOTE_MAX}
+          style={noteTextarea}
         />
         <OccurredAtField
           value={occurredAt}
@@ -217,20 +217,19 @@ export default function MoodPage() {
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             {entries.map((e) => {
-              const meta = MOOD_META[e.moods[0]];
               return (
                 <li
                   key={e.id}
                   style={{
                     display: "flex",
-                    alignItems: "center",
+                    alignItems: "flex-start",
                     justifyContent: "space-between",
                     padding: "8px 0",
                     borderBottom: "1px solid #1e293b",
                     gap: 8,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10, minWidth: 0 }}>
                     <span style={{ fontSize: 22, whiteSpace: "nowrap" }}>
                       {e.moods.map((m) => MOOD_META[m].emoji).join("")}
                     </span>
@@ -249,8 +248,21 @@ export default function MoodPage() {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
-                        {e.note ? ` · ${e.note}` : ""}
                       </span>
+                      {e.note ? (
+                        <p
+                          style={{
+                            margin: "4px 0 0",
+                            color: "#cbd5e1",
+                            fontSize: 14,
+                            lineHeight: 1.5,
+                            whiteSpace: "pre-wrap",
+                            overflowWrap: "anywhere",
+                          }}
+                        >
+                          {e.note}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>

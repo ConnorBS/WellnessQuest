@@ -291,6 +291,8 @@ while keeping order and rejects an empty list.
 `MoodEntryIn` still accepts the pre-multi-select `mood: "<value>"` and
 `MoodEntryOut` still returns `mood` (= `moods[0]`), so API-token consumers
 written against the old shape don't break. `PATCH` takes `moods` only.
+The note is a multi-line reflection capped at 4000 chars (`MOOD_NOTE_MAX`,
+same cap as a journal entry), shown in full under each check-in in history.
 Migration `0032` backfilled `moods = ARRAY[mood]`; its downgrade keeps only
 the first feeling.
 

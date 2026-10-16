@@ -44,6 +44,23 @@ export const MOOD_META: Record<MoodValue, MoodMeta> = {
   angry: { label: "Angry", emoji: "😠", color: "#dc2626" },
 };
 
+// Mirrors MOOD_NOTE_MAX in backend/app/models/mood_entry.py.
+export const MOOD_NOTE_MAX = 4000;
+
+export const noteTextarea: React.CSSProperties = {
+  width: "100%",
+  minHeight: 96,
+  padding: "8px 10px",
+  background: "#020617",
+  border: "1px solid #1e293b",
+  borderRadius: 6,
+  color: "#e2e8f0",
+  fontSize: 15,
+  lineHeight: 1.5,
+  fontFamily: "inherit",
+  resize: "vertical",
+};
+
 export const ENERGY_LABELS: Record<number, string> = {
   1: "Low",
   2: "Medium",

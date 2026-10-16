@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 import { OccurredAtField } from "@/components/forms/OccurredAtField";
 import { MoodPicker } from "@/components/mood/MoodPicker";
 import { useAddMood } from "@/hooks/useMood";
-import { ENERGY_LABELS } from "@/lib/mood";
+import { ENERGY_LABELS, MOOD_NOTE_MAX, noteTextarea } from "@/lib/mood";
 import type { MoodValue } from "@/lib/schemas";
 
 interface Props {
@@ -93,12 +93,12 @@ export function MoodForm({ onSaved }: Props) {
         </div>
       </div>
 
-      <input
-        type="text"
+      <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="Optional note (what's on your mind?)"
-        maxLength={500}
+        placeholder="Notes — what's happening, where you feel it, what set it off (optional)"
+        maxLength={MOOD_NOTE_MAX}
+        style={noteTextarea}
       />
       <OccurredAtField value={occurredAt} onChange={setOccurredAt} />
       {error && <p style={{ color: "#fca5a5", fontSize: 13 }}>{error}</p>}
