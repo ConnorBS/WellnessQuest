@@ -26,7 +26,7 @@ export function useMoodHistory(limit = 90) {
 }
 
 interface AddArgs {
-  mood: MoodValue;
+  moods: MoodValue[];
   energy: number;
   occurred_at?: string;
   note?: string | null;
@@ -45,7 +45,7 @@ export function useAddMood() {
 export type UpdateMoodArgs = {
   id: number;
   patch: {
-    mood?: MoodValue;
+    moods?: MoodValue[];
     energy?: number;
     occurred_at?: string;
     note?: string | null;

@@ -69,7 +69,7 @@ async def macro_totals(
         FoodEntry.occurred_at < end,
     )
     row = (await db.execute(stmt)).one()
-    return Decimal(row[0]), Decimal(row[1]), Decimal(row[2])
+    return Decimal(row[0] or 0), Decimal(row[1] or 0), Decimal(row[2] or 0)
 
 
 async def nutrient_totals(

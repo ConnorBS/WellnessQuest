@@ -13,7 +13,7 @@ from sqlalchemy import (
     String,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -23,32 +23,73 @@ from app.db.base import Base
 # against the same list.
 MOOD_VALUES: tuple[str, ...] = (
     "happy",
-    "calm",
+    "joyful",
     "excited",
+    "amused",
+    "proud",
+    "confident",
+    "hopeful",
+    "inspired",
     "motivated",
-    "relaxed",
-    "grateful",
     "productive",
-    "tired",
+    "calm",
+    "relaxed",
+    "peaceful",
+    "content",
+    "grateful",
+    "loved",
+    "connected",
+    "relieved",
     "sad",
-    "stressed",
+    "lonely",
+    "disappointed",
+    "hurt",
+    "grieving",
+    "nostalgic",
     "anxious",
+    "worried",
+    "scared",
+    "insecure",
+    "stressed",
     "overwhelmed",
-    "frustrated",
-    "low_energy",
     "angry",
+    "frustrated",
+    "irritated",
+    "resentful",
+    "jealous",
+    "ashamed",
+    "guilty",
+    "embarrassed",
+    "tired",
+    "low_energy",
+    "restless",
+    "bored",
+    "confused",
+    "numb",
 )
 
+# Room for an actual reflection on the moment, not just a tag line; same cap
+# as a journal entry. Mirrored by the pydantic max_length.
+MOOD_NOTE_MAX = 4000
+
 _MOOD_IN = ", ".join(f"'{m}'" for m in MOOD_VALUES)
+_MOOD_ARRAY = f"ARRAY[{_MOOD_IN}]::varchar[]"
 
 
 class MoodEntry(Base):
     """Append-only mood log. Multiple timestamped check-ins per day are expected,
-    each with a mood, an energy level (1=low, 2=medium, 3=high) and an optional note."""
+    each with one or more feelings, an energy level (1=low, 2=medium, 3=high) and
+    an optional note.
+
+    ``moods`` is ordered: the first element is the strongest feeling and is the
+    one the UI colours by (dashboard card, 30-day grid). Feelings rarely come
+    alone, so a check-in can carry several rather than forcing one pick.
+    """
 
     __tablename__ = "mood_entries"
     __table_args__ = (
-        CheckConstraint(f"mood IN ({_MOOD_IN})", name="ck_mood_value"),
+        CheckConstraint(f"moods <@ {_MOOD_ARRAY}", name="ck_mood_values"),
+        CheckConstraint("cardinality(moods) >= 1", name="ck_mood_values_nonempty"),
         CheckConstraint("energy >= 1 AND energy <= 3", name="ck_mood_energy_range"),
         Index("ix_mood_entries_user_occurred_at", "user_id", "occurred_at"),
     )
@@ -59,12 +100,12 @@ class MoodEntry(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
-    mood: Mapped[str] = mapped_column(String(20), nullable=False)
+    moods: Mapped[list[str]] = mapped_column(ARRAY(String(20)), nullable=False)
     energy: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     occurred_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    note: Mapped[str | None] = mapped_column(String(MOOD_NOTE_MAX), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

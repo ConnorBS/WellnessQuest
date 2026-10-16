@@ -123,7 +123,7 @@ async def _exercise_type_minutes(
         .group_by(ActivityEntry.exercise_type)
     )
     rows = (await db.execute(stmt)).all()
-    return {row[0]: int(row[1]) for row in rows}
+    return {row[0]: int(row[1]) for row in rows if row[0] is not None}
 
 
 async def _evaluate_kind(
@@ -420,7 +420,7 @@ async def unlocked_count_by_category(
         .group_by(Title.category)
     )
     rows = (await db.execute(stmt)).all()
-    return {row[0]: int(row[1]) for row in rows}
+    return {row[0]: int(row[1]) for row in rows if row[0] is not None}
 
 
 async def total_count_by_category(
