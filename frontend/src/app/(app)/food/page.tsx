@@ -58,8 +58,8 @@ export default function FoodPage() {
             onClick={() => setShowAllNutrients((v) => !v)}
             style={{
               background: "transparent",
-              color: "#94a3b8",
-              border: "1px solid #1e293b",
+              color: "var(--wq-muted)",
+              border: "1px solid var(--wq-surface-2)",
               borderRadius: 6,
               padding: "6px 10px",
               fontSize: 13,
@@ -69,7 +69,7 @@ export default function FoodPage() {
             {showAllNutrients ? "Show key nutrients" : "Show all"}
           </button>
         </header>
-        <p style={{ fontSize: 12, color: "#64748b", marginTop: 0, marginBottom: 12 }}>
+        <p style={{ fontSize: 12, color: "var(--wq-muted-2)", marginTop: 0, marginBottom: 12 }}>
           % Daily Value uses Health Canada&apos;s reference table. There&apos;s no
           goal — just an indicator of where you are against the panel printed on
           every Canadian label.
@@ -102,8 +102,8 @@ export default function FoodPage() {
               }}
               style={{
                 background: "transparent",
-                color: "#94a3b8",
-                border: "1px solid #1e293b",
+                color: "var(--wq-muted)",
+                border: "1px solid var(--wq-surface-2)",
                 borderRadius: 6,
                 padding: "6px 10px",
                 fontSize: 13,
@@ -116,7 +116,7 @@ export default function FoodPage() {
               type="button"
               onClick={() => setShowLog(true)}
               style={{
-                background: "#10b981",
+                background: "var(--wq-accent)",
                 color: "white",
                 border: "none",
                 borderRadius: 6,
@@ -152,19 +152,19 @@ export default function FoodPage() {
               style={{
                 width: 120,
                 padding: "6px 8px",
-                background: "#020617",
-                border: "1px solid #1e293b",
+                background: "var(--wq-bg)",
+                border: "1px solid var(--wq-surface-2)",
                 borderRadius: 6,
-                color: "#e2e8f0",
+                color: "var(--wq-text)",
               }}
             />
-            <span style={{ fontSize: 12, color: "#94a3b8" }}>kcal/day ceiling</span>
+            <span style={{ fontSize: 12, color: "var(--wq-muted)" }}>kcal/day ceiling</span>
             <button
               type="button"
               onClick={saveTarget}
               disabled={updateGoal.isPending}
               style={{
-                background: "#10b981",
+                background: "var(--wq-accent)",
                 color: "white",
                 border: "none",
                 borderRadius: 6,
@@ -181,7 +181,7 @@ export default function FoodPage() {
               onClick={() => setEditTarget(false)}
               style={{
                 background: "transparent",
-                color: "#94a3b8",
+                color: "var(--wq-muted)",
                 border: "none",
                 fontSize: 13,
                 cursor: "pointer",

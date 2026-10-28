@@ -37,8 +37,8 @@ export function Modal({ title, onClose, children }: Props) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#0f172a",
-          border: "1px solid #1e293b",
+          background: "var(--wq-surface)",
+          border: "1px solid var(--wq-surface-2)",
           borderRadius: 12,
           padding: 16,
           width: "100%",
@@ -62,7 +62,7 @@ export function Modal({ title, onClose, children }: Props) {
             aria-label="Close"
             style={{
               background: "transparent",
-              color: "#94a3b8",
+              color: "var(--wq-muted)",
               border: "none",
               fontSize: 20,
               cursor: "pointer",

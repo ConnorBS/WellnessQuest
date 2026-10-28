@@ -8,8 +8,8 @@ import { uuidv4 } from "@/lib/uuid";
 
 const inputStyle: React.CSSProperties = {
   padding: 8,
-  background: "#0f172a",
-  border: "1px solid #334155",
+  background: "var(--wq-surface)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   color: "inherit",
   fontSize: 14,

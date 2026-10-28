@@ -101,18 +101,18 @@ export function IconPicker({ value, onChange }: Props) {
       />
 
       {value && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#94a3b8", fontSize: 13 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--wq-muted)", fontSize: 13 }}>
           <MdiIcon name={value} size={28} />
           <span>
-            Selected: <code style={{ color: "#cbd5e1" }}>{value}</code>
+            Selected: <code style={{ color: "var(--wq-text-2)" }}>{value}</code>
           </span>
         </div>
       )}
 
       {!results ? (
-        <p style={{ color: "#94a3b8", fontSize: 13 }}>Loading icon catalog…</p>
+        <p style={{ color: "var(--wq-muted)", fontSize: 13 }}>Loading icon catalog…</p>
       ) : results.length === 0 ? (
-        <p style={{ color: "#94a3b8", fontSize: 13 }}>No icons match “{query}”.</p>
+        <p style={{ color: "var(--wq-muted)", fontSize: 13 }}>No icons match “{query}”.</p>
       ) : (
         <>
           <div
@@ -123,9 +123,9 @@ export function IconPicker({ value, onChange }: Props) {
               maxHeight: 280,
               overflowY: "auto",
               padding: 6,
-              border: "1px solid #1e293b",
+              border: "1px solid var(--wq-surface-2)",
               borderRadius: 8,
-              background: "rgba(15, 23, 42, 0.5)",
+              background: "var(--wq-card)",
             }}
           >
             {results.map((entry) => {
@@ -138,8 +138,8 @@ export function IconPicker({ value, onChange }: Props) {
                   onClick={() => onChange(entry.name)}
                   style={{
                     aspectRatio: "1",
-                    background: selected ? "#1e293b" : "transparent",
-                    border: selected ? "2px solid #10b981" : "1px solid #334155",
+                    background: selected ? "var(--wq-surface-2)" : "transparent",
+                    border: selected ? "2px solid var(--wq-accent)" : "1px solid var(--wq-border)",
                     borderRadius: 6,
                     color: "inherit",
                     display: "flex",
@@ -153,7 +153,7 @@ export function IconPicker({ value, onChange }: Props) {
             })}
           </div>
           {query && results.length === MAX_RESULTS && (
-            <p style={{ color: "#64748b", fontSize: 12 }}>
+            <p style={{ color: "var(--wq-muted-2)", fontSize: 12 }}>
               Showing first {MAX_RESULTS} matches — refine the search to narrow down.
             </p>
           )}

@@ -9,8 +9,8 @@ import { formatDuration } from "@/lib/duration";
 
 const inputStyle: React.CSSProperties = {
   padding: 8,
-  background: "#0f172a",
-  border: "1px solid #334155",
+  background: "var(--wq-surface)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   color: "inherit",
   width: 70,
@@ -18,8 +18,8 @@ const inputStyle: React.CSSProperties = {
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -64,7 +64,7 @@ export default function SleepSettingsPage() {
             aria-label="Goal hours"
             data-testid="sleep-goal-hours"
           />
-          <span style={{ color: "#94a3b8" }}>h</span>
+          <span style={{ color: "var(--wq-muted)" }}>h</span>
           <input
             type="number"
             min={0}
@@ -75,7 +75,7 @@ export default function SleepSettingsPage() {
             aria-label="Goal minutes"
             data-testid="sleep-goal-minutes"
           />
-          <span style={{ color: "#94a3b8" }}>min / night</span>
+          <span style={{ color: "var(--wq-muted)" }}>min / night</span>
           <button
             type="button"
             disabled={!valid || draft === current || updateGoal.isPending}
@@ -97,9 +97,9 @@ export default function SleepSettingsPage() {
               }}
               style={{
                 padding: "4px 10px",
-                background: "#1e293b",
-                color: "#e2e8f0",
-                border: "1px solid #334155",
+                background: "var(--wq-surface-2)",
+                color: "var(--wq-text)",
+                border: "1px solid var(--wq-border)",
                 borderRadius: 999,
                 fontSize: 13,
                 cursor: "pointer",
@@ -109,7 +109,7 @@ export default function SleepSettingsPage() {
             </button>
           ))}
         </div>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           A session that meets this target grants a bonus and extends your sleep
           streak. Sessions are counted against the day they ended on.
         </p>
@@ -119,18 +119,18 @@ export default function SleepSettingsPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 8 }}>
           Where sleep comes from
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 14 }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 14 }}>
           Log a night by hand on the{" "}
-          <Link href="/sleep" style={{ color: "#10b981" }}>
+          <Link href="/sleep" style={{ color: "var(--wq-accent)" }}>
             Sleep page
           </Link>
           , or import sessions automatically from a CPAP or wearable by connecting{" "}
-          <Link href="/settings/integrations" style={{ color: "#10b981" }}>
+          <Link href="/settings/integrations" style={{ color: "var(--wq-accent)" }}>
             Home Assistant
           </Link>
           .
         </p>
-        <p style={{ color: "#64748b", fontSize: 13, marginTop: 8 }}>
+        <p style={{ color: "var(--wq-muted-2)", fontSize: 13, marginTop: 8 }}>
           Quality is optional and free-form (0–100) — nothing is computed from it.
           It is recorded so you can spot patterns.
         </p>

@@ -15,8 +15,8 @@ import type { Habit } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -34,8 +34,8 @@ const dangerBtn: React.CSSProperties = {
 const ghostBtn: React.CSSProperties = {
   padding: "6px 10px",
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #334155",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 13,
 };
@@ -47,8 +47,8 @@ const arrowBtn: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   background: "transparent",
-  color: "#cbd5e1",
-  border: "1px solid #334155",
+  color: "var(--wq-text-2)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 16,
 };
@@ -104,7 +104,7 @@ export default function HabitsSettingsPage() {
         </header>
 
         {showCreate && (
-          <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #1e293b" }}>
+          <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid var(--wq-surface-2)" }}>
             <HabitForm
               busy={createHabit.isPending}
               onCancel={() => setShowCreate(false)}
@@ -119,12 +119,12 @@ export default function HabitsSettingsPage() {
         )}
 
         {habits.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : !sorted || sorted.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No habits yet. Add one to get started.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No habits yet. Add one to get started.</p>
         ) : (
           <>
-            <p style={{ color: "#64748b", fontSize: 12, marginBottom: 10 }}>
+            <p style={{ color: "var(--wq-muted-2)", fontSize: 12, marginBottom: 10 }}>
               Use ↑ / ↓ to set the order — within each Today / This week / This month section on
               the Habits page, items appear in this order.
             </p>
@@ -150,7 +150,7 @@ export default function HabitsSettingsPage() {
                         alignItems: "center",
                         gap: 10,
                         padding: 10,
-                        border: "1px solid #1e293b",
+                        border: "1px solid var(--wq-surface-2)",
                         borderRadius: 8,
                         flexWrap: "wrap",
                       }}
@@ -180,7 +180,7 @@ export default function HabitsSettingsPage() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 500 }}>{habit.name}</div>
-                        <div style={{ color: "#94a3b8", fontSize: 13 }}>{cadenceLabel(habit)}</div>
+                        <div style={{ color: "var(--wq-muted)", fontSize: 13 }}>{cadenceLabel(habit)}</div>
                       </div>
                       <button type="button" onClick={() => setEditingId(habit.id)} style={ghostBtn}>
                         Edit

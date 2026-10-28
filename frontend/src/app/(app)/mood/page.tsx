@@ -16,8 +16,8 @@ import type { MoodEntry, MoodValue } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -35,8 +35,8 @@ const dangerBtn: React.CSSProperties = {
 const subtleBtn: React.CSSProperties = {
   padding: "4px 8px",
   background: "transparent",
-  color: "#cbd5e1",
-  border: "1px solid #334155",
+  color: "var(--wq-text-2)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 12,
 };
@@ -84,15 +84,15 @@ function MonthlyOverview({ entries }: { entries: MoodEntry[] }) {
             style={{
               aspectRatio: "1",
               borderRadius: 6,
-              border: "1px solid #1e293b",
-              background: meta ? meta.color : "#0f172a",
+              border: "1px solid var(--wq-surface-2)",
+              background: meta ? meta.color : "var(--wq-surface)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 12,
             }}
           >
-            {meta ? meta.emoji : <span style={{ color: "#475569" }}>{d.label}</span>}
+            {meta ? meta.emoji : <span style={{ color: "var(--wq-border-strong)" }}>{d.label}</span>}
           </div>
         );
       })}
@@ -126,9 +126,9 @@ function EditMoodModal({ entry, onClose }: { entry: MoodEntry; onClose: () => vo
                 flex: 1,
                 padding: "8px",
                 borderRadius: 6,
-                border: energy === lvl ? "2px solid #10b981" : "1px solid #334155",
-                background: energy === lvl ? "#10b98122" : "transparent",
-                color: "#e2e8f0",
+                border: energy === lvl ? "2px solid var(--wq-accent)" : "1px solid var(--wq-border)",
+                background: energy === lvl ? "var(--wq-accent)22" : "transparent",
+                color: "var(--wq-text)",
                 fontSize: 13,
                 cursor: "pointer",
               }}
@@ -200,7 +200,7 @@ export default function MoodPage() {
           Last 30 days
         </h2>
         {entries.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No check-ins yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No check-ins yet.</p>
         ) : (
           <MonthlyOverview entries={entries} />
         )}
@@ -211,9 +211,9 @@ export default function MoodPage() {
           History
         </h2>
         {history.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : entries.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No entries yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No entries yet.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             {entries.map((e) => {
@@ -225,7 +225,7 @@ export default function MoodPage() {
                     alignItems: "flex-start",
                     justifyContent: "space-between",
                     padding: "8px 0",
-                    borderBottom: "1px solid #1e293b",
+                    borderBottom: "1px solid var(--wq-surface-2)",
                     gap: 8,
                   }}
                 >
@@ -236,11 +236,11 @@ export default function MoodPage() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
                       <span style={{ fontWeight: 600 }}>
                         {moodsLabel(e.moods)}
-                        <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 12 }}>
+                        <span style={{ color: "var(--wq-muted)", fontWeight: 400, fontSize: 12 }}>
                           {" "}· {ENERGY_LABELS[e.energy]} energy
                         </span>
                       </span>
-                      <span style={{ color: "#94a3b8", fontSize: 12 }}>
+                      <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
                         {new Date(e.occurred_at).toLocaleString(undefined, {
                           weekday: "short",
                           month: "short",
@@ -253,7 +253,7 @@ export default function MoodPage() {
                         <p
                           style={{
                             margin: "4px 0 0",
-                            color: "#cbd5e1",
+                            color: "var(--wq-text-2)",
                             fontSize: 14,
                             lineHeight: 1.5,
                             whiteSpace: "pre-wrap",

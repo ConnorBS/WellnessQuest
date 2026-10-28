@@ -15,9 +15,9 @@ interface RarityAccent {
 
 const RARITY_ACCENT: Record<string, RarityAccent> = {
   common: {
-    ring: "#94a3b8",
+    ring: "var(--wq-muted)",
     glow: "rgba(148, 163, 184, 0.35)",
-    burstColors: ["#94a3b8", "#cbd5e1", "#e2e8f0"],
+    burstColors: ["var(--wq-muted)", "var(--wq-text-2)", "var(--wq-text)"],
     particleCount: 14,
   },
   uncommon: {
@@ -309,8 +309,8 @@ export function TitleUnlockModal({ pending, pendingTotal }: Props) {
               <span style={{ textTransform: "uppercase", letterSpacing: 1.2 }}>
                 {next.rarity}
               </span>
-              <span style={{ color: "#475569" }}>•</span>
-              <span style={{ color: "#94a3b8", textTransform: "capitalize" }}>
+              <span style={{ color: "var(--wq-border-strong)" }}>•</span>
+              <span style={{ color: "var(--wq-muted)", textTransform: "capitalize" }}>
                 {next.category.replace(/_/g, " ")}
               </span>
             </motion.div>
@@ -325,7 +325,7 @@ export function TitleUnlockModal({ pending, pendingTotal }: Props) {
                 background: "rgba(15, 23, 42, 0.6)",
                 border: "1px solid rgba(148, 163, 184, 0.18)",
                 fontSize: 13,
-                color: "#cbd5e1",
+                color: "var(--wq-text-2)",
                 lineHeight: 1.45,
               }}
             >
@@ -341,7 +341,7 @@ export function TitleUnlockModal({ pending, pendingTotal }: Props) {
                 marginTop: 20,
                 padding: "10px 24px",
                 background: accent.ring,
-                color: "#0b1220",
+                color: "var(--wq-on-accent)",
                 fontWeight: 700,
                 border: 0,
                 borderRadius: 999,
@@ -364,7 +364,7 @@ export function TitleUnlockModal({ pending, pendingTotal }: Props) {
                   margin: "10px auto 0",
                   padding: "6px 16px",
                   background: "transparent",
-                  color: "#94a3b8",
+                  color: "var(--wq-muted)",
                   border: "1px solid rgba(148, 163, 184, 0.4)",
                   borderRadius: 999,
                   cursor: ackAll.isPending ? "wait" : "pointer",
@@ -375,7 +375,7 @@ export function TitleUnlockModal({ pending, pendingTotal }: Props) {
                 {ackAll.isPending ? "Dismissing…" : `Accept all (${remaining})`}
               </motion.button>
             )}
-            <div style={{ marginTop: 10, fontSize: 11, color: "#64748b" }}>
+            <div style={{ marginTop: 10, fontSize: 11, color: "var(--wq-muted-2)" }}>
               Tap anywhere to close
             </div>
           </motion.div>

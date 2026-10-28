@@ -15,8 +15,8 @@ import { displayToKg, formatWeight, kgToDisplay } from "@/lib/units";
 
 const primaryBtn: React.CSSProperties = {
   padding: "10px 14px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 600,
@@ -25,8 +25,8 @@ const primaryBtn: React.CSSProperties = {
 const ghostBtn: React.CSSProperties = {
   padding: "8px 12px",
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #334155",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 13,
 };
@@ -59,7 +59,7 @@ export default function WeightSettingsPage() {
   if (!me) {
     return (
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-        <p style={{ color: "#94a3b8" }}>Loading…</p>
+        <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
       </section>
     );
   }
@@ -97,11 +97,11 @@ export default function WeightSettingsPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 8 }}>
           Target weight
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 14, margin: "0 0 12px" }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 14, margin: "0 0 12px" }}>
           {current && current.target_kg != null ? (
             <>
-              Current: <strong style={{ color: "#e2e8f0" }}>{formatWeight(current.target_kg, unit)}</strong>
-              <span style={{ color: "#64748b" }}>
+              Current: <strong style={{ color: "var(--wq-text)" }}>{formatWeight(current.target_kg, unit)}</strong>
+              <span style={{ color: "var(--wq-muted-2)" }}>
                 {" "}
                 · set {new Date(current.effective_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
               </span>
@@ -126,7 +126,7 @@ export default function WeightSettingsPage() {
             placeholder={unit === "lb" ? "e.g. 170.0" : "e.g. 77.0"}
             style={{ width: 140 }}
           />
-          <span style={{ color: "#94a3b8" }}>{unit}</span>
+          <span style={{ color: "var(--wq-muted)" }}>{unit}</span>
           <button type="submit" disabled={addTarget.isPending} style={primaryBtn}>
             {addTarget.isPending ? "Saving…" : "Save new target"}
           </button>
@@ -142,7 +142,7 @@ export default function WeightSettingsPage() {
           )}
         </form>
         {error && <p style={{ color: "#fca5a5", fontSize: 13, marginTop: 6 }}>{error}</p>}
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           Each save creates a new history row so you can graph your goal alongside your weight later.
           &quot;Clear target&quot; records that you intentionally stopped tracking a goal as of now.
         </p>
@@ -153,9 +153,9 @@ export default function WeightSettingsPage() {
           Target history
         </h2>
         {targets.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : !targets.data || targets.data.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No history yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No history yet.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             {targets.data.map((t) => (
@@ -166,7 +166,7 @@ export default function WeightSettingsPage() {
                   alignItems: "center",
                   justifyContent: "space-between",
                   padding: "8px 0",
-                  borderBottom: "1px solid #1e293b",
+                  borderBottom: "1px solid var(--wq-surface-2)",
                   gap: 8,
                 }}
               >
@@ -174,9 +174,9 @@ export default function WeightSettingsPage() {
                   <span style={{ fontWeight: 500 }}>
                     {t.target_kg != null
                       ? formatWeight(t.target_kg, unit)
-                      : <span style={{ color: "#94a3b8" }}>No target (cleared)</span>}
+                      : <span style={{ color: "var(--wq-muted)" }}>No target (cleared)</span>}
                   </span>
-                  <span style={{ color: "#94a3b8", fontSize: 12, marginLeft: 8 }}>
+                  <span style={{ color: "var(--wq-muted)", fontSize: 12, marginLeft: 8 }}>
                     {new Date(t.effective_at).toLocaleString(undefined, {
                       month: "short",
                       day: "numeric",
@@ -214,7 +214,7 @@ export default function WeightSettingsPage() {
           />
           Enable Weight tracker
         </label>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           Turning this off hides the Weight card, nav link, and this settings page. Manage
           all trackers under Settings → Trackers.
         </p>
@@ -233,7 +233,7 @@ export default function WeightSettingsPage() {
           />
           Show raw day-to-day delta
         </label>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           Day-to-day weight swings 1–3 lb from water and food — the smoothed
           trend is a much better signal of progress. Leave this off unless you
           find the raw number motivating.
@@ -253,7 +253,7 @@ export default function WeightSettingsPage() {
           />
           Opt out of weight-related titles
         </label>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           Hides titles tied to weight milestones. You can turn this back on
           any time.
         </p>
@@ -275,7 +275,7 @@ export default function WeightSettingsPage() {
             <option value="lb">Pounds (lb)</option>
           </select>
         </label>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           Entries are stored as kg internally; this only changes how they are shown.
         </p>
       </section>

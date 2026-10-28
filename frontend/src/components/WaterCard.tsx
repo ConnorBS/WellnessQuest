@@ -56,7 +56,7 @@ export function WaterCard({ showQuickLog = false }: { showQuickLog?: boolean }) 
         </div>
       ) : (
         <p className="text-sm text-slate-400">
-          No quick-add buttons yet — <Link href="/settings/water" style={{ color: "#10b981" }}>add some in settings</Link>.
+          No quick-add buttons yet — <Link href="/settings/water" style={{ color: "var(--wq-accent)" }}>add some in settings</Link>.
         </p>
       )}
       <CustomAddWater />

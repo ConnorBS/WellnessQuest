@@ -12,8 +12,8 @@ import { formatWeight } from "@/lib/units";
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -31,8 +31,8 @@ const dangerBtn: React.CSSProperties = {
 const subtleBtn: React.CSSProperties = {
   padding: "4px 8px",
   background: "transparent",
-  color: "#cbd5e1",
-  border: "1px solid #334155",
+  color: "var(--wq-text-2)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 12,
 };
@@ -44,9 +44,9 @@ const weekBtn: React.CSSProperties = {
   justifyContent: "space-between",
   padding: "10px 0",
   background: "transparent",
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   border: 0,
-  borderBottom: "1px solid #1e293b",
+  borderBottom: "1px solid var(--wq-surface-2)",
   cursor: "pointer",
   textAlign: "left",
   font: "inherit",
@@ -152,15 +152,15 @@ export default function WeightPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 8 }}>
           Trend
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 13, margin: "0 0 12px" }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 13, margin: "0 0 12px" }}>
           Daily weight fluctuates 1–3 lb from water, food, and sodium. The
           smoothed line is your real signal — the faint dots are individual
           readings.
         </p>
         {history.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : !history.data || history.data.length < 2 ? (
-          <p style={{ color: "#94a3b8" }}>
+          <p style={{ color: "var(--wq-muted)" }}>
             {history.data && history.data.length === 1
               ? "One entry so far — log a few more to see your trend."
               : "No entries yet."}
@@ -180,9 +180,9 @@ export default function WeightPage() {
           History by week
         </h2>
         {history.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : weeks.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No entries yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No entries yet.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {weeks.map((g) => {
@@ -197,12 +197,12 @@ export default function WeightPage() {
                   >
                     <span style={{ display: "flex", flexDirection: "column" }}>
                       <span style={{ fontWeight: 500 }}>{g.label}</span>
-                      <span style={{ color: "#94a3b8", fontSize: 12 }}>
+                      <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
                         avg {formatWeight(g.meanKg, unit)} · {g.entries.length} entr
                         {g.entries.length === 1 ? "y" : "ies"}
                       </span>
                     </span>
-                    <span style={{ color: "#64748b", fontSize: 12 }}>
+                    <span style={{ color: "var(--wq-muted-2)", fontSize: 12 }}>
                       {isOpen ? "▾" : "▸"}
                     </span>
                   </button>
@@ -230,7 +230,7 @@ export default function WeightPage() {
                         >
                           <div style={{ display: "flex", flexDirection: "column" }}>
                             <span style={{ fontWeight: 500 }}>{formatWeight(e.weight_kg, unit)}</span>
-                            <span style={{ color: "#94a3b8", fontSize: 12 }}>
+                            <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
                               {new Date(e.occurred_at).toLocaleString(undefined, {
                                 weekday: "short",
                                 month: "short",

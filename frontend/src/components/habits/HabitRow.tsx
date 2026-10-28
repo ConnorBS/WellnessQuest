@@ -5,7 +5,7 @@ import { useToggleHabit } from "@/hooks/useHabits";
 import type { HabitWithStatus } from "@/lib/schemas";
 
 type Pill = { bg: string; fg: string; label: string };
-const OK_PILL: Pill = { bg: "rgba(100, 116, 139, 0.2)", fg: "#cbd5e1", label: "On track" };
+const OK_PILL: Pill = { bg: "rgba(100, 116, 139, 0.2)", fg: "var(--wq-text-2)", label: "On track" };
 const STATUS_PILL: Record<string, Pill> = {
   done: { bg: "rgba(16, 185, 129, 0.15)", fg: "#6ee7b7", label: "Done" },
   ok: OK_PILL,
@@ -66,9 +66,9 @@ export function HabitRow({ item }: { item: HabitWithStatus }) {
         alignItems: "center",
         gap: 12,
         padding: 12,
-        border: "1px solid #1e293b",
+        border: "1px solid var(--wq-surface-2)",
         borderRadius: 10,
-        background: "rgba(15, 23, 42, 0.4)",
+        background: "var(--wq-surface)",
       }}
     >
       <button
@@ -81,9 +81,9 @@ export function HabitRow({ item }: { item: HabitWithStatus }) {
           width: 44,
           height: 44,
           borderRadius: 22,
-          border: done ? "0" : "2px solid #475569",
-          background: done ? "#10b981" : "transparent",
-          color: done ? "#0b1220" : "#cbd5e1",
+          border: done ? "0" : "2px solid var(--wq-border-strong)",
+          background: done ? "var(--wq-accent)" : "transparent",
+          color: done ? "#0b1220" : "var(--wq-text-2)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -95,12 +95,12 @@ export function HabitRow({ item }: { item: HabitWithStatus }) {
       </button>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ color: "#cbd5e1", lineHeight: 0 }}>
+          <span style={{ color: "var(--wq-text-2)", lineHeight: 0 }}>
             <PresetIcon preset={{ icon_kind: item.habit.icon_kind, icon_key: item.habit.icon_key }} size={20} />
           </span>
           <span style={{ fontWeight: 600 }}>{item.habit.name}</span>
         </div>
-        <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>{subline(item)}</div>
+        <div style={{ color: "var(--wq-muted)", fontSize: 12, marginTop: 2 }}>{subline(item)}</div>
       </div>
       <span
         style={{

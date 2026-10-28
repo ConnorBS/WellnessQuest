@@ -26,8 +26,8 @@ import type { FlowValue, PeriodEntry, PeriodSymptom } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -78,7 +78,7 @@ function DayEditor({
     <Modal title={pretty} onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div>
-          <span style={{ color: "#94a3b8", fontSize: 12 }}>Flow</span>
+          <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Flow</span>
           <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
             {FLOW_ORDER.map((f) => {
               const meta = FLOW_META[f];
@@ -92,9 +92,9 @@ function DayEditor({
                     flex: 1,
                     padding: "8px 4px",
                     borderRadius: 6,
-                    border: selected ? `2px solid ${meta.color}` : "1px solid #334155",
+                    border: selected ? `2px solid ${meta.color}` : "1px solid var(--wq-border)",
                     background: selected ? `${meta.color}33` : "transparent",
-                    color: "#e2e8f0",
+                    color: "var(--wq-text)",
                     fontSize: 12,
                     cursor: "pointer",
                   }}
@@ -107,7 +107,7 @@ function DayEditor({
         </div>
 
         <div>
-          <span style={{ color: "#94a3b8", fontSize: 12 }}>Symptoms</span>
+          <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Symptoms</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
             {SYMPTOM_ORDER.map((s) => {
               const selected = symptoms.includes(s);
@@ -120,9 +120,9 @@ function DayEditor({
                   style={{
                     padding: "6px 10px",
                     borderRadius: 999,
-                    border: selected ? "2px solid #10b981" : "1px solid #334155",
-                    background: selected ? "#10b98122" : "transparent",
-                    color: "#e2e8f0",
+                    border: selected ? "2px solid var(--wq-accent)" : "1px solid var(--wq-border)",
+                    background: selected ? "var(--wq-accent)22" : "transparent",
+                    color: "var(--wq-text)",
                     fontSize: 12,
                     cursor: "pointer",
                   }}
@@ -256,7 +256,7 @@ export default function PeriodPage() {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
           {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-            <div key={i} style={{ textAlign: "center", color: "#64748b", fontSize: 11 }}>
+            <div key={i} style={{ textAlign: "center", color: "var(--wq-muted-2)", fontSize: 11 }}>
               {d}
             </div>
           ))}
@@ -285,9 +285,9 @@ export default function PeriodPage() {
                       ? "2px dashed #fb7185"
                       : isFertile
                         ? "1px dashed #a855f7"
-                        : "1px solid #1e293b",
+                        : "1px solid var(--wq-surface-2)",
                   background: bg,
-                  color: entry ? "#fff" : "#cbd5e1",
+                  color: entry ? "#fff" : "var(--wq-text-2)",
                   fontSize: 12,
                   cursor: "pointer",
                   position: "relative",
@@ -327,7 +327,7 @@ export default function PeriodPage() {
           })}
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12, fontSize: 11, color: "#94a3b8" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12, fontSize: 11, color: "var(--wq-muted)" }}>
           {FLOW_ORDER.map((f) => (
             <span key={f} style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ width: 10, height: 10, borderRadius: 3, background: FLOW_META[f].color, display: "inline-block" }} />
@@ -356,18 +356,18 @@ export default function PeriodPage() {
           Cycle
         </h2>
         <dl style={{ display: "grid", gridTemplateColumns: "160px 1fr", rowGap: 6, fontSize: 14 }}>
-          <dt style={{ color: "#94a3b8" }}>Avg cycle length</dt>
+          <dt style={{ color: "var(--wq-muted)" }}>Avg cycle length</dt>
           <dd>{stats.avgCycleLength ? `${stats.avgCycleLength} days` : "Not enough data"}</dd>
-          <dt style={{ color: "#94a3b8" }}>Avg period length</dt>
+          <dt style={{ color: "var(--wq-muted)" }}>Avg period length</dt>
           <dd>{stats.avgPeriodLength ? `${stats.avgPeriodLength} days` : "—"}</dd>
-          <dt style={{ color: "#94a3b8" }}>Next period (est.)</dt>
+          <dt style={{ color: "var(--wq-muted)" }}>Next period (est.)</dt>
           <dd>{fmt(stats.predictedNextStart)}</dd>
-          <dt style={{ color: "#94a3b8" }}>Fertile window (est.)</dt>
+          <dt style={{ color: "var(--wq-muted)" }}>Fertile window (est.)</dt>
           <dd>
             {stats.fertileStart ? `${fmt(stats.fertileStart)} – ${fmt(stats.fertileEnd)}` : "—"}
           </dd>
         </dl>
-        <p style={{ color: "#64748b", fontSize: 12, marginTop: 10 }}>
+        <p style={{ color: "var(--wq-muted-2)", fontSize: 12, marginTop: 10 }}>
           Estimates from your logged history — averages only, not medical advice, and not a
           reliable form of contraception.
         </p>

@@ -33,7 +33,7 @@ export function BPCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
               + Log
             </button>
           )}
-          <Link href="/blood-pressure" style={{ fontSize: 13, color: "#10b981" }}>
+          <Link href="/blood-pressure" style={{ fontSize: 13, color: "var(--wq-accent)" }}>
             See all →
           </Link>
         </div>
@@ -43,7 +43,7 @@ export function BPCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
       ) : !latest ? (
         <p className="mt-3 text-sm text-slate-400">
           No readings yet —{" "}
-          <Link href="/blood-pressure" style={{ color: "#10b981" }}>
+          <Link href="/blood-pressure" style={{ color: "var(--wq-accent)" }}>
             log your first
           </Link>
           .
@@ -56,10 +56,10 @@ export function BPCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
             </span>
             <BPCategoryChip systolic={latest.systolic} diastolic={latest.diastolic} />
             {latest.pulse != null && (
-              <span style={{ color: "#94a3b8", fontSize: 13 }}>· {latest.pulse} bpm</span>
+              <span style={{ color: "var(--wq-muted)", fontSize: 13 }}>· {latest.pulse} bpm</span>
             )}
           </div>
-          <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
+          <p style={{ color: "var(--wq-muted)", fontSize: 12, marginTop: 2 }}>
             {new Date(latest.occurred_at).toLocaleString(undefined, {
               weekday: "short",
               month: "short",
@@ -69,9 +69,9 @@ export function BPCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
             })}
           </p>
           {hasTarget && (
-            <p style={{ color: "#cbd5e1", fontSize: 13, marginTop: 6 }}>
+            <p style={{ color: "var(--wq-text-2)", fontSize: 13, marginTop: 6 }}>
               Target: {target!.target_systolic}/{target!.target_diastolic} ·{" "}
-              <span style={{ color: "#94a3b8" }}>
+              <span style={{ color: "var(--wq-muted)" }}>
                 {compareToTarget(
                   { systolic: latest.systolic, diastolic: latest.diastolic },
                   {

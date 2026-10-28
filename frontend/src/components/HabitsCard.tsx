@@ -12,7 +12,7 @@ export function HabitsCard() {
     <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
       <header className="flex items-baseline justify-between">
         <h2 className="text-lg font-semibold">Habits</h2>
-        <Link href="/habits" style={{ fontSize: 13, color: "#10b981" }}>
+        <Link href="/habits" style={{ fontSize: 13, color: "var(--wq-accent)" }}>
           See all →
         </Link>
       </header>
@@ -20,7 +20,7 @@ export function HabitsCard() {
         <p className="mt-3 text-sm text-slate-400">Loading…</p>
       ) : !data || data.length === 0 ? (
         <p className="mt-3 text-sm text-slate-400">
-          No habits yet — <Link href="/settings/habits" style={{ color: "#10b981" }}>add some in settings</Link>.
+          No habits yet — <Link href="/settings/habits" style={{ color: "var(--wq-accent)" }}>add some in settings</Link>.
         </p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0", display: "flex", flexDirection: "column", gap: 8 }}>

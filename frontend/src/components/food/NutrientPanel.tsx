@@ -28,9 +28,9 @@ export function NutrientPanel({ totals, dvPercent, compact }: Props) {
   return (
     <div
       style={{
-        border: "1px solid #1e293b",
+        border: "1px solid var(--wq-surface-2)",
         borderRadius: 6,
-        background: "#0b1220",
+        background: "var(--wq-bg)",
         padding: 12,
         fontSize: 13,
       }}
@@ -43,11 +43,11 @@ export function NutrientPanel({ totals, dvPercent, compact }: Props) {
           alignItems: "center",
         }}
       >
-        <span style={{ color: "#64748b", fontWeight: 600 }}>Nutrient</span>
-        <span style={{ color: "#64748b", fontWeight: 600, textAlign: "right" }}>
+        <span style={{ color: "var(--wq-muted-2)", fontWeight: 600 }}>Nutrient</span>
+        <span style={{ color: "var(--wq-muted-2)", fontWeight: 600, textAlign: "right" }}>
           Amount
         </span>
-        <span style={{ color: "#64748b", fontWeight: 600, textAlign: "right" }}>
+        <span style={{ color: "var(--wq-muted-2)", fontWeight: 600, textAlign: "right" }}>
           % DV
         </span>
         {keys.map((key) => {
@@ -69,7 +69,7 @@ export function NutrientPanel({ totals, dvPercent, compact }: Props) {
           );
         })}
       </div>
-      <p style={{ marginTop: 8, marginBottom: 0, fontSize: 11, color: "#64748b" }}>
+      <p style={{ marginTop: 8, marginBottom: 0, fontSize: 11, color: "var(--wq-muted-2)" }}>
         % Daily Value reflects Health Canada Schedule K. Foods labelled 5% or less
         are <em>a little</em>; 15% or more are <em>a lot</em>.
       </p>
@@ -111,12 +111,12 @@ function PanelRow({
 }) {
   return (
     <>
-      <span style={{ color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <span style={{ color: "var(--wq-text-2)", overflow: "hidden", textOverflow: "ellipsis" }}>
         {label}
       </span>
       <span
         style={{
-          color: amount == null ? "#475569" : "#e2e8f0",
+          color: amount == null ? "var(--wq-border-strong)" : "var(--wq-text)",
           textAlign: "right",
           fontVariantNumeric: "tabular-nums",
         }}

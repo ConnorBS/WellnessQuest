@@ -64,8 +64,8 @@ export default function SetupPage() {
     width: "100%",
     padding: 10,
     marginTop: 4,
-    background: "#0f172a",
-    border: "1px solid #334155",
+    background: "var(--wq-surface)",
+    border: "1px solid var(--wq-border)",
     color: "inherit",
     borderRadius: 8,
   };
@@ -73,7 +73,7 @@ export default function SetupPage() {
   return (
     <main style={{ maxWidth: 420, margin: "4rem auto", padding: "0 1rem" }}>
       <h1 style={{ fontSize: 28, marginBottom: 4 }}>Welcome!</h1>
-      <p style={{ color: "#94a3b8", marginBottom: 24, fontSize: 14 }}>
+      <p style={{ color: "var(--wq-muted)", marginBottom: 24, fontSize: 14 }}>
         Get started by creating your admin account.
       </p>
       <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>

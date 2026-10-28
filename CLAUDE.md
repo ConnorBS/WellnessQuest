@@ -411,6 +411,40 @@ under both.
 The service worker generates a `client_id = crypto.randomUUID()` before
 queueing offline POSTs so retries dedupe.
 
+### Colours go through CSS variables (user theming)
+
+Users can recolour the whole app under Settings → Appearance (`users.ui_prefs`,
+validated by `backend/app/schemas/ui_prefs.py`). That works because every
+surface reads a `--wq-*` custom property declared on `:root` in
+`frontend/src/styles/globals.css` and overridden inline on `<html>` by
+`applyTheme` in `frontend/src/lib/theme.ts`. The slots:
+
+| Variable | Default | Use for |
+|---|---|---|
+| `--wq-bg` | `#020617` | page background |
+| `--wq-card` | `rgba(15,23,42,.5)` | tracker panels (`.bg-slate-900/40`) |
+| `--wq-surface` / `--wq-surface-2` | `#0f172a` / `#1e293b` | inputs, modals, dividers, progress tracks |
+| `--wq-border` / `--wq-border-strong` | `#334155` / `#475569` | outlines |
+| `--wq-accent` / `--wq-on-accent` | `#10b981` / `#0b1220` | buttons, bars, active links / text on them |
+| `--wq-text` / `--wq-text-2` | `#e2e8f0` / `#cbd5e1` | headings, values / secondary text |
+| `--wq-muted` / `--wq-muted-2` | `#94a3b8` / `#64748b` | hints, labels |
+
+**Don't write a slate/emerald hex literal in a component** — write
+`var(--wq-muted)` etc., or it won't follow the user's theme. Semantic colours
+(BP category, mood colours, rarity, danger red) are deliberately *not* themed
+and stay as literals in `lib/*.ts`. A per-tracker card tint is just
+`--wq-card` (plus derived surfaces) set on a wrapper via `cardTintStyle`; the
+dashboard and the tracker's own page (`(app)/layout.tsx` → `PATH_FEATURE`)
+both apply it. The user only ever picks the slots in `THEME_SLOTS`; the
+derived ones (`-2`, `surface`, `on-accent`) are computed in `resolveTheme` so
+a light background still gets dark text without the user setting six things.
+Adding a theme slot = `ui_prefs.py` + `theme.ts` (`THEME_SLOTS`,
+`DEFAULT_THEME`, `resolveTheme`) + `schemas.ts` + the `:root` default; no
+migration. Adding a hideable section = `UI_SECTIONS` in `ui_prefs.py` +
+`SECTIONS` / `UiSection` in `theme.ts` + the enum in `schemas.ts` + an
+`isHidden()` check where it renders. Trackers are hidden/ordered via
+`/features`, not here.
+
 ### The utility classes are hand-written, not Tailwind
 
 `frontend/src/styles/globals.css` defines a small set of Tailwind-*looking*

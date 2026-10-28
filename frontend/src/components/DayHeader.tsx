@@ -14,8 +14,8 @@ export function DayHeader() {
     alignItems: "center",
     justifyContent: "center",
     background: "transparent",
-    color: "#cbd5e1",
-    border: "1px solid #334155",
+    color: "var(--wq-text-2)",
+    border: "1px solid var(--wq-border)",
     borderRadius: 8,
     fontSize: 18,
   };
@@ -38,7 +38,7 @@ export function DayHeader() {
           {label}
         </span>
         <span
-          style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}
+          style={{ fontSize: 12, color: "var(--wq-muted)", marginTop: 1 }}
           data-testid="day-header-date"
         >
           {dateLabel}
@@ -47,7 +47,7 @@ export function DayHeader() {
           <button
             type="button"
             onClick={goToToday}
-            style={{ color: "#10b981", fontSize: 12, marginTop: 2 }}
+            style={{ color: "var(--wq-accent)", fontSize: 12, marginTop: 2 }}
           >
             Jump to today
           </button>

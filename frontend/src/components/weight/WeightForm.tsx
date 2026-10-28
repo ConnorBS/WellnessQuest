@@ -14,8 +14,8 @@ interface Props {
 
 const primaryBtn: React.CSSProperties = {
   padding: "10px 14px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 600,
@@ -69,7 +69,7 @@ export function WeightForm({ unit, defaultValue, onSaved }: Props) {
           placeholder={unit === "lb" ? "e.g. 175.0" : "e.g. 79.5"}
           style={{ flex: 1 }}
         />
-        <span style={{ color: "#94a3b8" }}>{unit}</span>
+        <span style={{ color: "var(--wq-muted)" }}>{unit}</span>
       </label>
       <input
         type="text"

@@ -38,10 +38,10 @@ export function QuickAddRecentButton({ entry }: Props) {
         alignItems: "flex-start",
         gap: 2,
         padding: "6px 10px",
-        border: "1px solid #1e293b",
+        border: "1px solid var(--wq-surface-2)",
         borderRadius: 999,
-        color: "#cbd5e1",
-        background: "#0f172a",
+        color: "var(--wq-text-2)",
+        background: "var(--wq-surface)",
         cursor: add.isPending ? "not-allowed" : "pointer",
         opacity: add.isPending ? 0.6 : 1,
         whiteSpace: "nowrap",
@@ -59,7 +59,7 @@ export function QuickAddRecentButton({ entry }: Props) {
       >
         {entry.name}
       </span>
-      <span style={{ fontSize: 11, color: "#94a3b8" }}>+{entry.kcal} kcal</span>
+      <span style={{ fontSize: 11, color: "var(--wq-muted)" }}>+{entry.kcal} kcal</span>
     </button>
   );
 }

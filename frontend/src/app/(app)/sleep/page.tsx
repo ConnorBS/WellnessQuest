@@ -41,7 +41,7 @@ export default function SleepPage() {
             onClick={() => setShowLog(true)}
             data-testid="open-sleep-log"
             style={{
-              background: "#10b981",
+              background: "var(--wq-accent)",
               color: "white",
               border: "none",
               borderRadius: 6,
@@ -82,7 +82,7 @@ export default function SleepPage() {
               >
                 <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                   <span>{formatDuration(e.duration_minutes)}</span>
-                  <span style={{ color: "#94a3b8", fontSize: 12 }}>
+                  <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
                     {formatNight(e.started_at, e.ended_at)}
                     {e.quality_score != null && ` · quality ${e.quality_score}/100`}
                     {` · ${e.source}`}
@@ -95,7 +95,7 @@ export default function SleepPage() {
                   title="Delete session"
                   aria-label="Delete session"
                   style={{
-                    color: "#94a3b8",
+                    color: "var(--wq-muted)",
                     background: "transparent",
                     border: "none",
                     padding: 4,

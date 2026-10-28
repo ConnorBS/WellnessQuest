@@ -13,7 +13,7 @@ export function PainCard() {
     <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
       <header className="flex items-baseline justify-between" style={{ gap: 8 }}>
         <h2 className="text-lg font-semibold">Pain &amp; symptoms</h2>
-        <Link href="/pain" style={{ fontSize: 13, color: "#10b981" }}>
+        <Link href="/pain" style={{ fontSize: 13, color: "var(--wq-accent)" }}>
           See all →
         </Link>
       </header>
@@ -22,7 +22,7 @@ export function PainCard() {
       ) : !latest ? (
         <p className="mt-3 text-sm text-slate-400">
           No check-ins yet —{" "}
-          <Link href="/pain" style={{ color: "#10b981" }}>
+          <Link href="/pain" style={{ color: "var(--wq-accent)" }}>
             log pain &amp; symptoms
           </Link>
           .
@@ -40,14 +40,14 @@ export function PainCard() {
                 alignItems: "center",
                 justifyContent: "center",
                 fontWeight: 700,
-                color: "#0b1220",
+                color: "var(--wq-on-accent)",
               }}
             >
               {latest.pain_level}
             </span>
             <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
               <span style={{ fontSize: 14 }}>Pain level {latest.pain_level}/10</span>
-              <span style={{ color: "#94a3b8", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span style={{ color: "var(--wq-muted)", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {latest.locations.length > 0
                   ? latest.locations.map((l) => REGION_LABELS[l] ?? l).join(", ")
                   : "No areas marked"}
@@ -55,7 +55,7 @@ export function PainCard() {
             </div>
           </div>
           {latest.symptoms.length > 0 && (
-            <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 6 }}>
+            <p style={{ color: "var(--wq-muted)", fontSize: 12, marginTop: 6 }}>
               {latest.symptoms.map((s) => `${s.name} (${s.severity})`).join(" · ")}
             </p>
           )}

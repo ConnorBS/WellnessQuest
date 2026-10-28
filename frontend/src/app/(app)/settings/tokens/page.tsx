@@ -76,7 +76,7 @@ export default function TokensPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            style={{ padding: 8, background: "#0f172a", border: "1px solid #334155", color: "inherit" }}
+            style={{ padding: 8, background: "var(--wq-surface)", border: "1px solid var(--wq-border)", color: "inherit" }}
           />
           <div
             style={{
@@ -103,17 +103,17 @@ export default function TokensPage() {
           </div>
           <button
             type="submit"
-            style={{ padding: "8px 12px", background: "#10b981", color: "#0b1220", border: 0, borderRadius: 8 }}
+            style={{ padding: "8px 12px", background: "var(--wq-accent)", color: "var(--wq-on-accent)", border: 0, borderRadius: 8 }}
           >
             Create
           </button>
         </form>
         {justCreated && (
-          <div style={{ marginTop: 12, padding: 10, border: "1px solid #10b981", borderRadius: 8 }}>
+          <div style={{ marginTop: 12, padding: 10, border: "1px solid var(--wq-accent)", borderRadius: 8 }}>
             <p style={{ marginTop: 0 }}>
               Copy this token now — it will not be shown again:
             </p>
-            <code style={{ wordBreak: "break-all", display: "block", background: "#020617", padding: 8 }}>
+            <code style={{ wordBreak: "break-all", display: "block", background: "var(--wq-bg)", padding: 8 }}>
               {justCreated}
             </code>
           </div>
@@ -126,18 +126,18 @@ export default function TokensPage() {
           Existing tokens
         </h2>
         {tokens.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No tokens yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No tokens yet.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             {tokens.map((t) => (
               <li key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span>
-                  {t.name} <span style={{ color: "#94a3b8", fontSize: 12 }}>· {t.scopes.join(", ")}</span>
+                  {t.name} <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>· {t.scopes.join(", ")}</span>
                 </span>
                 {t.revoked_at ? (
                   <button
                     onClick={() => onRemove(t.id)}
-                    style={{ background: "transparent", color: "#94a3b8", border: 0 }}
+                    style={{ background: "transparent", color: "var(--wq-muted)", border: 0 }}
                   >
                     Remove
                   </button>

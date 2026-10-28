@@ -33,7 +33,7 @@ export function VersionFooter() {
         paddingTop: 12,
         textAlign: "center",
         fontSize: 12,
-        color: "#64748b",
+        color: "var(--wq-muted-2)",
       }}
       title={info.build_timestamp ? `Built ${info.build_timestamp}` : undefined}
     >

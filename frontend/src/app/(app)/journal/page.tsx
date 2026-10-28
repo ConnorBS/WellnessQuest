@@ -16,8 +16,8 @@ import type { JournalEntry } from "@/lib/schemas";
 const subtleBtn: React.CSSProperties = {
   padding: "4px 8px",
   background: "transparent",
-  color: "#cbd5e1",
-  border: "1px solid #334155",
+  color: "var(--wq-text-2)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 12,
 };
@@ -33,8 +33,8 @@ const dangerBtn: React.CSSProperties = {
 
 const primaryBtn: React.CSSProperties = {
   padding: "6px 10px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontSize: 13,
@@ -45,10 +45,10 @@ const textarea: React.CSSProperties = {
   width: "100%",
   minHeight: 96,
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 15,
   lineHeight: 1.5,
   fontFamily: "inherit",
@@ -92,7 +92,7 @@ function EntryRow({ entry }: { entry: JournalEntry }) {
   return (
     <li
       style={{
-        border: "1px solid #1e293b",
+        border: "1px solid var(--wq-surface-2)",
         borderRadius: 10,
         padding: 12,
         display: "flex",
@@ -149,7 +149,7 @@ function EntryRow({ entry }: { entry: JournalEntry }) {
               gap: 8,
             }}
           >
-            <span style={{ color: "#64748b", fontSize: 12 }}>
+            <span style={{ color: "var(--wq-muted-2)", fontSize: 12 }}>
               {timeOf(entry.created_at)}
               {edited ? " · edited" : ""}
             </span>
@@ -198,7 +198,7 @@ export default function JournalPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 4 }}>
           {isToday ? "Today" : formatDay(viewedDay)}
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 12 }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 13, marginBottom: 12 }}>
           Anything worth remembering — what you saw, who you ran into, where you
           went. Use the day arrows above to write into an earlier day.
         </p>
@@ -213,9 +213,9 @@ export default function JournalPage() {
           {isToday ? "Today's notes" : "Notes that day"}
         </h3>
         {day.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : entries.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>Nothing written yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>Nothing written yet.</p>
         ) : (
           <ul
             style={{
@@ -239,16 +239,16 @@ export default function JournalPage() {
           Earlier
         </h3>
         {recent.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : earlier.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>Nothing else written yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>Nothing else written yet.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {earlier.map(([date, items]) => (
               <div key={date}>
                 <p
                   style={{
-                    color: "#94a3b8",
+                    color: "var(--wq-muted)",
                     fontSize: 12,
                     textTransform: "uppercase",
                     letterSpacing: 0.5,

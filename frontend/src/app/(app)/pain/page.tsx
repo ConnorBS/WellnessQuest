@@ -22,8 +22,8 @@ import type { PainEntry, Severity } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
   padding: "10px 14px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 600,
@@ -41,8 +41,8 @@ const dangerBtn: React.CSSProperties = {
 const subtleBtn: React.CSSProperties = {
   padding: "4px 8px",
   background: "transparent",
-  color: "#cbd5e1",
-  border: "1px solid #334155",
+  color: "var(--wq-text-2)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 12,
 };
@@ -121,7 +121,7 @@ function PainLogForm() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
-        <label style={{ color: "#94a3b8", fontSize: 12 }}>
+        <label style={{ color: "var(--wq-muted)", fontSize: 12 }}>
           Pain level: <strong style={{ color: painColor(painLevel) }}>{painLevel}/10</strong>
         </label>
         <input
@@ -136,10 +136,10 @@ function PainLogForm() {
       </div>
 
       <div>
-        <span style={{ color: "#94a3b8", fontSize: 12 }}>Where does it hurt? (tap)</span>
+        <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Where does it hurt? (tap)</span>
         <BodyMap selected={regions} onToggle={toggleRegion} />
         {regions.length > 0 && (
-          <p style={{ color: "#cbd5e1", fontSize: 12, marginTop: 4, textAlign: "center" }}>
+          <p style={{ color: "var(--wq-text-2)", fontSize: 12, marginTop: 4, textAlign: "center" }}>
             {regions.map((r) => REGION_LABELS[r] ?? r).join(", ")}
           </p>
         )}
@@ -147,17 +147,17 @@ function PainLogForm() {
 
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <span style={{ color: "#94a3b8", fontSize: 12 }}>Symptoms</span>
-          <Link href="/settings/pain" style={{ color: "#10b981", fontSize: 12 }}>
+          <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Symptoms</span>
+          <Link href="/settings/pain" style={{ color: "var(--wq-accent)", fontSize: 12 }}>
             Edit list
           </Link>
         </div>
         {catalog.isLoading ? (
-          <p style={{ color: "#94a3b8", fontSize: 13 }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)", fontSize: 13 }}>Loading…</p>
         ) : (catalog.data ?? []).length === 0 ? (
-          <p style={{ color: "#94a3b8", fontSize: 13 }}>
+          <p style={{ color: "var(--wq-muted)", fontSize: 13 }}>
             No symptoms yet — add some under{" "}
-            <Link href="/settings/pain" style={{ color: "#10b981" }}>
+            <Link href="/settings/pain" style={{ color: "var(--wq-accent)" }}>
               Edit list
             </Link>
             .
@@ -181,9 +181,9 @@ function PainLogForm() {
                           style={{
                             padding: "4px 8px",
                             borderRadius: 6,
-                            border: on ? `2px solid ${meta.color}` : "1px solid #334155",
+                            border: on ? `2px solid ${meta.color}` : "1px solid var(--wq-border)",
                             background: on ? `${meta.color}22` : "transparent",
-                            color: "#e2e8f0",
+                            color: "var(--wq-text)",
                             fontSize: 12,
                             cursor: "pointer",
                           }}
@@ -255,13 +255,13 @@ function ThirtyDayStrip({ entries }: { entries: PainEntry[] }) {
           style={{
             aspectRatio: "1",
             borderRadius: 6,
-            border: "1px solid #1e293b",
-            background: d.level != null ? painColor(d.level) : "#0f172a",
+            border: "1px solid var(--wq-surface-2)",
+            background: d.level != null ? painColor(d.level) : "var(--wq-surface)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: 11,
-            color: d.level != null ? "#0b1220" : "#475569",
+            color: d.level != null ? "#0b1220" : "var(--wq-border-strong)",
             fontWeight: 600,
           }}
         >
@@ -296,7 +296,7 @@ export default function PainPage() {
           Last 30 days
         </h2>
         {entries.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No check-ins yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No check-ins yet.</p>
         ) : (
           <ThirtyDayStrip entries={entries} />
         )}
@@ -307,9 +307,9 @@ export default function PainPage() {
           History
         </h2>
         {history.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : entries.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No entries yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No entries yet.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
             {entries.map((e) => (
@@ -320,7 +320,7 @@ export default function PainPage() {
                   justifyContent: "space-between",
                   gap: 8,
                   padding: "8px 0",
-                  borderBottom: "1px solid #1e293b",
+                  borderBottom: "1px solid var(--wq-surface-2)",
                 }}
               >
                 <div style={{ display: "flex", gap: 10, minWidth: 0 }}>
@@ -330,7 +330,7 @@ export default function PainPage() {
                       height: 30,
                       borderRadius: 6,
                       background: painColor(e.pain_level),
-                      color: "#0b1220",
+                      color: "var(--wq-on-accent)",
                       fontWeight: 700,
                       display: "flex",
                       alignItems: "center",
@@ -341,19 +341,19 @@ export default function PainPage() {
                     {e.pain_level}
                   </span>
                   <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                    <span style={{ fontSize: 12, color: "#cbd5e1" }}>
+                    <span style={{ fontSize: 12, color: "var(--wq-text-2)" }}>
                       {e.locations.length > 0
                         ? e.locations.map((l) => REGION_LABELS[l] ?? l).join(", ")
                         : "No areas marked"}
                     </span>
                     {e.symptoms.length > 0 && (
-                      <span style={{ fontSize: 12, color: "#94a3b8" }}>
+                      <span style={{ fontSize: 12, color: "var(--wq-muted)" }}>
                         {e.symptoms
                           .map((s) => `${s.name}: ${s.severity}${s.duration_minutes ? ` (${s.duration_minutes}m)` : ""}`)
                           .join(" · ")}
                       </span>
                     )}
-                    <span style={{ fontSize: 11, color: "#64748b" }}>
+                    <span style={{ fontSize: 11, color: "var(--wq-muted-2)" }}>
                       {new Date(e.occurred_at).toLocaleString(undefined, {
                         weekday: "short",
                         month: "short",

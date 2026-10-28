@@ -111,13 +111,13 @@ export function SleepLogModal({ onClose }: Props) {
           />
         </label>
 
-        <p style={{ margin: 0, fontSize: 13, color: valid ? "#94a3b8" : "#fca5a5" }}>
+        <p style={{ margin: 0, fontSize: 13, color: valid ? "var(--wq-muted)" : "#fca5a5" }}>
           {valid ? `That's ${formatDuration(durationMinutes)} of sleep.` : problem}
         </p>
 
         <label>
           <span style={labelStyle}>
-            Quality <span style={{ color: "#64748b" }}>(optional, 0–100)</span>
+            Quality <span style={{ color: "var(--wq-muted-2)" }}>(optional, 0–100)</span>
           </span>
           <input
             type="number"
@@ -146,8 +146,8 @@ export function SleepLogModal({ onClose }: Props) {
           disabled={disabled}
           data-testid="sleep-log-submit"
           style={{
-            background: disabled ? "#1e293b" : "#10b981",
-            color: disabled ? "#64748b" : "white",
+            background: disabled ? "var(--wq-surface-2)" : "var(--wq-accent)",
+            color: disabled ? "var(--wq-muted-2)" : "white",
             border: "none",
             borderRadius: 6,
             padding: "10px 14px",
@@ -181,17 +181,17 @@ function formatLogError(err: unknown): string {
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 12,
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   marginBottom: 4,
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 14,
 };
 

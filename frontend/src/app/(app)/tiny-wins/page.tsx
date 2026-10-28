@@ -19,17 +19,17 @@ export default function TinyWinsPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 4 }}>
           {isToday ? "Today's tiny wins" : "Tiny wins"}
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 12 }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 13, marginBottom: 12 }}>
           Some days are maintenance days, and that&apos;s okay. Invisible things still count —
           check off whatever you managed. {total > 0 ? `${done} of ${total} done.` : ""}
         </p>
 
         {q.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : total === 0 ? (
-          <p style={{ color: "#94a3b8" }}>
+          <p style={{ color: "var(--wq-muted)" }}>
             No items yet — add some under{" "}
-            <Link href="/settings/tiny-wins" style={{ color: "#10b981" }}>
+            <Link href="/settings/tiny-wins" style={{ color: "var(--wq-accent)" }}>
               Edit list
             </Link>
             .
@@ -46,7 +46,7 @@ export default function TinyWinsPage() {
                     fontSize: 15,
                     padding: "8px 6px",
                     borderRadius: 8,
-                    background: i.done ? "#10b98111" : "transparent",
+                    background: i.done ? "var(--wq-accent)11" : "transparent",
                   }}
                 >
                   <input
@@ -57,7 +57,7 @@ export default function TinyWinsPage() {
                   />
                   <span
                     style={{
-                      color: i.done ? "#64748b" : "#e2e8f0",
+                      color: i.done ? "var(--wq-muted-2)" : "var(--wq-text)",
                       textDecoration: i.done ? "line-through" : "none",
                     }}
                   >
@@ -76,7 +76,7 @@ export default function TinyWinsPage() {
         )}
 
         <p style={{ marginTop: 16 }}>
-          <Link href="/settings/tiny-wins" style={{ color: "#10b981", fontSize: 13 }}>
+          <Link href="/settings/tiny-wins" style={{ color: "var(--wq-accent)", fontSize: 13 }}>
             Edit list
           </Link>
         </p>

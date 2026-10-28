@@ -57,10 +57,10 @@ export function MealGroups({ entries }: { entries: FoodEntry[] }) {
                 marginBottom: 6,
               }}
             >
-              <h3 style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--wq-text-2)" }}>
                 {MEAL_LABELS[k]}
               </h3>
-              <span style={{ fontSize: 12, color: "#94a3b8" }}>{subtotal} kcal</span>
+              <span style={{ fontSize: 12, color: "var(--wq-muted)" }}>{subtotal} kcal</span>
             </header>
             <ul
               style={{
@@ -82,8 +82,8 @@ export function MealGroups({ entries }: { entries: FoodEntry[] }) {
                       justifyContent: "space-between",
                       alignItems: "center",
                       fontSize: 14,
-                      background: "#0f172a",
-                      border: "1px solid #1e293b",
+                      background: "var(--wq-surface)",
+                      border: "1px solid var(--wq-surface-2)",
                       borderRadius: 6,
                       padding: "8px 10px",
                     }}
@@ -114,10 +114,10 @@ export function MealGroups({ entries }: { entries: FoodEntry[] }) {
                       >
                         {e.name}
                         {e.brand ? (
-                          <span style={{ color: "#64748b" }}> · {e.brand}</span>
+                          <span style={{ color: "var(--wq-muted-2)" }}> · {e.brand}</span>
                         ) : null}
                       </span>
-                      <span style={{ fontSize: 12, color: "#94a3b8" }}>
+                      <span style={{ fontSize: 12, color: "var(--wq-muted)" }}>
                         {new Date(e.occurred_at).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -143,7 +143,7 @@ export function MealGroups({ entries }: { entries: FoodEntry[] }) {
                           disabled={del.isPending}
                           title="Delete entry"
                           style={{
-                            color: "#94a3b8",
+                            color: "var(--wq-muted)",
                             background: "transparent",
                             border: "none",
                             cursor: "pointer",

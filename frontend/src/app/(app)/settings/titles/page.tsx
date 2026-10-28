@@ -13,7 +13,7 @@ import { useUpdateMe } from "@/hooks/useUpdateMe";
 import { Title } from "@/lib/schemas";
 
 const RARITY_COLORS: Record<string, string> = {
-  common: "#94a3b8",
+  common: "var(--wq-muted)",
   uncommon: "#4ade80",
   rare: "#60a5fa",
   epic: "#c084fc",
@@ -53,7 +53,7 @@ function TitleRow({
   equipped: boolean;
   onEquip: () => void;
 }) {
-  const color = RARITY_COLORS[title.rarity] ?? "#cbd5e1";
+  const color = RARITY_COLORS[title.rarity] ?? "var(--wq-text-2)";
   return (
     <li
       style={{
@@ -61,7 +61,7 @@ function TitleRow({
         alignItems: "center",
         justifyContent: "space-between",
         padding: "10px 0",
-        borderBottom: "1px solid #1e293b",
+        borderBottom: "1px solid var(--wq-surface-2)",
         gap: 12,
         opacity: title.unlocked ? 1 : 0.55,
       }}
@@ -74,19 +74,19 @@ function TitleRow({
               fontSize: 11,
               textTransform: "uppercase",
               letterSpacing: 1,
-              color: "#64748b",
+              color: "var(--wq-muted-2)",
             }}
           >
             {title.rarity}
           </span>
         </div>
         {title.description && (
-          <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: "var(--wq-muted)", marginTop: 2 }}>
             {title.description}
           </div>
         )}
         {!title.unlocked && (
-          <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Locked</div>
+          <div style={{ fontSize: 12, color: "var(--wq-muted-2)", marginTop: 2 }}>Locked</div>
         )}
       </div>
       {title.unlocked && (
@@ -96,9 +96,9 @@ function TitleRow({
           disabled={equipped}
           style={{
             padding: "6px 12px",
-            background: equipped ? "transparent" : "#10b981",
-            color: equipped ? "#94a3b8" : "#0b1220",
-            border: equipped ? "1px solid #334155" : 0,
+            background: equipped ? "transparent" : "var(--wq-accent)",
+            color: equipped ? "var(--wq-muted)" : "#0b1220",
+            border: equipped ? "1px solid var(--wq-border)" : 0,
             borderRadius: 6,
             fontSize: 13,
             fontWeight: 600,
@@ -132,7 +132,7 @@ export default function TitlesPage() {
   if (!me) {
     return (
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-        <p style={{ color: "#94a3b8" }}>Loading…</p>
+        <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
       </section>
     );
   }
@@ -146,10 +146,10 @@ export default function TitlesPage() {
         {me.equipped_title ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div>
-              <div style={{ color: RARITY_COLORS[me.equipped_title.rarity] ?? "#cbd5e1", fontWeight: 600 }}>
+              <div style={{ color: RARITY_COLORS[me.equipped_title.rarity] ?? "var(--wq-text-2)", fontWeight: 600 }}>
                 {me.equipped_title.name}
               </div>
-              <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", letterSpacing: 1 }}>
+              <div style={{ fontSize: 12, color: "var(--wq-muted-2)", textTransform: "uppercase", letterSpacing: 1 }}>
                 {me.equipped_title.rarity}
               </div>
             </div>
@@ -160,8 +160,8 @@ export default function TitlesPage() {
               style={{
                 padding: "6px 12px",
                 background: "transparent",
-                color: "#94a3b8",
-                border: "1px solid #334155",
+                color: "var(--wq-muted)",
+                border: "1px solid var(--wq-border)",
                 borderRadius: 6,
                 fontSize: 13,
               }}
@@ -170,7 +170,7 @@ export default function TitlesPage() {
             </button>
           </div>
         ) : (
-          <p style={{ color: "#94a3b8", margin: 0 }}>None equipped.</p>
+          <p style={{ color: "var(--wq-muted)", margin: 0 }}>None equipped.</p>
         )}
         <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, marginTop: 12 }}>
           <input
@@ -188,9 +188,9 @@ export default function TitlesPage() {
           Browse
         </h2>
         {categories.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading categories…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading categories…</p>
         ) : !categories.data || categories.data.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>
+          <p style={{ color: "var(--wq-muted)" }}>
             No titles in the catalog yet. Check back after the next deploy.
           </p>
         ) : (
@@ -208,8 +208,8 @@ export default function TitlesPage() {
                       borderRadius: 999,
                       fontSize: 12,
                       background: isActive ? "#1e40af" : "transparent",
-                      color: isActive ? "#e2e8f0" : "#94a3b8",
-                      border: `1px solid ${isActive ? "#3b82f6" : "#334155"}`,
+                      color: isActive ? "var(--wq-text)" : "var(--wq-muted)",
+                      border: `1px solid ${isActive ? "#3b82f6" : "var(--wq-border)"}`,
                       cursor: "pointer",
                     }}
                   >
@@ -245,9 +245,9 @@ export default function TitlesPage() {
                       padding: "4px 12px",
                       borderRadius: 999,
                       fontSize: 12,
-                      background: isActive ? "#0f172a" : "transparent",
-                      color: isActive ? "#e2e8f0" : "#94a3b8",
-                      border: `1px solid ${isActive ? "#475569" : "#1e293b"}`,
+                      background: isActive ? "var(--wq-surface)" : "transparent",
+                      color: isActive ? "var(--wq-text)" : "var(--wq-muted)",
+                      border: `1px solid ${isActive ? "var(--wq-border-strong)" : "var(--wq-surface-2)"}`,
                       cursor: "pointer",
                     }}
                   >
@@ -257,9 +257,9 @@ export default function TitlesPage() {
               })}
             </div>
             {titles.isLoading ? (
-              <p style={{ color: "#94a3b8" }}>Loading…</p>
+              <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
             ) : !titles.data || titles.data.length === 0 ? (
-              <p style={{ color: "#94a3b8" }}>
+              <p style={{ color: "var(--wq-muted)" }}>
                 {lockFilter === "unlocked"
                   ? "Nothing unlocked here yet."
                   : lockFilter === "locked"

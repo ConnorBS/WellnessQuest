@@ -11,8 +11,8 @@ interface Props {
 
 const primaryBtn: React.CSSProperties = {
   padding: "10px 14px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 600,
@@ -83,7 +83,7 @@ export function BPForm({ onSaved }: Props) {
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: "#94a3b8", fontSize: 12 }}>Systolic</span>
+          <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Systolic</span>
           <input
             type="number"
             inputMode="numeric"
@@ -97,9 +97,9 @@ export function BPForm({ onSaved }: Props) {
             style={numberInput}
           />
         </label>
-        <span style={{ color: "#64748b", alignSelf: "flex-end", paddingBottom: 8 }}>/</span>
+        <span style={{ color: "var(--wq-muted-2)", alignSelf: "flex-end", paddingBottom: 8 }}>/</span>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: "#94a3b8", fontSize: 12 }}>Diastolic</span>
+          <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Diastolic</span>
           <input
             type="number"
             inputMode="numeric"
@@ -114,7 +114,7 @@ export function BPForm({ onSaved }: Props) {
           />
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: "#94a3b8", fontSize: 12 }}>Pulse (optional)</span>
+          <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Pulse (optional)</span>
           <input
             type="number"
             inputMode="numeric"
@@ -127,7 +127,7 @@ export function BPForm({ onSaved }: Props) {
             style={numberInput}
           />
         </label>
-        <span style={{ color: "#94a3b8", fontSize: 12, alignSelf: "flex-end", paddingBottom: 12 }}>
+        <span style={{ color: "var(--wq-muted)", fontSize: 12, alignSelf: "flex-end", paddingBottom: 12 }}>
           mmHg
         </span>
       </div>

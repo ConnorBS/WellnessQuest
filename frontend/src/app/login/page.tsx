@@ -57,7 +57,7 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={{ width: "100%", padding: 8, marginTop: 4, background: "#0f172a", border: "1px solid #334155", color: "inherit" }}
+            style={{ width: "100%", padding: 8, marginTop: 4, background: "var(--wq-surface)", border: "1px solid var(--wq-border)", color: "inherit" }}
           />
         </label>
         <label>
@@ -68,10 +68,10 @@ export default function LoginPage() {
             minLength={1}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            style={{ width: "100%", padding: 8, marginTop: 4, background: "#0f172a", border: "1px solid #334155", color: "inherit" }}
+            style={{ width: "100%", padding: 8, marginTop: 4, background: "var(--wq-surface)", border: "1px solid var(--wq-border)", color: "inherit" }}
           />
         </label>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#cbd5e1" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--wq-text-2)" }}>
           <input
             type="checkbox"
             checked={remember}
@@ -83,7 +83,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={busy}
-          style={{ padding: "10px 14px", background: "#10b981", color: "#0b1220", border: 0, borderRadius: 8 }}
+          style={{ padding: "10px 14px", background: "var(--wq-accent)", color: "var(--wq-on-accent)", border: 0, borderRadius: 8 }}
         >
           {busy ? "Signing in..." : "Sign in"}
         </button>

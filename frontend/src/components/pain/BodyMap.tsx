@@ -24,8 +24,8 @@ export function BodyMap({ selected, onToggle }: Props) {
             {REGIONS.filter((r) => r.view === view).map((r) => {
               const on = selected.includes(r.key);
               const common = {
-                fill: on ? ACCENT : "#1e293b",
-                stroke: on ? "#fca5a5" : "#475569",
+                fill: on ? ACCENT : "var(--wq-surface-2)",
+                stroke: on ? "#fca5a5" : "var(--wq-border-strong)",
                 strokeWidth: 0.8,
                 style: { cursor: "pointer" },
                 onClick: () => onToggle(r.key),
@@ -56,7 +56,7 @@ export function BodyMap({ selected, onToggle }: Props) {
               );
             })}
           </svg>
-          <figcaption style={{ color: "#94a3b8", fontSize: 11, textTransform: "capitalize" }}>
+          <figcaption style={{ color: "var(--wq-muted)", fontSize: 11, textTransform: "capitalize" }}>
             {view}
           </figcaption>
         </figure>

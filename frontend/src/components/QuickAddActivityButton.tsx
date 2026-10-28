@@ -32,12 +32,12 @@ export function QuickAddActivityButton({ preset, minutes, label }: Props) {
       data-testid={`quick-add-activity-${duration}`}
     >
       {preset && (
-        <span style={{ color: "#cbd5e1", lineHeight: 0 }}>
+        <span style={{ color: "var(--wq-text-2)", lineHeight: 0 }}>
           <PresetIcon preset={preset} size={28} />
         </span>
       )}
       {displayLabel && (
-        <span style={{ fontSize: 12, color: "#cbd5e1", textAlign: "center", lineHeight: 1.15 }}>
+        <span style={{ fontSize: 12, color: "var(--wq-text-2)", textAlign: "center", lineHeight: 1.15 }}>
           {displayLabel}
         </span>
       )}

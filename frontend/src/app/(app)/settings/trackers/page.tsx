@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   useFeatureList,
   useReorderFeatures,
@@ -9,8 +11,8 @@ import {
 const arrowBtn: React.CSSProperties = {
   padding: "2px 8px",
   background: "transparent",
-  color: "#cbd5e1",
-  border: "1px solid #334155",
+  color: "var(--wq-text-2)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 12,
   lineHeight: 1.2,
@@ -41,14 +43,19 @@ export default function TrackersSettingsPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 8 }}>
           Trackers
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 16 }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 14, marginBottom: 16 }}>
           Turn a tracker off to hide it everywhere — its dashboard card, its top-nav
           link, and its settings page all disappear (your data is kept). Use the arrows
-          to set the order your cards appear on the dashboard.
+          to set the order your cards appear on the dashboard. Colours and the
+          non-tracker sections (XP bar, streaks, footer) live under{" "}
+          <Link href="/settings/appearance" style={{ color: "var(--wq-accent)" }}>
+            Appearance
+          </Link>
+          .
         </p>
 
         {isLoading || !data ? (
-          <p style={{ color: "#94a3b8" }}>Loading...</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading...</p>
         ) : (
           <ul style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {items.map((f, i) => (

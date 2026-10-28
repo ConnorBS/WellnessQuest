@@ -145,7 +145,7 @@ export function EditPainEntryDrawer({ entry, onClose }: Props) {
         <span style={fieldLabel}>Where does it hurt? (tap)</span>
         <BodyMap selected={regions} onToggle={toggleRegion} />
         {regions.length > 0 && (
-          <p style={{ color: "#cbd5e1", fontSize: 12, marginTop: 4, textAlign: "center" }}>
+          <p style={{ color: "var(--wq-text-2)", fontSize: 12, marginTop: 4, textAlign: "center" }}>
             {regions.map((r) => REGION_LABELS[r] ?? r).join(", ")}
           </p>
         )}
@@ -154,9 +154,9 @@ export function EditPainEntryDrawer({ entry, onClose }: Props) {
       <div>
         <span style={fieldLabel}>Symptoms</span>
         {catalog.isLoading ? (
-          <p style={{ color: "#94a3b8", fontSize: 13 }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)", fontSize: 13 }}>Loading…</p>
         ) : rows.length === 0 ? (
-          <p style={{ color: "#94a3b8", fontSize: 13 }}>No symptoms in your list.</p>
+          <p style={{ color: "var(--wq-muted)", fontSize: 13 }}>No symptoms in your list.</p>
         ) : (
           <ul
             style={{
@@ -186,9 +186,9 @@ export function EditPainEntryDrawer({ entry, onClose }: Props) {
                           style={{
                             padding: "4px 8px",
                             borderRadius: 6,
-                            border: on ? `2px solid ${meta.color}` : "1px solid #334155",
+                            border: on ? `2px solid ${meta.color}` : "1px solid var(--wq-border)",
                             background: on ? `${meta.color}22` : "transparent",
-                            color: "#e2e8f0",
+                            color: "var(--wq-text)",
                             fontSize: 12,
                             cursor: "pointer",
                           }}

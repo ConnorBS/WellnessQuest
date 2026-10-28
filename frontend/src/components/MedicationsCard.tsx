@@ -13,7 +13,7 @@ export function MedicationsCard() {
     <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
       <header className="flex items-baseline justify-between" style={{ gap: 8 }}>
         <h2 className="text-lg font-semibold">Medications</h2>
-        <Link href="/medications" style={{ fontSize: 13, color: "#10b981" }}>
+        <Link href="/medications" style={{ fontSize: 13, color: "var(--wq-accent)" }}>
           See all →
         </Link>
       </header>
@@ -22,14 +22,14 @@ export function MedicationsCard() {
       ) : meds.length === 0 ? (
         <p className="mt-3 text-sm text-slate-400">
           Nothing recorded —{" "}
-          <Link href="/medications" style={{ color: "#10b981" }}>
+          <Link href="/medications" style={{ color: "var(--wq-accent)" }}>
             add a medication
           </Link>
           .
         </p>
       ) : (
         <>
-          <p style={{ color: "#94a3b8", fontSize: 13, marginTop: 6 }}>
+          <p style={{ color: "var(--wq-muted)", fontSize: 13, marginTop: 6 }}>
             {meds.length} currently taking
           </p>
           <ul
@@ -46,9 +46,9 @@ export function MedicationsCard() {
               const dose = doseText(m);
               return (
                 <li key={m.id} style={{ fontSize: 14, display: "flex", gap: 8 }}>
-                  <span style={{ color: "#e2e8f0" }}>{m.name}</span>
+                  <span style={{ color: "var(--wq-text)" }}>{m.name}</span>
                   {dose && (
-                    <span style={{ color: "#94a3b8", fontSize: 13 }}>{dose}</span>
+                    <span style={{ color: "var(--wq-muted)", fontSize: 13 }}>{dose}</span>
                   )}
                 </li>
               );
@@ -57,7 +57,7 @@ export function MedicationsCard() {
           {meds.length > 4 && (
             <Link
               href="/medications"
-              style={{ color: "#10b981", fontSize: 12, display: "inline-block", marginTop: 6 }}
+              style={{ color: "var(--wq-accent)", fontSize: 12, display: "inline-block", marginTop: 6 }}
             >
               +{meds.length - 4} more
             </Link>

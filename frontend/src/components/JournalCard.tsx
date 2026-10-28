@@ -32,7 +32,7 @@ export function JournalCard({ showQuickLog = false }: { showQuickLog?: boolean }
               + Note
             </button>
           )}
-          <Link href="/journal" style={{ fontSize: 13, color: "#10b981" }}>
+          <Link href="/journal" style={{ fontSize: 13, color: "var(--wq-accent)" }}>
             See all →
           </Link>
         </div>
@@ -42,17 +42,17 @@ export function JournalCard({ showQuickLog = false }: { showQuickLog?: boolean }
       ) : count === 0 ? (
         <p className="mt-3 text-sm text-slate-400">
           Nothing written{isToday ? " today" : " for this day"} yet —{" "}
-          <Link href="/journal" style={{ color: "#10b981" }}>
+          <Link href="/journal" style={{ color: "var(--wq-accent)" }}>
             note something down
           </Link>
           .
         </p>
       ) : (
         <>
-          <p style={{ fontSize: 14, marginTop: 8, color: "#e2e8f0" }}>
+          <p style={{ fontSize: 14, marginTop: 8, color: "var(--wq-text)" }}>
             {journalPreview(latest?.body ?? "")}
           </p>
-          <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 6 }}>
+          <p style={{ color: "var(--wq-muted)", fontSize: 12, marginTop: 6 }}>
             {count} note{count === 1 ? "" : "s"}
             {isToday ? " today" : " that day"}.
           </p>

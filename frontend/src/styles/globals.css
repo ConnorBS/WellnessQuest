@@ -3,6 +3,22 @@
 
 :root {
   color-scheme: dark;
+  /* Palette. Every colour in the app reads one of these so a user's
+     Settings -> Appearance picks (applied as inline overrides on <html> by
+     lib/theme.ts) restyle the whole UI. Keep the defaults in sync with
+     DEFAULT_THEME in lib/theme.ts. */
+  --wq-bg: #020617;            /* page background */
+  --wq-card: rgba(15, 23, 42, 0.5); /* tracker panels */
+  --wq-surface: #0f172a;       /* inputs, modals, inset panels */
+  --wq-surface-2: #1e293b;     /* dividers, hover, progress tracks */
+  --wq-border: #334155;
+  --wq-border-strong: #475569;
+  --wq-accent: #10b981;
+  --wq-on-accent: #0b1220;     /* text on an accent-filled button */
+  --wq-text: #e2e8f0;
+  --wq-text-2: #cbd5e1;
+  --wq-muted: #94a3b8;
+  --wq-muted-2: #64748b;
 }
 
 *,
@@ -15,8 +31,8 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: #020617;
-  color: #e2e8f0;
+  background: var(--wq-bg);
+  color: var(--wq-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
@@ -62,9 +78,9 @@ select,
 textarea {
   font-family: inherit;
   font-size: 16px;
-  color: #e2e8f0;
-  background: #0f172a;
-  border: 1px solid #334155;
+  color: var(--wq-text);
+  background: var(--wq-surface);
+  border: 1px solid var(--wq-border);
   border-radius: 6px;
   padding: 10px 12px;
   -webkit-appearance: none;
@@ -74,7 +90,7 @@ textarea {
 input[type="file"] {
   padding: 8px;
   background: transparent;
-  border: 1px dashed #334155;
+  border: 1px dashed var(--wq-border);
 }
 
 input[type="radio"],
@@ -82,21 +98,21 @@ input[type="checkbox"] {
   width: 18px;
   height: 18px;
   padding: 0;
-  accent-color: #10b981;
+  accent-color: var(--wq-accent);
   -webkit-appearance: auto;
   appearance: auto;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #64748b;
+  color: var(--wq-muted-2);
 }
 
 input:focus,
 select:focus,
 textarea:focus,
 button:focus-visible {
-  outline: 2px solid #10b981;
+  outline: 2px solid var(--wq-accent);
   outline-offset: 1px;
 }
 
@@ -105,15 +121,15 @@ button:focus-visible {
 .rounded-xl { border-radius: 14px; }
 .rounded-md { border-radius: 8px; }
 .rounded-full { border-radius: 9999px; }
-.border { border: 1px solid #334155; }
-.border-slate-600 { border-color: #475569; }
-.border-slate-700 { border-color: #334155; }
-.border-emerald-500 { border-color: #10b981; }
-.bg-slate-900\/40 { background: rgba(15, 23, 42, 0.5); }
-.bg-slate-950 { background: #020617; }
-.bg-slate-900 { background: #0f172a; }
-.bg-slate-800 { background: #1e293b; }
-.bg-emerald-500 { background: #10b981; }
+.border { border: 1px solid var(--wq-border); }
+.border-slate-600 { border-color: var(--wq-border-strong); }
+.border-slate-700 { border-color: var(--wq-border); }
+.border-emerald-500 { border-color: var(--wq-accent); }
+.bg-slate-900\/40 { background: var(--wq-card); }
+.bg-slate-950 { background: var(--wq-bg); }
+.bg-slate-900 { background: var(--wq-surface); }
+.bg-slate-800 { background: var(--wq-surface-2); }
+.bg-emerald-500 { background: var(--wq-accent); }
 .bg-sky-500 { background: #0ea5e9; }
 .bg-amber-400 { background: #fbbf24; }
 /* Steps and sleep progress fills. This is a hand-written utility sheet, not
@@ -161,18 +177,18 @@ button:focus-visible {
 .font-medium { font-weight: 500; }
 .font-semibold { font-weight: 600; }
 .font-normal { font-weight: 400; }
-.text-slate-100 { color: #e2e8f0; }
-.text-slate-200 { color: #e2e8f0; }
-.text-slate-300 { color: #cbd5e1; }
-.text-slate-400 { color: #94a3b8; }
+.text-slate-100 { color: var(--wq-text); }
+.text-slate-200 { color: var(--wq-text); }
+.text-slate-300 { color: var(--wq-text-2); }
+.text-slate-400 { color: var(--wq-muted); }
 .text-emerald-300 { color: #6ee7b7; }
-.text-emerald-500 { color: #10b981; }
+.text-emerald-500 { color: var(--wq-accent); }
 .text-sky-300 { color: #7dd3fc; }
 .antialiased { -webkit-font-smoothing: antialiased; }
 .transition-all { transition: all 200ms ease; }
 .disabled\:opacity-50:disabled { opacity: 0.5; }
-.hover\:bg-slate-800:hover { background: #1e293b; }
-.active\:bg-slate-800:active { background: #1e293b; }
+.hover\:bg-slate-800:hover { background: var(--wq-surface-2); }
+.active\:bg-slate-800:active { background: var(--wq-surface-2); }
 
 /* Quick-add tappable target: ensures >=44px tap area per Apple HIG / Material. */
 .wq-tap {
@@ -193,7 +209,7 @@ button:focus-visible {
   justify-content: space-between;
   gap: 8px 14px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: 1px solid var(--wq-surface-2);
 }
 .wq-brand {
   font-weight: 600;
@@ -205,16 +221,16 @@ button:focus-visible {
   align-items: center;
   gap: 14px;
   font-size: 14px;
-  color: #cbd5e1;
+  color: var(--wq-text-2);
 }
 .wq-nav-link {
-  color: #cbd5e1;
+  color: var(--wq-text-2);
 }
 .wq-nav-link[data-active="true"] {
-  color: #10b981;
+  color: var(--wq-accent);
 }
 .wq-signout {
-  color: #94a3b8;
+  color: var(--wq-muted);
 }
 .wq-nav-toggle {
   display: none;
@@ -224,8 +240,8 @@ button:focus-visible {
   height: 40px;
   font-size: 20px;
   line-height: 1;
-  color: #cbd5e1;
-  border: 1px solid #1e293b;
+  color: var(--wq-text-2);
+  border: 1px solid var(--wq-surface-2);
   border-radius: 8px;
 }
 
@@ -246,7 +262,7 @@ button:focus-visible {
   }
   .wq-nav-link {
     padding: 12px 2px;
-    border-top: 1px solid #0f172a;
+    border-top: 1px solid var(--wq-surface);
     text-align: left;
   }
 }

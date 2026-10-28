@@ -100,7 +100,7 @@ export function WeightSparkline({
       {/* Hero line: smoothed trend if we have it, raw entries otherwise. */}
       <path
         d={heroPath}
-        stroke="#10b981"
+        stroke="var(--wq-accent)"
         strokeWidth={2}
         fill="none"
         strokeLinejoin="round"
@@ -113,11 +113,11 @@ export function WeightSparkline({
           cx={p.x}
           cy={p.y}
           r={1.5}
-          fill="#10b981"
+          fill="var(--wq-accent)"
           opacity={trendPoints ? 0.35 : 1}
         />
       ))}
-      {last && <circle cx={last.x} cy={last.y} r={3} fill="#10b981" />}
+      {last && <circle cx={last.x} cy={last.y} r={3} fill="var(--wq-accent)" />}
     </svg>
   );
 }

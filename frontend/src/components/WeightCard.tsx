@@ -44,7 +44,7 @@ export function WeightCard({ showQuickLog = false }: { showQuickLog?: boolean })
               + Log
             </button>
           )}
-          <Link href="/weight" style={{ fontSize: 13, color: "#10b981" }}>
+          <Link href="/weight" style={{ fontSize: 13, color: "var(--wq-accent)" }}>
             See all →
           </Link>
         </div>
@@ -53,7 +53,7 @@ export function WeightCard({ showQuickLog = false }: { showQuickLog?: boolean })
         <p className="mt-3 text-sm text-slate-400">Loading…</p>
       ) : !latest ? (
         <p className="mt-3 text-sm text-slate-400">
-          No entries yet — <Link href="/weight" style={{ color: "#10b981" }}>log your first</Link>.
+          No entries yet — <Link href="/weight" style={{ color: "var(--wq-accent)" }}>log your first</Link>.
         </p>
       ) : (
         <>
@@ -127,14 +127,14 @@ function TrendHeadline({
         <span style={{ fontSize: 28, fontWeight: 700 }}>
           {formatWeight(trendKg, unit)}
         </span>
-        <span style={{ color: "#94a3b8", fontSize: 13 }}>trend</span>
+        <span style={{ color: "var(--wq-muted)", fontSize: 13 }}>trend</span>
       </div>
       {trendDelta != null && (
-        <p style={{ color: "#cbd5e1", fontSize: 13, marginTop: 2 }}>
+        <p style={{ color: "var(--wq-text-2)", fontSize: 13, marginTop: 2 }}>
           {formatTrendDelta(trendDelta, unit, lookbackDays)}
         </p>
       )}
-      <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
+      <p style={{ color: "var(--wq-muted)", fontSize: 12, marginTop: 2 }}>
         Last logged: {formatWeight(latestKg, unit)} ·{" "}
         {new Date(latestAt).toLocaleDateString(undefined, {
           weekday: "short",
@@ -143,7 +143,7 @@ function TrendHeadline({
         })}
       </p>
       {showRawDelta && rawDelta != null && (
-        <p style={{ color: "#64748b", fontSize: 12, marginTop: 2 }}>
+        <p style={{ color: "var(--wq-muted-2)", fontSize: 12, marginTop: 2 }}>
           Reading-to-reading: {formatWeightDelta(rawDelta, unit)}
         </p>
       )}
@@ -167,14 +167,14 @@ function ColdStartHeadline({
           {formatWeight(latestKg, unit)}
         </span>
       </div>
-      <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
+      <p style={{ color: "var(--wq-muted)", fontSize: 12, marginTop: 2 }}>
         {new Date(latestAt).toLocaleDateString(undefined, {
           weekday: "short",
           month: "short",
           day: "numeric",
         })}
       </p>
-      <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 6 }}>
+      <p style={{ color: "var(--wq-muted)", fontSize: 12, marginTop: 6 }}>
         Log a few more readings over the next week or two and we&apos;ll show
         your trend here. Day-to-day numbers fluctuate too much to be a useful
         signal on their own.
@@ -205,9 +205,9 @@ function TargetLine({
     const pct = total === 0 ? 0 : Math.max(0, Math.min(100, (moved / total) * 100));
     return (
       <div style={{ marginTop: 8 }}>
-        <p style={{ color: "#cbd5e1", fontSize: 13 }}>
+        <p style={{ color: "var(--wq-text-2)", fontSize: 13 }}>
           Target: {formatWeight(target, unit)} ·{" "}
-          <span style={{ color: "#94a3b8" }}>{pct.toFixed(0)}% from start</span>
+          <span style={{ color: "var(--wq-muted)" }}>{pct.toFixed(0)}% from start</span>
         </p>
         <div
           aria-hidden
@@ -215,7 +215,7 @@ function TargetLine({
             marginTop: 6,
             height: 4,
             borderRadius: 2,
-            background: "#1e293b",
+            background: "var(--wq-surface-2)",
             overflow: "hidden",
           }}
         >
@@ -223,7 +223,7 @@ function TargetLine({
             style={{
               width: `${pct}%`,
               height: "100%",
-              background: "#10b981",
+              background: "var(--wq-accent)",
               opacity: 0.7,
             }}
           />
@@ -234,7 +234,7 @@ function TargetLine({
 
   if (atTarget) {
     return (
-      <p style={{ color: "#cbd5e1", fontSize: 13, marginTop: 8 }}>
+      <p style={{ color: "var(--wq-text-2)", fontSize: 13, marginTop: 8 }}>
         Target: {formatWeight(target, unit)} ·{" "}
         <span style={{ color: "#6ee7b7" }}>at target</span>
       </p>
@@ -244,7 +244,7 @@ function TargetLine({
   // No starting point yet — show the target weight neutrally, no deficit.
   // Suppress kg display value comparison entirely; users can see it on /weight.
   return (
-    <p style={{ color: "#cbd5e1", fontSize: 13, marginTop: 8 }}>
+    <p style={{ color: "var(--wq-text-2)", fontSize: 13, marginTop: 8 }}>
       Target: {formatWeight(target, unit)}
     </p>
   );
