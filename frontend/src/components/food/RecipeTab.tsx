@@ -47,8 +47,8 @@ export function RecipeTab({ meal, onLogged }: Props) {
         onClick={openNew}
         style={{
           background: "transparent",
-          color: "#10b981",
-          border: "1px dashed #1e293b",
+          color: "var(--wq-accent)",
+          border: "1px dashed var(--wq-surface-2)",
           borderRadius: 6,
           padding: "10px",
           fontSize: 13,
@@ -59,13 +59,13 @@ export function RecipeTab({ meal, onLogged }: Props) {
       </button>
 
       {recipes.isLoading ? (
-        <p style={{ fontSize: 13, color: "#94a3b8" }}>Loading recipes…</p>
+        <p style={{ fontSize: 13, color: "var(--wq-muted)" }}>Loading recipes…</p>
       ) : recipes.isError ? (
         <p style={{ fontSize: 13, color: "#fca5a5" }}>
           Could not load recipes.
         </p>
       ) : !recipes.data || recipes.data.length === 0 ? (
-        <p style={{ fontSize: 12, color: "#64748b" }}>
+        <p style={{ fontSize: 12, color: "var(--wq-muted-2)" }}>
           No recipes yet. Build one to log multi-ingredient dishes (like
           “my scrambled eggs”) in a single tap.
         </p>
@@ -154,8 +154,8 @@ function RecipeRow({ recipe, expanded, meal, onToggle, onEdit, onLogged }: RowPr
   return (
     <li
       style={{
-        background: "#0b1220",
-        border: "1px solid #1e293b",
+        background: "var(--wq-bg)",
+        border: "1px solid var(--wq-surface-2)",
         borderRadius: 6,
         padding: 0,
       }}
@@ -168,16 +168,16 @@ function RecipeRow({ recipe, expanded, meal, onToggle, onEdit, onLogged }: RowPr
           textAlign: "left",
           background: "transparent",
           border: "none",
-          color: "#e2e8f0",
+          color: "var(--wq-text)",
           padding: "10px",
           cursor: "pointer",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
           <span style={{ fontSize: 14, fontWeight: 500 }}>{recipe.label}</span>
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>{perServingKcal} kcal/serving</span>
+          <span style={{ fontSize: 12, color: "var(--wq-muted)" }}>{perServingKcal} kcal/serving</span>
         </div>
-        <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+        <div style={{ fontSize: 11, color: "var(--wq-muted-2)", marginTop: 2 }}>
           Serves {yields}
           {recipe.serving_label ? ` · ${recipe.serving_label}` : ""}
         </div>
@@ -186,7 +186,7 @@ function RecipeRow({ recipe, expanded, meal, onToggle, onEdit, onLogged }: RowPr
       {expanded ? (
         <div
           style={{
-            borderTop: "1px solid #1e293b",
+            borderTop: "1px solid var(--wq-surface-2)",
             padding: 10,
             display: "flex",
             flexDirection: "column",
@@ -194,7 +194,7 @@ function RecipeRow({ recipe, expanded, meal, onToggle, onEdit, onLogged }: RowPr
           }}
         >
           <label>
-            <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
+            <span style={{ display: "block", fontSize: 12, color: "var(--wq-muted)", marginBottom: 4 }}>
               How many servings?
             </span>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -215,10 +215,10 @@ function RecipeRow({ recipe, expanded, meal, onToggle, onEdit, onLogged }: RowPr
                 style={{
                   flex: 1,
                   padding: "8px 10px",
-                  background: "#020617",
-                  border: "1px solid #1e293b",
+                  background: "var(--wq-bg)",
+                  border: "1px solid var(--wq-surface-2)",
                   borderRadius: 6,
-                  color: "#e2e8f0",
+                  color: "var(--wq-text)",
                   fontSize: 14,
                   textAlign: "center",
                 }}
@@ -233,7 +233,7 @@ function RecipeRow({ recipe, expanded, meal, onToggle, onEdit, onLogged }: RowPr
               </button>
             </div>
           </label>
-          <div style={{ fontSize: 12, color: "#cbd5e1" }}>
+          <div style={{ fontSize: 12, color: "var(--wq-text-2)" }}>
             Logs {loggedKcal} kcal
           </div>
           {err ? <div style={{ fontSize: 13, color: "#fca5a5" }}>{err}</div> : null}
@@ -244,8 +244,8 @@ function RecipeRow({ recipe, expanded, meal, onToggle, onEdit, onLogged }: RowPr
               disabled={log.isPending}
               style={{
                 flex: 1,
-                background: log.isPending ? "#1e293b" : "#10b981",
-                color: log.isPending ? "#64748b" : "white",
+                background: log.isPending ? "var(--wq-surface-2)" : "var(--wq-accent)",
+                color: log.isPending ? "var(--wq-muted-2)" : "white",
                 border: "none",
                 borderRadius: 6,
                 padding: "10px 14px",
@@ -261,8 +261,8 @@ function RecipeRow({ recipe, expanded, meal, onToggle, onEdit, onLogged }: RowPr
               onClick={onEdit}
               style={{
                 background: "transparent",
-                color: "#cbd5e1",
-                border: "1px solid #1e293b",
+                color: "var(--wq-text-2)",
+                border: "1px solid var(--wq-surface-2)",
                 borderRadius: 6,
                 padding: "8px 12px",
                 fontSize: 13,
@@ -278,7 +278,7 @@ function RecipeRow({ recipe, expanded, meal, onToggle, onEdit, onLogged }: RowPr
               style={{
                 background: "transparent",
                 color: "#fca5a5",
-                border: "1px solid #1e293b",
+                border: "1px solid var(--wq-surface-2)",
                 borderRadius: 6,
                 padding: "8px 12px",
                 fontSize: 13,
@@ -298,9 +298,9 @@ const stepper: React.CSSProperties = {
   width: 40,
   height: 40,
   fontSize: 18,
-  background: "#1e293b",
-  color: "#e2e8f0",
-  border: "1px solid #334155",
+  background: "var(--wq-surface-2)",
+  color: "var(--wq-text)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   cursor: "pointer",
   fontWeight: 600,

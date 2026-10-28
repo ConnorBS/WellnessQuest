@@ -85,8 +85,8 @@ export function NutritionLabelScanner({ onScanned, variant = "ghost", label }: P
 function buttonStyleFor(variant: "primary" | "ghost", busy: boolean): React.CSSProperties {
   if (variant === "primary") {
     return {
-      background: busy ? "#1e293b" : "#10b981",
-      color: busy ? "#64748b" : "white",
+      background: busy ? "var(--wq-surface-2)" : "var(--wq-accent)",
+      color: busy ? "var(--wq-muted-2)" : "white",
       border: "none",
       borderRadius: 6,
       padding: "8px 12px",
@@ -97,8 +97,8 @@ function buttonStyleFor(variant: "primary" | "ghost", busy: boolean): React.CSSP
   }
   return {
     background: "transparent",
-    color: busy ? "#64748b" : "#10b981",
-    border: "1px solid #1e293b",
+    color: busy ? "var(--wq-muted-2)" : "var(--wq-accent)",
+    border: "1px solid var(--wq-surface-2)",
     borderRadius: 6,
     padding: "8px 12px",
     fontSize: 13,
@@ -110,7 +110,7 @@ function buttonStyleFor(variant: "primary" | "ghost", busy: boolean): React.CSSP
 function uploadButtonStyle(busy: boolean): React.CSSProperties {
   return {
     background: "transparent",
-    color: "#94a3b8",
+    color: "var(--wq-muted)",
     border: "none",
     borderRadius: 8,
     padding: "6px 8px",

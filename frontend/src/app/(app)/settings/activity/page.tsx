@@ -16,8 +16,8 @@ import type { ActivityPreset } from "@/lib/schemas";
 
 const inputStyle: React.CSSProperties = {
   padding: 8,
-  background: "#0f172a",
-  border: "1px solid #334155",
+  background: "var(--wq-surface)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   color: "inherit",
   width: 120,
@@ -25,8 +25,8 @@ const inputStyle: React.CSSProperties = {
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -44,8 +44,8 @@ const dangerBtn: React.CSSProperties = {
 const ghostBtn: React.CSSProperties = {
   padding: "6px 10px",
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #334155",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 13,
 };
@@ -81,7 +81,7 @@ export default function ActivitySettingsPage() {
             onChange={(e) => setGoalDraft(Number(e.target.value) || 0)}
             style={inputStyle}
           />
-          <span style={{ color: "#94a3b8" }}>min / day</span>
+          <span style={{ color: "var(--wq-muted)" }}>min / day</span>
           <button
             type="button"
             disabled={
@@ -95,7 +95,7 @@ export default function ActivitySettingsPage() {
             {updateGoal.isPending ? "Saving…" : "Save"}
           </button>
         </div>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           The progress bar on the Activity page tracks against this target.
         </p>
       </section>
@@ -111,7 +111,7 @@ export default function ActivitySettingsPage() {
         </header>
 
         {showCreate && (
-          <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #1e293b" }}>
+          <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid var(--wq-surface-2)" }}>
             <PresetForm
               busy={createPreset.isPending}
               onCancel={() => setShowCreate(false)}
@@ -126,9 +126,9 @@ export default function ActivitySettingsPage() {
         )}
 
         {presets.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : !presets.data || presets.data.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No presets yet. Add one to put a button on the Activity page.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No presets yet. Add one to put a button on the Activity page.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
             {presets.data.map((p) => (
@@ -179,7 +179,7 @@ function PresetRow({
         alignItems: "center",
         gap: 12,
         padding: 10,
-        border: "1px solid #1e293b",
+        border: "1px solid var(--wq-surface-2)",
         borderRadius: 8,
       }}
     >
@@ -188,7 +188,7 @@ function PresetRow({
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 500 }}>{preset.label}</div>
-        <div style={{ color: "#94a3b8", fontSize: 13 }}>{preset.minutes} min</div>
+        <div style={{ color: "var(--wq-muted)", fontSize: 13 }}>{preset.minutes} min</div>
       </div>
       <button type="button" onClick={onEdit} style={ghostBtn}>
         Edit

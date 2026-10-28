@@ -30,8 +30,8 @@ import type {
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -55,13 +55,13 @@ const linkBtn: React.CSSProperties = {
   cursor: "pointer",
 };
 
-function chipStyle(selected: boolean, colour = "#10b981"): React.CSSProperties {
+function chipStyle(selected: boolean, colour = "var(--wq-accent)"): React.CSSProperties {
   return {
     padding: "6px 10px",
     borderRadius: 999,
-    border: selected ? `2px solid ${colour}` : "1px solid #334155",
+    border: selected ? `2px solid ${colour}` : "1px solid var(--wq-border)",
     background: selected ? `${colour}22` : "transparent",
-    color: "#e2e8f0",
+    color: "var(--wq-text)",
     fontSize: 12,
     cursor: "pointer",
   };
@@ -124,7 +124,7 @@ function Editor({
     <Modal title={existing ? "Edit entry" : "Log sexual activity"} onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: "#94a3b8", fontSize: 12 }}>Date</span>
+          <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Date</span>
           <input
             type="date"
             value={date}
@@ -134,7 +134,7 @@ function Editor({
         </label>
 
         <div>
-          <span style={{ color: "#94a3b8", fontSize: 12 }}>Kind</span>
+          <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Kind</span>
           <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
             {KIND_ORDER.map((k) => (
               <button
@@ -152,7 +152,7 @@ function Editor({
 
         {kind === "partnered" && (
           <div>
-            <span style={{ color: "#94a3b8", fontSize: 12 }}>Protection</span>
+            <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Protection</span>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
               {PROTECTION_ORDER.map((p) => (
                 <button
@@ -170,7 +170,7 @@ function Editor({
         )}
 
         <div>
-          <span style={{ color: "#94a3b8", fontSize: 12 }}>Tags</span>
+          <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Tags</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
             {TAG_ORDER.map((t) => (
               <button
@@ -265,14 +265,14 @@ export function IntimacyLog({ stats }: { stats: CycleStats }) {
       </header>
 
       {history.isLoading ? (
-        <p style={{ color: "#94a3b8", fontSize: 14 }}>Loading…</p>
+        <p style={{ color: "var(--wq-muted)", fontSize: 14 }}>Loading…</p>
       ) : entries.length === 0 ? (
-        <p style={{ color: "#94a3b8", fontSize: 14 }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 14 }}>
           Nothing logged yet. Entries are private to your account and never leave it.
         </p>
       ) : (
         <>
-          <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 10 }}>
+          <p style={{ color: "var(--wq-muted)", fontSize: 13, marginBottom: 10 }}>
             {last30} {last30 === 1 ? "entry" : "entries"} in the last 30 days · last on{" "}
             {fmtDay(entries[0]!.entry_date)}
           </p>
@@ -286,7 +286,7 @@ export function IntimacyLog({ stats }: { stats: CycleStats }) {
           >
             {days.map(([date, rows]) => (
               <li key={date}>
-                <div style={{ color: "#64748b", fontSize: 11, marginBottom: 4 }}>
+                <div style={{ color: "var(--wq-muted-2)", fontSize: 11, marginBottom: 4 }}>
                   {fmtDay(date)}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -294,7 +294,7 @@ export function IntimacyLog({ stats }: { stats: CycleStats }) {
                     <div
                       key={e.id}
                       style={{
-                        border: "1px solid #1e293b",
+                        border: "1px solid var(--wq-surface-2)",
                         borderRadius: 8,
                         padding: "8px 10px",
                         display: "flex",
@@ -325,12 +325,12 @@ export function IntimacyLog({ stats }: { stats: CycleStats }) {
                         </span>
                       )}
                       {e.tags.length > 0 && (
-                        <span style={{ color: "#94a3b8", fontSize: 12 }}>
+                        <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
                           {e.tags.map((t) => TAG_LABELS[t]).join(" · ")}
                         </span>
                       )}
                       {e.note && (
-                        <span style={{ color: "#cbd5e1", fontSize: 12 }}>{e.note}</span>
+                        <span style={{ color: "var(--wq-text-2)", fontSize: 12 }}>{e.note}</span>
                       )}
                     </div>
                   ))}
@@ -341,7 +341,7 @@ export function IntimacyLog({ stats }: { stats: CycleStats }) {
         </>
       )}
 
-      <p style={{ color: "#64748b", fontSize: 12, marginTop: 10 }}>
+      <p style={{ color: "var(--wq-muted-2)", fontSize: 12, marginTop: 10 }}>
         The fertile-window note is derived from your logged cycle averages — an
         estimate, not a pregnancy test and not contraception. Turn this section off
         any time under Settings → Trackers; your entries are kept.

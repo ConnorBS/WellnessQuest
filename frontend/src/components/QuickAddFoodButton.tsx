@@ -33,10 +33,10 @@ export function QuickAddFoodButton({ preset }: Props) {
       className="wq-tap flex flex-col items-center justify-center gap-1 rounded-md border border-slate-700 px-2 py-3 text-slate-200 hover:bg-slate-800 active:bg-slate-800 disabled:opacity-50"
       data-testid={`quick-add-food-${preset.kcal}`}
     >
-      <span style={{ color: "#cbd5e1", lineHeight: 0 }}>
+      <span style={{ color: "var(--wq-text-2)", lineHeight: 0 }}>
         <PresetIcon preset={preset} size={28} />
       </span>
-      <span style={{ fontSize: 12, color: "#cbd5e1", textAlign: "center", lineHeight: 1.15 }}>
+      <span style={{ fontSize: 12, color: "var(--wq-text-2)", textAlign: "center", lineHeight: 1.15 }}>
         {preset.label}
       </span>
       <span style={{ fontSize: 13, fontWeight: 600 }}>+{preset.kcal} kcal</span>

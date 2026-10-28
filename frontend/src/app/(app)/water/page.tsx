@@ -34,7 +34,7 @@ export default function WaterPage() {
             onClick={() => setShowLog(true)}
             data-testid="open-water-log"
             style={{
-              background: "#10b981",
+              background: "var(--wq-accent)",
               color: "white",
               border: "none",
               borderRadius: 6,
@@ -65,7 +65,7 @@ export default function WaterPage() {
                   )}
                 </span>
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: "#94a3b8", whiteSpace: "nowrap" }}>
+                  <span style={{ color: "var(--wq-muted)", whiteSpace: "nowrap" }}>
                     {new Date(e.occurred_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {e.source}
                   </span>
                   {e.id > 0 ? (
@@ -109,7 +109,7 @@ export default function WaterPage() {
 }
 
 const iconBtn: React.CSSProperties = {
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   background: "transparent",
   border: "none",
   cursor: "pointer",

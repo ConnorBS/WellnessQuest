@@ -16,8 +16,8 @@ import type { FoodPreset } from "@/lib/schemas";
 
 const inputStyle: React.CSSProperties = {
   padding: 8,
-  background: "#0f172a",
-  border: "1px solid #334155",
+  background: "var(--wq-surface)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   color: "inherit",
   width: 120,
@@ -25,8 +25,8 @@ const inputStyle: React.CSSProperties = {
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -44,8 +44,8 @@ const dangerBtn: React.CSSProperties = {
 const ghostBtn: React.CSSProperties = {
   padding: "6px 10px",
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #334155",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 13,
 };
@@ -81,7 +81,7 @@ export default function FoodSettingsPage() {
             onChange={(e) => setGoalDraft(Number(e.target.value) || 0)}
             style={inputStyle}
           />
-          <span style={{ color: "#94a3b8" }}>kcal / day</span>
+          <span style={{ color: "var(--wq-muted)" }}>kcal / day</span>
           <button
             type="button"
             disabled={
@@ -95,7 +95,7 @@ export default function FoodSettingsPage() {
             {updateGoal.isPending ? "Saving…" : "Save"}
           </button>
         </div>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           The food bar turns red and a <code>food.target_exceeded</code> event fires when
           today&apos;s total crosses this ceiling.
         </p>
@@ -120,7 +120,7 @@ export default function FoodSettingsPage() {
 
         {showCreate && (
           <div
-            style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #1e293b" }}
+            style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid var(--wq-surface-2)" }}
           >
             <PresetForm
               busy={createPreset.isPending}
@@ -136,9 +136,9 @@ export default function FoodSettingsPage() {
         )}
 
         {presets.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : !presets.data || presets.data.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>
+          <p style={{ color: "var(--wq-muted)" }}>
             No quick foods yet. Add one to put a one-tap button on the Food page.
           </p>
         ) : (
@@ -208,7 +208,7 @@ function PresetRow({
         alignItems: "center",
         gap: 12,
         padding: 10,
-        border: "1px solid #1e293b",
+        border: "1px solid var(--wq-surface-2)",
         borderRadius: 8,
       }}
     >
@@ -227,9 +227,9 @@ function PresetRow({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 500 }}>
           {preset.label}
-          {preset.brand ? <span style={{ color: "#64748b" }}> · {preset.brand}</span> : null}
+          {preset.brand ? <span style={{ color: "var(--wq-muted-2)" }}> · {preset.brand}</span> : null}
         </div>
-        <div style={{ color: "#94a3b8", fontSize: 13 }}>
+        <div style={{ color: "var(--wq-muted)", fontSize: 13 }}>
           {preset.kcal} kcal
           {preset.meal_type ? ` · ${preset.meal_type}` : ""}
           {macros ? ` · ${macros}` : ""}

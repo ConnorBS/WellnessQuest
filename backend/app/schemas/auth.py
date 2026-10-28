@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
 from app.schemas.title import TitleSummary
+from app.schemas.ui_prefs import UiPrefs
 
 
 class LoginIn(BaseModel):
@@ -49,6 +50,9 @@ class MeOut(BaseModel):
     # User-chosen dashboard order of feature keys (registry order for anything
     # unplaced). Drives the order of cards on the dashboard.
     feature_order: list[str] = Field(default_factory=list)
+    # Appearance: theme colour overrides, per-tracker card tints, hidden
+    # dashboard sections. Always present; `{}`-equivalent means all defaults.
+    ui_prefs: UiPrefs = Field(default_factory=UiPrefs)
     pending_title_unlocks: list[TitleSummary] = Field(default_factory=list)
     # True count of un-acknowledged unlocks. `pending_title_unlocks` is
     # capped at PENDING_UNLOCKS_LIMIT (5) so the popup can show one at a
@@ -67,6 +71,9 @@ class MePatchIn(BaseModel):
     bp_titles_opt_out: bool | None = None
     show_raw_weight_delta: bool | None = None
     show_bp_category: bool | None = None
+    # Replaces the whole appearance blob (not merged): the settings page always
+    # sends the full object, so a cleared colour actually clears.
+    ui_prefs: UiPrefs | None = None
 
 
 class SetupStatusOut(BaseModel):

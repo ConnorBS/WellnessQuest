@@ -72,13 +72,13 @@ export function OccurredAtField({
 
 const labelStyle: React.CSSProperties = {
   fontSize: 12,
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
 };
 
 const linkBtn: React.CSSProperties = {
   alignSelf: "start",
   fontSize: 12,
-  color: "#10b981",
+  color: "var(--wq-accent)",
   background: "transparent",
   border: "none",
   cursor: "pointer",
@@ -88,9 +88,9 @@ const linkBtn: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 14,
 };

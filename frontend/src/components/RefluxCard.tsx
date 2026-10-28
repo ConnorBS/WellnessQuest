@@ -31,7 +31,7 @@ export function RefluxCard({ showQuickLog = false }: { showQuickLog?: boolean })
               + Log
             </button>
           )}
-          <Link href="/reflux" style={{ fontSize: 13, color: "#10b981" }}>
+          <Link href="/reflux" style={{ fontSize: 13, color: "var(--wq-accent)" }}>
             See all →
           </Link>
         </div>
@@ -41,7 +41,7 @@ export function RefluxCard({ showQuickLog = false }: { showQuickLog?: boolean })
       ) : !latest ? (
         <p className="mt-3 text-sm text-slate-400">
           No episodes logged —{" "}
-          <Link href="/reflux" style={{ color: "#10b981" }}>
+          <Link href="/reflux" style={{ color: "var(--wq-accent)" }}>
             log one when it happens
           </Link>
           .
@@ -52,7 +52,7 @@ export function RefluxCard({ showQuickLog = false }: { showQuickLog?: boolean })
             <span style={{ fontSize: 18, fontWeight: 600, color: SEVERITY_META[latest.severity].color }}>
               {SEVERITY_META[latest.severity].label}
             </span>
-            <span style={{ color: "#94a3b8", fontSize: 12 }}>
+            <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
               {new Date(latest.occurred_at).toLocaleString(undefined, {
                 weekday: "short",
                 hour: "2-digit",
@@ -63,7 +63,7 @@ export function RefluxCard({ showQuickLog = false }: { showQuickLog?: boolean })
                 : ""}
             </span>
           </div>
-          <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 6 }}>
+          <p style={{ color: "var(--wq-muted)", fontSize: 12, marginTop: 6 }}>
             {todayCount} today · {weekCount} in the last 7 days
           </p>
         </>

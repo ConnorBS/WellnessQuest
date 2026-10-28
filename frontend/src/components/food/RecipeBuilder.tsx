@@ -195,7 +195,7 @@ export function RecipeBuilder({ existing, onClose }: Props) {
             aria-label="Close"
             style={{
               background: "transparent",
-              color: "#94a3b8",
+              color: "var(--wq-muted)",
               border: "none",
               fontSize: 20,
             }}
@@ -282,7 +282,7 @@ export function RecipeBuilder({ existing, onClose }: Props) {
               </button>
             </div>
             {ingredients.length === 0 ? (
-              <p style={{ fontSize: 12, color: "#64748b" }}>
+              <p style={{ fontSize: 12, color: "var(--wq-muted-2)" }}>
                 No ingredients yet. Tap “Add ingredient” to start.
               </p>
             ) : (
@@ -295,14 +295,14 @@ export function RecipeBuilder({ existing, onClose }: Props) {
                       alignItems: "center",
                       gap: 6,
                       padding: 8,
-                      background: "#0b1220",
-                      border: "1px solid #1e293b",
+                      background: "var(--wq-bg)",
+                      border: "1px solid var(--wq-surface-2)",
                       borderRadius: 6,
                     }}
                   >
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, color: "#e2e8f0" }}>{i.name}</div>
-                      <div style={{ fontSize: 11, color: "#64748b" }}>
+                      <div style={{ fontSize: 13, color: "var(--wq-text)" }}>{i.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--wq-muted-2)" }}>
                         {fmtQty(i.quantity, i.unit)} · {i.kcal} kcal
                       </div>
                     </div>
@@ -342,16 +342,16 @@ export function RecipeBuilder({ existing, onClose }: Props) {
             <div
               style={{
                 padding: 10,
-                background: "#0b1220",
-                border: "1px solid #1e293b",
+                background: "var(--wq-bg)",
+                border: "1px solid var(--wq-surface-2)",
                 borderRadius: 6,
                 fontSize: 13,
-                color: "#cbd5e1",
+                color: "var(--wq-text-2)",
               }}
             >
               Total: {totals.kcal} kcal · P {fmt(totals.protein_g)} · C{" "}
               {fmt(totals.carbs_g)} · F {fmt(totals.fat_g)}
-              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: "var(--wq-muted-2)", marginTop: 2 }}>
                 Serves {yields} · {perServingKcal} kcal per serving
               </div>
             </div>
@@ -399,8 +399,8 @@ const overlay: React.CSSProperties = {
 };
 
 const panel: React.CSSProperties = {
-  background: "#0f172a",
-  border: "1px solid #1e293b",
+  background: "var(--wq-surface)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 12,
   padding: 16,
   width: "100%",
@@ -419,17 +419,17 @@ const hdr: React.CSSProperties = {
 const input: React.CSSProperties = {
   width: "100%",
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 14,
 };
 
 const fieldLabel: React.CSSProperties = {
   display: "block",
   fontSize: 12,
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   marginBottom: 4,
 };
 
@@ -437,9 +437,9 @@ const stepper: React.CSSProperties = {
   width: 36,
   height: 36,
   fontSize: 18,
-  background: "#1e293b",
-  color: "#e2e8f0",
-  border: "1px solid #334155",
+  background: "var(--wq-surface-2)",
+  color: "var(--wq-text)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   cursor: "pointer",
   fontWeight: 600,
@@ -447,7 +447,7 @@ const stepper: React.CSSProperties = {
 
 const linkBtn: React.CSSProperties = {
   fontSize: 12,
-  color: "#10b981",
+  color: "var(--wq-accent)",
   background: "transparent",
   border: "none",
   cursor: "pointer",
@@ -459,8 +459,8 @@ function iconBtn(disabled: boolean): React.CSSProperties {
     width: 28,
     height: 28,
     background: "transparent",
-    color: disabled ? "#475569" : "#cbd5e1",
-    border: "1px solid #1e293b",
+    color: disabled ? "var(--wq-border-strong)" : "var(--wq-text-2)",
+    border: "1px solid var(--wq-surface-2)",
     borderRadius: 4,
     cursor: disabled ? "not-allowed" : "pointer",
     fontSize: 14,
@@ -469,8 +469,8 @@ function iconBtn(disabled: boolean): React.CSSProperties {
 
 function primary(disabled: boolean): React.CSSProperties {
   return {
-    background: disabled ? "#1e293b" : "#10b981",
-    color: disabled ? "#64748b" : "white",
+    background: disabled ? "var(--wq-surface-2)" : "var(--wq-accent)",
+    color: disabled ? "var(--wq-muted-2)" : "white",
     border: "none",
     borderRadius: 6,
     padding: "10px 14px",

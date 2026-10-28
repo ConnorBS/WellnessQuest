@@ -34,6 +34,24 @@ export const CategorySummarySchema = z.object({
 export type CategorySummary = z.infer<typeof CategorySummarySchema>;
 export const CategorySummaryListSchema = z.array(CategorySummarySchema);
 
+const HexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+
+export const UiThemeSchema = z.object({
+  background: HexColorSchema.nullable().optional(),
+  card: HexColorSchema.nullable().optional(),
+  border: HexColorSchema.nullable().optional(),
+  accent: HexColorSchema.nullable().optional(),
+  text: HexColorSchema.nullable().optional(),
+  muted: HexColorSchema.nullable().optional(),
+});
+
+export const UiPrefsSchema = z.object({
+  theme: UiThemeSchema,
+  card_colors: z.record(HexColorSchema),
+  hidden_sections: z.array(z.enum(["xp_bar", "streaks", "quick_log", "version_footer"])),
+});
+export type UiPrefsOut = z.infer<typeof UiPrefsSchema>;
+
 export const MeSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
@@ -58,6 +76,9 @@ export const MeSchema = z.object({
   features: z.record(z.boolean()),
   // User-chosen dashboard order of feature keys (registry order for unplaced).
   feature_order: z.array(z.string()),
+  // Appearance (theme colours, card tints, hidden sections). Optional so a
+  // /me cached by the service worker before this field shipped still parses.
+  ui_prefs: UiPrefsSchema.optional(),
   pending_title_unlocks: z.array(TitleSummarySchema),
   pending_title_unlocks_total: z.number().int().nonnegative(),
 });

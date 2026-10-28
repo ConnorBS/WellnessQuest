@@ -8,6 +8,7 @@ from app.models.title import Title
 from app.models.user import User
 from app.schemas.auth import MeOut, MePatchIn
 from app.schemas.title import TitleSummary
+from app.schemas.ui_prefs import ui_prefs_from_row
 from app.services import feature_service, title_service
 from app.telemetry.recorder import audit
 
@@ -50,6 +51,7 @@ async def _build_me_out(db: AsyncSession, user: User) -> MeOut:
         show_bp_category=user.show_bp_category,
         features=features,
         feature_order=feature_service.effective_order(user),
+        ui_prefs=ui_prefs_from_row(user.ui_prefs),
         pending_title_unlocks=[_to_title_summary(t) for t in pending],
         pending_title_unlocks_total=pending_total,
     )
@@ -101,6 +103,8 @@ async def patch_me(
         user.show_raw_weight_delta = payload.show_raw_weight_delta
     if payload.show_bp_category is not None:
         user.show_bp_category = payload.show_bp_category
+    if payload.ui_prefs is not None:
+        user.ui_prefs = payload.ui_prefs.to_row()
     await db.flush()
     await audit(
         db,

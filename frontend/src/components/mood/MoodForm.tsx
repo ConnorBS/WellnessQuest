@@ -14,8 +14,8 @@ interface Props {
 
 const primaryBtn: React.CSSProperties = {
   padding: "10px 14px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 600,
@@ -59,7 +59,7 @@ export function MoodForm({ onSaved }: Props) {
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div>
-        <span style={{ color: "#94a3b8", fontSize: 12 }}>
+        <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
           What are you feeling right now? Pick as many as fit — strongest first.
         </span>
         <div style={{ marginTop: 6 }}>
@@ -68,7 +68,7 @@ export function MoodForm({ onSaved }: Props) {
       </div>
 
       <div>
-        <span style={{ color: "#94a3b8", fontSize: 12 }}>Energy</span>
+        <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>Energy</span>
         <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
           {[1, 2, 3].map((lvl) => (
             <button
@@ -80,9 +80,9 @@ export function MoodForm({ onSaved }: Props) {
                 flex: 1,
                 padding: "8px",
                 borderRadius: 6,
-                border: energy === lvl ? "2px solid #10b981" : "1px solid #334155",
-                background: energy === lvl ? "#10b98122" : "transparent",
-                color: "#e2e8f0",
+                border: energy === lvl ? "2px solid var(--wq-accent)" : "1px solid var(--wq-border)",
+                background: energy === lvl ? "var(--wq-accent)22" : "transparent",
+                color: "var(--wq-text)",
                 fontSize: 13,
                 cursor: "pointer",
               }}

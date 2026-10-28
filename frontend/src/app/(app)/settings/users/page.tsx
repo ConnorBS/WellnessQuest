@@ -92,12 +92,12 @@ export default function AdminUsersPage() {
     createUser.mutate();
   }
 
-  if (meLoading) return <p style={{ color: "#94a3b8" }}>Loading…</p>;
+  if (meLoading) return <p style={{ color: "var(--wq-muted)" }}>Loading…</p>;
   if (me?.role !== "admin") {
     return (
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
         <h2 className="text-lg font-semibold">Users</h2>
-        <p style={{ color: "#94a3b8", fontSize: 14, marginTop: 8 }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 14, marginTop: 8 }}>
           Only admins can manage users.
         </p>
       </section>
@@ -106,15 +106,15 @@ export default function AdminUsersPage() {
 
   const cellStyle: React.CSSProperties = {
     padding: "8px 10px",
-    borderBottom: "1px solid #1e293b",
+    borderBottom: "1px solid var(--wq-surface-2)",
     fontSize: 14,
   };
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: 8,
     marginTop: 4,
-    background: "#0f172a",
-    border: "1px solid #334155",
+    background: "var(--wq-surface)",
+    border: "1px solid var(--wq-border)",
     color: "inherit",
     borderRadius: 6,
   };
@@ -172,7 +172,7 @@ export default function AdminUsersPage() {
                 onClick={() => setPassword(generateTempPassword())}
                 style={{
                   padding: "8px 12px",
-                  background: "#334155",
+                  background: "var(--wq-border)",
                   color: "white",
                   border: 0,
                   borderRadius: 6,
@@ -206,12 +206,12 @@ export default function AdminUsersPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 12 }}>
           Users
         </h2>
-        {usersQuery.isLoading && <p style={{ color: "#94a3b8" }}>Loading…</p>}
+        {usersQuery.isLoading && <p style={{ color: "var(--wq-muted)" }}>Loading…</p>}
         {usersQuery.data && (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ textAlign: "left", color: "#94a3b8", fontSize: 12 }}>
+                <tr style={{ textAlign: "left", color: "var(--wq-muted)", fontSize: 12 }}>
                   <th style={cellStyle}>Email</th>
                   <th style={cellStyle}>Name</th>
                   <th style={cellStyle}>Role</th>
@@ -249,7 +249,7 @@ export default function AdminUsersPage() {
                           onChange={(e) =>
                             changeRole.mutate({ id: u.id, role: e.target.value as "admin" | "user" })
                           }
-                          style={{ background: "#0f172a", color: "inherit", border: "1px solid #334155", padding: "2px 6px", borderRadius: 4 }}
+                          style={{ background: "var(--wq-surface)", color: "inherit", border: "1px solid var(--wq-border)", padding: "2px 6px", borderRadius: 4 }}
                         >
                           <option value="user">user</option>
                           <option value="admin">admin</option>
@@ -266,7 +266,7 @@ export default function AdminUsersPage() {
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                           <button
                             onClick={onReset}
-                            style={{ color: "#cbd5e1", fontSize: 13 }}
+                            style={{ color: "var(--wq-text-2)", fontSize: 13 }}
                           >
                             Reset password
                           </button>

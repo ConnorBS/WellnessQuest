@@ -34,7 +34,7 @@ export default function ActivityPage() {
             onClick={() => setShowLog(true)}
             data-testid="open-activity-log"
             style={{
-              background: "#10b981",
+              background: "var(--wq-accent)",
               color: "white",
               border: "none",
               borderRadius: 6,
@@ -59,7 +59,7 @@ export default function ActivityPage() {
                 <span style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0, flexWrap: "wrap" }}>
                   <span>+{e.minutes} min</span>
                   {e.name && (
-                    <span style={{ color: "#e2e8f0", fontSize: 13 }}>{e.name}</span>
+                    <span style={{ color: "var(--wq-text)", fontSize: 13 }}>{e.name}</span>
                   )}
                   {e.exercise_type && (
                     <span style={{ color: "#7dd3fc", fontSize: 12, whiteSpace: "nowrap" }}>
@@ -68,7 +68,7 @@ export default function ActivityPage() {
                   )}
                 </span>
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: "#94a3b8", whiteSpace: "nowrap" }}>
+                  <span style={{ color: "var(--wq-muted)", whiteSpace: "nowrap" }}>
                     {new Date(e.occurred_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {e.source}
                   </span>
                   {e.id > 0 ? (
@@ -112,7 +112,7 @@ export default function ActivityPage() {
 }
 
 const iconBtn: React.CSSProperties = {
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   background: "transparent",
   border: "none",
   cursor: "pointer",

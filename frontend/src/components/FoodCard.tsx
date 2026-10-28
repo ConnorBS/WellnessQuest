@@ -71,7 +71,7 @@ export function FoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
       </div>
       <p
         className="text-sm"
-        style={{ color: over ? "#fb7185" : "#94a3b8", marginBottom: 8 }}
+        style={{ color: over ? "#fb7185" : "var(--wq-muted)", marginBottom: 8 }}
       >
         {over
           ? `Over by ${total - target} kcal`
@@ -100,12 +100,12 @@ export function FoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 6,
-                  background: "#0b1220",
-                  border: "1px solid #1e293b",
+                  background: "var(--wq-bg)",
+                  border: "1px solid var(--wq-surface-2)",
                   borderRadius: 999,
                   padding: "2px 10px",
                   fontSize: 11,
-                  color: "#cbd5e1",
+                  color: "var(--wq-text-2)",
                 }}
               >
                 <span
@@ -137,7 +137,7 @@ export function FoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
       ) : (
         <p className="text-sm text-slate-400">
           No quick foods yet —{" "}
-          <Link href="/settings/food" style={{ color: "#10b981" }}>
+          <Link href="/settings/food" style={{ color: "var(--wq-accent)" }}>
             add some in settings
           </Link>
           .
@@ -148,7 +148,7 @@ export function FoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
           <p
             style={{
               fontSize: 11,
-              color: "#64748b",
+              color: "var(--wq-muted-2)",
               textTransform: "uppercase",
               letterSpacing: 0.5,
               marginBottom: 6,

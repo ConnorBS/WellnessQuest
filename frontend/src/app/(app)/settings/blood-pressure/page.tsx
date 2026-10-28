@@ -14,8 +14,8 @@ import { useUpdateMe } from "@/hooks/useUpdateMe";
 
 const primaryBtn: React.CSSProperties = {
   padding: "10px 14px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 600,
@@ -24,8 +24,8 @@ const primaryBtn: React.CSSProperties = {
 const ghostBtn: React.CSSProperties = {
   padding: "8px 12px",
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #334155",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 13,
 };
@@ -65,7 +65,7 @@ export default function BPSettingsPage() {
   if (!me) {
     return (
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-        <p style={{ color: "#94a3b8" }}>Loading…</p>
+        <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
       </section>
     );
   }
@@ -114,14 +114,14 @@ export default function BPSettingsPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 8 }}>
           Target blood pressure
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 14, margin: "0 0 12px" }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 14, margin: "0 0 12px" }}>
           {currentSet ? (
             <>
               Current:{" "}
-              <strong style={{ color: "#e2e8f0" }}>
+              <strong style={{ color: "var(--wq-text)" }}>
                 {current!.target_systolic}/{current!.target_diastolic} mmHg
               </strong>
-              <span style={{ color: "#64748b" }}>
+              <span style={{ color: "var(--wq-muted-2)" }}>
                 {" "}· set{" "}
                 {new Date(current!.effective_at).toLocaleDateString(undefined, {
                   month: "short",
@@ -157,7 +157,7 @@ export default function BPSettingsPage() {
             style={numberInput}
             aria-label="Target systolic"
           />
-          <span style={{ color: "#64748b" }}>/</span>
+          <span style={{ color: "var(--wq-muted-2)" }}>/</span>
           <input
             type="number"
             inputMode="numeric"
@@ -170,7 +170,7 @@ export default function BPSettingsPage() {
             style={numberInput}
             aria-label="Target diastolic"
           />
-          <span style={{ color: "#94a3b8" }}>mmHg</span>
+          <span style={{ color: "var(--wq-muted)" }}>mmHg</span>
           <button type="submit" disabled={addTarget.isPending} style={primaryBtn}>
             {addTarget.isPending ? "Saving…" : "Save new target"}
           </button>
@@ -186,7 +186,7 @@ export default function BPSettingsPage() {
           )}
         </form>
         {error && <p style={{ color: "#fca5a5", fontSize: 13, marginTop: 6 }}>{error}</p>}
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           Each save creates a new history row so you can see how your goal has changed over time.
           &quot;Clear target&quot; records that you intentionally stopped tracking a goal as of now.
         </p>
@@ -197,9 +197,9 @@ export default function BPSettingsPage() {
           Target history
         </h2>
         {targets.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : !targets.data || targets.data.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No history yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No history yet.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             {targets.data.map((t) => (
@@ -210,7 +210,7 @@ export default function BPSettingsPage() {
                   alignItems: "center",
                   justifyContent: "space-between",
                   padding: "8px 0",
-                  borderBottom: "1px solid #1e293b",
+                  borderBottom: "1px solid var(--wq-surface-2)",
                   gap: 8,
                 }}
               >
@@ -219,13 +219,13 @@ export default function BPSettingsPage() {
                     {t.target_systolic != null && t.target_diastolic != null ? (
                       <>
                         {t.target_systolic}/{t.target_diastolic}{" "}
-                        <span style={{ color: "#94a3b8", fontSize: 12 }}>mmHg</span>
+                        <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>mmHg</span>
                       </>
                     ) : (
-                      <span style={{ color: "#94a3b8" }}>No target (cleared)</span>
+                      <span style={{ color: "var(--wq-muted)" }}>No target (cleared)</span>
                     )}
                   </span>
-                  <span style={{ color: "#94a3b8", fontSize: 12, marginLeft: 8 }}>
+                  <span style={{ color: "var(--wq-muted)", fontSize: 12, marginLeft: 8 }}>
                     {new Date(t.effective_at).toLocaleString(undefined, {
                       month: "short",
                       day: "numeric",
@@ -263,7 +263,7 @@ export default function BPSettingsPage() {
           />
           Enable Blood pressure tracker
         </label>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           Turning this off hides the Blood pressure card, nav link, and this settings page.
           Manage all trackers under Settings → Trackers.
         </p>
@@ -282,7 +282,7 @@ export default function BPSettingsPage() {
           />
           Tag readings with a category
         </label>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           Shows the coloured Normal / Elevated / Stage 1 / Stage 2 / Crisis chip
           (AHA 2017 ranges) next to each reading on the dashboard card and the
           history list. Turn it off to see just the numbers — your readings and
@@ -303,7 +303,7 @@ export default function BPSettingsPage() {
           />
           Opt out of blood pressure titles
         </label>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           Hides titles tied to blood pressure milestones. You can turn this
           back on any time.
         </p>

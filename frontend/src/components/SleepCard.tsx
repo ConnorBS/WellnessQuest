@@ -56,9 +56,9 @@ export function SleepCard({ showQuickLog = false }: { showQuickLog?: boolean }) 
             data-testid="sleep-log-open"
             style={{
               padding: "8px 12px",
-              background: "#1e293b",
-              color: "#e2e8f0",
-              border: "1px solid #334155",
+              background: "var(--wq-surface-2)",
+              color: "var(--wq-text)",
+              border: "1px solid var(--wq-border)",
               borderRadius: 6,
               fontSize: 14,
               cursor: "pointer",
@@ -97,7 +97,7 @@ export function SleepCard({ showQuickLog = false }: { showQuickLog?: boolean }) 
         !isLoading && (
           <p className="mt-3 text-sm text-slate-400">
             No sleep data yet — log a night, or connect{" "}
-            <Link href="/settings/integrations" style={{ color: "#10b981" }}>
+            <Link href="/settings/integrations" style={{ color: "var(--wq-accent)" }}>
               Home Assistant
             </Link>{" "}
             to import from your CPAP or wearable.

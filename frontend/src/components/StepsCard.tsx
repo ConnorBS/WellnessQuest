@@ -42,9 +42,9 @@ export function StepsCard({ showQuickLog = false }: { showQuickLog?: boolean }) 
           data-testid="steps-log-open"
           style={{
             padding: "8px 12px",
-            background: "#1e293b",
-            color: "#e2e8f0",
-            border: "1px solid #334155",
+            background: "var(--wq-surface-2)",
+            color: "var(--wq-text)",
+            border: "1px solid var(--wq-border)",
             borderRadius: 6,
             fontSize: 14,
             cursor: "pointer",
@@ -57,7 +57,7 @@ export function StepsCard({ showQuickLog = false }: { showQuickLog?: boolean }) 
       {total === 0 && !isLoading && (
         <p className="mt-3 text-sm text-slate-400">
           No steps yet today — log some, or connect{" "}
-          <Link href="/settings/integrations" style={{ color: "#10b981" }}>
+          <Link href="/settings/integrations" style={{ color: "var(--wq-accent)" }}>
             Home Assistant
           </Link>{" "}
           to import from your phone or wearable.

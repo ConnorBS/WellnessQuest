@@ -482,8 +482,8 @@ export function FoodLogModal({ onClose }: Props) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#0f172a",
-          border: "1px solid #1e293b",
+          background: "var(--wq-surface)",
+          border: "1px solid var(--wq-surface-2)",
           borderRadius: 12,
           padding: 16,
           width: "100%",
@@ -506,7 +506,7 @@ export function FoodLogModal({ onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            style={{ background: "transparent", color: "#94a3b8", border: "none", fontSize: 20 }}
+            style={{ background: "transparent", color: "var(--wq-muted)", border: "none", fontSize: 20 }}
             aria-label="Close"
           >
             ×
@@ -564,7 +564,7 @@ export function FoodLogModal({ onClose }: Props) {
             ) : null}
 
             <label style={{ display: "block", marginBottom: 12 }}>
-              <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
+              <span style={{ display: "block", fontSize: 12, color: "var(--wq-muted)", marginBottom: 4 }}>
                 Meal
               </span>
               <select
@@ -585,7 +585,7 @@ export function FoodLogModal({ onClose }: Props) {
             ) : mode === "search" ? (
               <>
                 <label style={{ display: "block", marginBottom: 8 }}>
-                  <span style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>
+                  <span style={{ display: "block", fontSize: 12, color: "var(--wq-muted)", marginBottom: 4 }}>
                     Search Open Food Facts
                   </span>
                   <div style={{ display: "flex", gap: 8 }}>
@@ -616,8 +616,8 @@ export function FoodLogModal({ onClose }: Props) {
                       style={{
                         padding: "0 12px",
                         background: "transparent",
-                        color: "#10b981",
-                        border: "1px solid #1e293b",
+                        color: "var(--wq-accent)",
+                        border: "1px solid var(--wq-surface-2)",
                         borderRadius: 6,
                         cursor: "pointer",
                         fontSize: 13,
@@ -632,7 +632,7 @@ export function FoodLogModal({ onClose }: Props) {
                   <p style={{ fontSize: 13, color: "#fca5a5", marginBottom: 8 }}>{scanError}</p>
                 )}
                 {search.trim().length < 2 ? (
-                  <p style={{ fontSize: 12, color: "#64748b" }}>
+                  <p style={{ fontSize: 12, color: "var(--wq-muted-2)" }}>
                     Type at least 2 characters to search.
                   </p>
                 ) : isError ? (
@@ -643,8 +643,8 @@ export function FoodLogModal({ onClose }: Props) {
                       onClick={() => flushAndRefetch()}
                       style={{
                         background: "transparent",
-                        color: "#10b981",
-                        border: "1px solid #1e293b",
+                        color: "var(--wq-accent)",
+                        border: "1px solid var(--wq-surface-2)",
                         borderRadius: 6,
                         padding: "2px 8px",
                         cursor: "pointer",
@@ -655,7 +655,7 @@ export function FoodLogModal({ onClose }: Props) {
                     </button>
                   </div>
                 ) : isLoading ? (
-                  <p style={{ fontSize: 13, color: "#94a3b8" }}>Searching…</p>
+                  <p style={{ fontSize: 13, color: "var(--wq-muted)" }}>Searching…</p>
                 ) : data && data.hits.length > 0 ? (
                   <ul
                     style={{
@@ -667,8 +667,8 @@ export function FoodLogModal({ onClose }: Props) {
                       gap: 4,
                       maxHeight: 240,
                       overflowY: "auto",
-                      borderTop: "1px solid #1e293b",
-                      borderBottom: "1px solid #1e293b",
+                      borderTop: "1px solid var(--wq-surface-2)",
+                      borderBottom: "1px solid var(--wq-surface-2)",
                     }}
                   >
                     {data.hits.map((h) => {
@@ -683,21 +683,21 @@ export function FoodLogModal({ onClose }: Props) {
                             style={{
                               width: "100%",
                               textAlign: "left",
-                              background: isSel ? "#1e293b" : "transparent",
+                              background: isSel ? "var(--wq-surface-2)" : "transparent",
                               border: "none",
-                              color: "#e2e8f0",
+                              color: "var(--wq-text)",
                               padding: "8px 6px",
-                              borderBottom: "1px solid #1e293b",
+                              borderBottom: "1px solid var(--wq-surface-2)",
                               cursor: "pointer",
                             }}
                           >
                             <div style={{ fontSize: 14 }}>
                               {h.name}
                               {h.brand ? (
-                                <span style={{ color: "#64748b" }}> · {h.brand}</span>
+                                <span style={{ color: "var(--wq-muted-2)" }}> · {h.brand}</span>
                               ) : null}
                             </div>
-                            <div style={{ fontSize: 12, color: "#94a3b8" }}>
+                            <div style={{ fontSize: 12, color: "var(--wq-muted)" }}>
                               {(() => {
                                 const native = h.unit ?? DEFAULT_NATIVE_UNIT;
                                 const per100 =
@@ -729,7 +729,7 @@ export function FoodLogModal({ onClose }: Props) {
                     })}
                   </ul>
                 ) : data && !isFetching ? (
-                  <p style={{ fontSize: 13, color: "#94a3b8" }}>No matches.</p>
+                  <p style={{ fontSize: 13, color: "var(--wq-muted)" }}>No matches.</p>
                 ) : null}
 
                 {selected
@@ -742,11 +742,11 @@ export function FoodLogModal({ onClose }: Props) {
                       return (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                           <div style={selectedHeaderStyle}>
-                            <div style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0" }}>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: "var(--wq-text)" }}>
                               {selected.name}
                             </div>
                             {selected.brand ? (
-                              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
+                              <div style={{ fontSize: 12, color: "var(--wq-muted)", marginTop: 2 }}>
                                 {selected.brand}
                               </div>
                             ) : null}
@@ -872,9 +872,9 @@ export function FoodLogModal({ onClose }: Props) {
                                     <div
                                       style={{
                                         fontSize: 13,
-                                        color: "#cbd5e1",
-                                        background: "#0f172a",
-                                        border: "1px solid #1e293b",
+                                        color: "var(--wq-text-2)",
+                                        background: "var(--wq-surface)",
+                                        border: "1px solid var(--wq-surface-2)",
                                         borderRadius: 6,
                                         padding: "8px 10px",
                                       }}
@@ -898,7 +898,7 @@ export function FoodLogModal({ onClose }: Props) {
                                 <span
                                   style={{
                                     fontSize: 11,
-                                    color: "#64748b",
+                                    color: "var(--wq-muted-2)",
                                     display: "block",
                                   }}
                                 >
@@ -967,7 +967,7 @@ export function FoodLogModal({ onClose }: Props) {
                               <>
                                 {computed?.hasNutritionData && !editingValues ? (
                                   <>
-                                    <div style={{ fontSize: 13, color: "#cbd5e1" }}>
+                                    <div style={{ fontSize: 13, color: "var(--wq-text-2)" }}>
                                       {`${finalKcal} kcal · P ${fmt(
                                         finalProtein,
                                       )} · C ${fmt(finalCarbs)} · F ${fmt(finalFat)}`}
@@ -1008,8 +1008,8 @@ export function FoodLogModal({ onClose }: Props) {
                                       flexDirection: "column",
                                       gap: 8,
                                       padding: 10,
-                                      background: "#0b1220",
-                                      border: "1px solid #1e293b",
+                                      background: "var(--wq-bg)",
+                                      border: "1px solid var(--wq-surface-2)",
                                       borderRadius: 6,
                                     }}
                                   >
@@ -1026,7 +1026,7 @@ export function FoodLogModal({ onClose }: Props) {
                                         style={{
                                           fontSize: 12,
                                           color: computed?.hasNutritionData
-                                            ? "#94a3b8"
+                                            ? "var(--wq-muted)"
                                             : "#fcd34d",
                                           margin: 0,
                                           flex: 1,
@@ -1276,7 +1276,7 @@ function SaveAsPresetCheckbox({
         alignItems: "center",
         gap: 8,
         fontSize: 13,
-        color: "#cbd5e1",
+        color: "var(--wq-text-2)",
         cursor: "pointer",
       }}
     >
@@ -1322,9 +1322,9 @@ function tabStyle(active: boolean): React.CSSProperties {
   return {
     flex: 1,
     padding: "8px 12px",
-    background: active ? "#1e293b" : "transparent",
-    color: active ? "#e2e8f0" : "#94a3b8",
-    border: "1px solid #1e293b",
+    background: active ? "var(--wq-surface-2)" : "transparent",
+    color: active ? "var(--wq-text)" : "var(--wq-muted)",
+    border: "1px solid var(--wq-surface-2)",
     borderRadius: 6,
     cursor: "pointer",
     fontSize: 14,
@@ -1334,17 +1334,17 @@ function tabStyle(active: boolean): React.CSSProperties {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 14,
 };
 
 const fieldLabel: React.CSSProperties = {
   display: "block",
   fontSize: 12,
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   marginBottom: 4,
 };
 
@@ -1352,9 +1352,9 @@ const stepperBtn: React.CSSProperties = {
   width: 40,
   height: 40,
   fontSize: 18,
-  background: "#1e293b",
-  color: "#e2e8f0",
-  border: "1px solid #334155",
+  background: "var(--wq-surface-2)",
+  color: "var(--wq-text)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   cursor: "pointer",
   fontWeight: 600,
@@ -1363,7 +1363,7 @@ const stepperBtn: React.CSSProperties = {
 const linkBtn: React.CSSProperties = {
   alignSelf: "start",
   fontSize: 12,
-  color: "#10b981",
+  color: "var(--wq-accent)",
   background: "transparent",
   border: "none",
   cursor: "pointer",
@@ -1372,15 +1372,15 @@ const linkBtn: React.CSSProperties = {
 
 const selectedHeaderStyle: React.CSSProperties = {
   padding: "8px 10px",
-  background: "#0b1220",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
 };
 
 function primaryBtnStyleFor(disabled: boolean): React.CSSProperties {
   return {
-    background: disabled ? "#1e293b" : "#10b981",
-    color: disabled ? "#64748b" : "white",
+    background: disabled ? "var(--wq-surface-2)" : "var(--wq-accent)",
+    color: disabled ? "var(--wq-muted-2)" : "white",
     border: "none",
     borderRadius: 6,
     padding: "10px 14px",

@@ -208,7 +208,7 @@ export function RecipeIngredientPicker({ onAdd, onClose }: Props) {
             aria-label="Close"
             style={{
               background: "transparent",
-              color: "#94a3b8",
+              color: "var(--wq-muted)",
               border: "none",
               fontSize: 20,
             }}
@@ -265,7 +265,7 @@ export function RecipeIngredientPicker({ onAdd, onClose }: Props) {
                         <div style={{ fontSize: 13 }}>
                           {h.name}
                           {h.brand ? (
-                            <span style={{ color: "#64748b" }}> · {h.brand}</span>
+                            <span style={{ color: "var(--wq-muted-2)" }}> · {h.brand}</span>
                           ) : null}
                         </div>
                       </button>
@@ -295,10 +295,10 @@ export function RecipeIngredientPicker({ onAdd, onClose }: Props) {
                         <div style={{ fontSize: 13 }}>
                           {p.label}
                           {p.brand ? (
-                            <span style={{ color: "#64748b" }}> · {p.brand}</span>
+                            <span style={{ color: "var(--wq-muted-2)" }}> · {p.brand}</span>
                           ) : null}
                         </div>
-                        <div style={{ fontSize: 11, color: "#64748b" }}>
+                        <div style={{ fontSize: 11, color: "var(--wq-muted-2)" }}>
                           {p.kcal} kcal
                           {p.serving_label ? ` · ${p.serving_label}` : ""}
                         </div>
@@ -382,8 +382,8 @@ export function RecipeIngredientPicker({ onAdd, onClose }: Props) {
             style={{
               marginTop: 12,
               padding: 10,
-              background: "#0b1220",
-              border: "1px solid #1e293b",
+              background: "var(--wq-bg)",
+              border: "1px solid var(--wq-surface-2)",
               borderRadius: 6,
               display: "flex",
               flexDirection: "column",
@@ -432,7 +432,7 @@ export function RecipeIngredientPicker({ onAdd, onClose }: Props) {
               </label>
             ) : null}
             {preview && tab !== "manual" ? (
-              <div style={{ fontSize: 12, color: "#cbd5e1" }}>
+              <div style={{ fontSize: 12, color: "var(--wq-text-2)" }}>
                 {preview.kcal != null
                   ? `${preview.kcal} kcal · P ${fmt(preview.protein_g)} · C ${fmt(
                       preview.carbs_g,
@@ -473,8 +473,8 @@ const overlayStyle: React.CSSProperties = {
 };
 
 const panelStyle: React.CSSProperties = {
-  background: "#0f172a",
-  border: "1px solid #1e293b",
+  background: "var(--wq-surface)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 12,
   padding: 16,
   width: "100%",
@@ -493,21 +493,21 @@ const headerStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 14,
 };
 
 const fieldLabel: React.CSSProperties = {
   display: "block",
   fontSize: 12,
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   marginBottom: 4,
 };
 
-const hint: React.CSSProperties = { fontSize: 12, color: "#64748b" };
+const hint: React.CSSProperties = { fontSize: 12, color: "var(--wq-muted-2)" };
 
 const listStyle: React.CSSProperties = {
   listStyle: "none",
@@ -518,19 +518,19 @@ const listStyle: React.CSSProperties = {
   gap: 2,
   maxHeight: 200,
   overflowY: "auto",
-  borderTop: "1px solid #1e293b",
-  borderBottom: "1px solid #1e293b",
+  borderTop: "1px solid var(--wq-surface-2)",
+  borderBottom: "1px solid var(--wq-surface-2)",
 };
 
 function hitBtn(selected: boolean): React.CSSProperties {
   return {
     width: "100%",
     textAlign: "left",
-    background: selected ? "#1e293b" : "transparent",
+    background: selected ? "var(--wq-surface-2)" : "transparent",
     border: "none",
-    color: "#e2e8f0",
+    color: "var(--wq-text)",
     padding: "8px 6px",
-    borderBottom: "1px solid #1e293b",
+    borderBottom: "1px solid var(--wq-surface-2)",
     cursor: "pointer",
   };
 }
@@ -539,9 +539,9 @@ function tabStyle(active: boolean): React.CSSProperties {
   return {
     flex: 1,
     padding: "6px 8px",
-    background: active ? "#1e293b" : "transparent",
-    color: active ? "#e2e8f0" : "#94a3b8",
-    border: "1px solid #1e293b",
+    background: active ? "var(--wq-surface-2)" : "transparent",
+    color: active ? "var(--wq-text)" : "var(--wq-muted)",
+    border: "1px solid var(--wq-surface-2)",
     borderRadius: 6,
     cursor: "pointer",
     fontSize: 13,
@@ -550,8 +550,8 @@ function tabStyle(active: boolean): React.CSSProperties {
 
 function primaryBtn(disabled: boolean): React.CSSProperties {
   return {
-    background: disabled ? "#1e293b" : "#10b981",
-    color: disabled ? "#64748b" : "white",
+    background: disabled ? "var(--wq-surface-2)" : "var(--wq-accent)",
+    color: disabled ? "var(--wq-muted-2)" : "white",
     border: "none",
     borderRadius: 6,
     padding: "10px 14px",

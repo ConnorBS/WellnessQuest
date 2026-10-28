@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import ARRAY, CITEXT, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, CITEXT, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -65,4 +66,11 @@ class User(Base):
     # the registry default order. Unknown/missing keys are reconciled at read time.
     feature_order: Mapped[list[str] | None] = mapped_column(
         ARRAY(String), nullable=True
+    )
+    # Appearance preferences: theme colour overrides, per-tracker card tints and
+    # hidden dashboard sections. Shape is validated by app.schemas.ui_prefs; `{}`
+    # means every default. Kept as one JSONB blob so adding a theme slot or a
+    # hideable section is a schema-module change, not a migration.
+    ui_prefs: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default="{}"
     )

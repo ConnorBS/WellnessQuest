@@ -30,7 +30,7 @@ export function MoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
               + Log
             </button>
           )}
-          <Link href="/mood" style={{ fontSize: 13, color: "#10b981" }}>
+          <Link href="/mood" style={{ fontSize: 13, color: "var(--wq-accent)" }}>
             See all →
           </Link>
         </div>
@@ -40,7 +40,7 @@ export function MoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
       ) : !latest ? (
         <p className="mt-3 text-sm text-slate-400">
           No check-ins yet —{" "}
-          <Link href="/mood" style={{ color: "#10b981" }}>
+          <Link href="/mood" style={{ color: "var(--wq-accent)" }}>
             log how you feel
           </Link>
           .
@@ -55,7 +55,7 @@ export function MoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
               <span style={{ fontSize: 18, fontWeight: 600 }}>
                 {moodsLabel(latest.moods)}
               </span>
-              <span style={{ color: "#94a3b8", fontSize: 12 }}>
+              <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
                 {ENERGY_LABELS[latest.energy]} energy ·{" "}
                 {new Date(latest.occurred_at).toLocaleString(undefined, {
                   weekday: "short",
@@ -65,7 +65,7 @@ export function MoodCard({ showQuickLog = false }: { showQuickLog?: boolean }) {
               </span>
             </div>
           </div>
-          <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 6 }}>
+          <p style={{ color: "var(--wq-muted)", fontSize: 12, marginTop: 6 }}>
             {todayCount === 0
               ? "No check-ins today yet."
               : `${todayCount} check-in${todayCount === 1 ? "" : "s"} today.`}

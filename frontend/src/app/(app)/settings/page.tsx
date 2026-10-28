@@ -17,22 +17,23 @@ export default function SettingsPage() {
         </h2>
         {data ? (
           <dl style={{ display: "grid", gridTemplateColumns: "120px 1fr", rowGap: 6, fontSize: 14 }}>
-            <dt style={{ color: "#94a3b8" }}>Email</dt>
+            <dt style={{ color: "var(--wq-muted)" }}>Email</dt>
             <dd>{data.email}</dd>
-            <dt style={{ color: "#94a3b8" }}>Display name</dt>
+            <dt style={{ color: "var(--wq-muted)" }}>Display name</dt>
             <dd>{data.display_name}</dd>
-            <dt style={{ color: "#94a3b8" }}>Timezone</dt>
+            <dt style={{ color: "var(--wq-muted)" }}>Timezone</dt>
             <dd>{data.timezone}</dd>
-            <dt style={{ color: "#94a3b8" }}>Role</dt>
+            <dt style={{ color: "var(--wq-muted)" }}>Role</dt>
             <dd>{data.role}</dd>
           </dl>
         ) : (
-          <p style={{ color: "#94a3b8" }}>Loading...</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading...</p>
         )}
       </section>
 
       <nav style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <Link href="/settings/trackers">Trackers (enable / disable)</Link>
+        <Link href="/settings/trackers">Trackers (enable / disable / order)</Link>
+        <Link href="/settings/appearance">Appearance (colours &amp; sections)</Link>
         {isEnabled("water") && <Link href="/settings/water">Water goal &amp; presets</Link>}
         {isEnabled("food") && <Link href="/settings/food">Food ceiling &amp; quick foods</Link>}
         {isEnabled("activity") && (

@@ -87,17 +87,17 @@ export function EditDrawerShell({
 export const fieldLabel: CSSProperties = {
   display: "block",
   fontSize: 12,
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   marginBottom: 4,
 };
 
 export const inputStyle: CSSProperties = {
   width: "100%",
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 14,
 };
 
@@ -113,8 +113,8 @@ const overlayStyle: CSSProperties = {
 };
 
 const panelStyle: CSSProperties = {
-  background: "#0f172a",
-  border: "1px solid #1e293b",
+  background: "var(--wq-surface)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 12,
   padding: 16,
   width: "100%",
@@ -145,15 +145,15 @@ const titleStyle: CSSProperties = { fontSize: 16, fontWeight: 600, margin: 0 };
 
 const closeBtn: CSSProperties = {
   background: "transparent",
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   border: "none",
   fontSize: 20,
 };
 
 const ghostBtn: CSSProperties = {
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #1e293b",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
   padding: "10px 14px",
   fontSize: 14,
@@ -162,8 +162,8 @@ const ghostBtn: CSSProperties = {
 
 function primaryBtnStyleFor(disabled: boolean): CSSProperties {
   return {
-    background: disabled ? "#1e293b" : "#10b981",
-    color: disabled ? "#64748b" : "white",
+    background: disabled ? "var(--wq-surface-2)" : "var(--wq-accent)",
+    color: disabled ? "var(--wq-muted-2)" : "white",
     border: "none",
     borderRadius: 6,
     padding: "10px 14px",

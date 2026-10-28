@@ -8,8 +8,8 @@ import { useUpdateStepsGoal } from "@/hooks/useStepsGoal";
 
 const inputStyle: React.CSSProperties = {
   padding: 8,
-  background: "#0f172a",
-  border: "1px solid #334155",
+  background: "var(--wq-surface)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   color: "inherit",
   width: 120,
@@ -17,8 +17,8 @@ const inputStyle: React.CSSProperties = {
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -53,7 +53,7 @@ export default function StepsSettingsPage() {
             style={inputStyle}
             data-testid="steps-goal-input"
           />
-          <span style={{ color: "#94a3b8" }}>steps / day</span>
+          <span style={{ color: "var(--wq-muted)" }}>steps / day</span>
           <button
             type="button"
             disabled={!goalDraft || goalDraft === today.data?.goal || updateGoal.isPending}
@@ -72,9 +72,9 @@ export default function StepsSettingsPage() {
               onClick={() => setGoalDraft(n)}
               style={{
                 padding: "4px 10px",
-                background: "#1e293b",
-                color: "#e2e8f0",
-                border: "1px solid #334155",
+                background: "var(--wq-surface-2)",
+                color: "var(--wq-text)",
+                border: "1px solid var(--wq-border)",
                 borderRadius: 999,
                 fontSize: 13,
                 cursor: "pointer",
@@ -84,7 +84,7 @@ export default function StepsSettingsPage() {
             </button>
           ))}
         </div>
-        <p style={{ marginTop: 8, color: "#64748b", fontSize: 13 }}>
+        <p style={{ marginTop: 8, color: "var(--wq-muted-2)", fontSize: 13 }}>
           The progress bar on the Steps page tracks against this target. Crossing it
           once a day grants a bonus and extends your steps streak.
         </p>
@@ -94,18 +94,18 @@ export default function StepsSettingsPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 8 }}>
           Where steps come from
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 14 }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 14 }}>
           Log them by hand on the{" "}
-          <Link href="/steps" style={{ color: "#10b981" }}>
+          <Link href="/steps" style={{ color: "var(--wq-accent)" }}>
             Steps page
           </Link>
           , or import them automatically from a phone or wearable by connecting{" "}
-          <Link href="/settings/integrations" style={{ color: "#10b981" }}>
+          <Link href="/settings/integrations" style={{ color: "var(--wq-accent)" }}>
             Home Assistant
           </Link>
           . Both write to the same daily total, so you can mix the two.
         </p>
-        <p style={{ color: "#64748b", fontSize: 13, marginTop: 8 }}>
+        <p style={{ color: "var(--wq-muted-2)", fontSize: 13, marginTop: 8 }}>
           Entries are stored as additions, not as a running total — logging 3,000
           adds 3,000 to the day rather than setting it.
         </p>

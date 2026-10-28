@@ -8,7 +8,7 @@ function thresholdFor(level: number): number {
 }
 
 const RARITY_COLORS: Record<string, string> = {
-  common: "#94a3b8",
+  common: "var(--wq-muted)",
   uncommon: "#4ade80",
   rare: "#60a5fa",
   epic: "#c084fc",
@@ -24,7 +24,7 @@ export function XpBar() {
   const span = Math.max(1, upper - lower);
   const pct = Math.min(100, Math.round(((current - lower) / span) * 100));
   const title = !data.title_hidden ? data.equipped_title : null;
-  const titleColor = title ? RARITY_COLORS[title.rarity] ?? "#cbd5e1" : null;
+  const titleColor = title ? RARITY_COLORS[title.rarity] ?? "var(--wq-text-2)" : null;
   return (
     <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-4">
       {title && (

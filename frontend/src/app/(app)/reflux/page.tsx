@@ -19,8 +19,8 @@ import type { RefluxEntry, RefluxSeverity, RefluxTrigger } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -38,8 +38,8 @@ const dangerBtn: React.CSSProperties = {
 const subtleBtn: React.CSSProperties = {
   padding: "4px 8px",
   background: "transparent",
-  color: "#cbd5e1",
-  border: "1px solid #334155",
+  color: "var(--wq-text-2)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 12,
 };
@@ -128,13 +128,13 @@ export default function RefluxPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 4 }}>
           Usual suspects
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 12, marginBottom: 12 }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 12, marginBottom: 12 }}>
           Ranked by how often each trigger was ticked, weighted by how bad the
           episode was, across the {recentCount} episode
           {recentCount === 1 ? "" : "s"} in the last 30 days.
         </p>
         {triggers.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>
+          <p style={{ color: "var(--wq-muted)" }}>
             Nothing to rank yet — tick the triggers you suspect when you log an
             episode and a pattern will show up here.
           </p>
@@ -144,14 +144,14 @@ export default function RefluxPage() {
               <li key={t.trigger} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, gap: 8 }}>
                   <span>{TRIGGER_LABELS[t.trigger]}</span>
-                  <span style={{ color: "#94a3b8", whiteSpace: "nowrap" }}>
+                  <span style={{ color: "var(--wq-muted)", whiteSpace: "nowrap" }}>
                     {t.count}× ·{" "}
                     <span style={{ color: SEVERITY_META[t.typicalSeverity].color }}>
                       {SEVERITY_META[t.typicalSeverity].label.toLowerCase()}
                     </span>
                   </span>
                 </div>
-                <div style={{ height: 6, borderRadius: 3, background: "#1e293b", overflow: "hidden" }}>
+                <div style={{ height: 6, borderRadius: 3, background: "var(--wq-surface-2)", overflow: "hidden" }}>
                   <div
                     style={{
                       width: `${Math.round(t.share * 100)}%`,
@@ -171,9 +171,9 @@ export default function RefluxPage() {
           History
         </h2>
         {history.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : entries.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No episodes yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No episodes yet.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             {entries.map((e) => {
@@ -186,7 +186,7 @@ export default function RefluxPage() {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "8px 0",
-                    borderBottom: "1px solid #1e293b",
+                    borderBottom: "1px solid var(--wq-surface-2)",
                     gap: 8,
                   }}
                 >
@@ -199,12 +199,12 @@ export default function RefluxPage() {
                       <span style={{ fontWeight: 600 }}>
                         {meta.label}
                         {e.triggers.length > 0 && (
-                          <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 12 }}>
+                          <span style={{ color: "var(--wq-muted)", fontWeight: 400, fontSize: 12 }}>
                             {" "}· {e.triggers.map((t) => TRIGGER_LABELS[t]).join(", ")}
                           </span>
                         )}
                       </span>
-                      <span style={{ color: "#94a3b8", fontSize: 12 }}>
+                      <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
                         {new Date(e.occurred_at).toLocaleString(undefined, {
                           weekday: "short",
                           month: "short",

@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { apiPatch } from "@/lib/api";
 import { MeSchema } from "@/lib/schemas";
+import type { UiPrefs } from "@/lib/theme";
 
 interface MePatch {
   show_weight_card?: boolean;
@@ -14,6 +15,8 @@ interface MePatch {
   bp_titles_opt_out?: boolean;
   show_raw_weight_delta?: boolean;
   show_bp_category?: boolean;
+  // Replaces the whole appearance blob — send the full object.
+  ui_prefs?: UiPrefs;
 }
 
 export function useUpdateMe() {

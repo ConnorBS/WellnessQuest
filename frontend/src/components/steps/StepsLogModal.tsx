@@ -117,25 +117,25 @@ function formatLogError(err: unknown): string {
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 12,
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   marginBottom: 4,
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 14,
 };
 
 const chipStyle: React.CSSProperties = {
   padding: "6px 12px",
-  background: "#1e293b",
-  color: "#e2e8f0",
-  border: "1px solid #334155",
+  background: "var(--wq-surface-2)",
+  color: "var(--wq-text)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 999,
   fontSize: 13,
   cursor: "pointer",
@@ -153,8 +153,8 @@ const errorStyle: React.CSSProperties = {
 
 function submitStyle(disabled: boolean): React.CSSProperties {
   return {
-    background: disabled ? "#1e293b" : "#10b981",
-    color: disabled ? "#64748b" : "white",
+    background: disabled ? "var(--wq-surface-2)" : "var(--wq-accent)",
+    color: disabled ? "var(--wq-muted-2)" : "white",
     border: "none",
     borderRadius: 6,
     padding: "10px 14px",

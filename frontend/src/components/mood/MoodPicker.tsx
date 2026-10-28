@@ -18,12 +18,12 @@ export function MoodPicker({ value, onChange }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <p style={{ margin: 0, fontSize: 13, color: value.length ? "#e2e8f0" : "#64748b" }}>
+      <p style={{ margin: 0, fontSize: 13, color: value.length ? "var(--wq-text)" : "var(--wq-muted-2)" }}>
         {value.length ? `Feeling: ${moodsLabel(value)}` : "Nothing picked yet"}
       </p>
       {MOOD_GROUPS.map((group) => (
         <div key={group.label}>
-          <span style={{ color: "#94a3b8", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <span style={{ color: "var(--wq-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
             {group.label}
           </span>
           <div
@@ -52,9 +52,9 @@ export function MoodPicker({ value, onChange }: Props) {
                     gap: 2,
                     padding: "8px 4px",
                     borderRadius: 8,
-                    border: selected ? `2px solid ${meta.color}` : "1px solid #334155",
+                    border: selected ? `2px solid ${meta.color}` : "1px solid var(--wq-border)",
                     background: selected ? `${meta.color}22` : "transparent",
-                    color: "#e2e8f0",
+                    color: "var(--wq-text)",
                     fontSize: 12,
                     cursor: "pointer",
                   }}

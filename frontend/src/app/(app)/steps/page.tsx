@@ -33,7 +33,7 @@ export default function StepsPage() {
             onClick={() => setShowLog(true)}
             data-testid="open-steps-log"
             style={{
-              background: "#10b981",
+              background: "var(--wq-accent)",
               color: "white",
               border: "none",
               borderRadius: 6,
@@ -72,7 +72,7 @@ export default function StepsPage() {
               >
                 <span>+{e.count.toLocaleString()} steps</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: "#94a3b8", whiteSpace: "nowrap" }}>
+                  <span style={{ color: "var(--wq-muted)", whiteSpace: "nowrap" }}>
                     {new Date(e.occurred_at).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -106,7 +106,7 @@ export default function StepsPage() {
 }
 
 const iconBtn: React.CSSProperties = {
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   background: "transparent",
   border: "none",
   cursor: "pointer",

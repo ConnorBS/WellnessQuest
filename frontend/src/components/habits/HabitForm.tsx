@@ -21,8 +21,8 @@ const inputStyle: React.CSSProperties = {
 
 const buttonStyle: React.CSSProperties = {
   padding: "10px 14px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 600,
@@ -31,8 +31,8 @@ const buttonStyle: React.CSSProperties = {
 const secondaryButtonStyle: React.CSSProperties = {
   padding: "10px 14px",
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #334155",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
 };
 
@@ -86,8 +86,8 @@ export function HabitForm({ initial, onSubmit, onCancel, busy }: Props) {
         />
       </label>
 
-      <fieldset style={{ border: "1px solid #334155", borderRadius: 8, padding: 12 }}>
-        <legend style={{ color: "#cbd5e1", padding: "0 6px" }}>Cadence</legend>
+      <fieldset style={{ border: "1px solid var(--wq-border)", borderRadius: 8, padding: 12 }}>
+        <legend style={{ color: "var(--wq-text-2)", padding: "0 6px" }}>Cadence</legend>
 
         <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
           <input
@@ -160,7 +160,7 @@ export function HabitForm({ initial, onSubmit, onCancel, busy }: Props) {
 
       <div>
         <div style={{ display: "flex", gap: 12, marginBottom: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 14, color: "#94a3b8" }}>Icon:</span>
+          <span style={{ fontSize: 14, color: "var(--wq-muted)" }}>Icon:</span>
           {(["builtin", "upload", "none"] as const).map((k) => (
             <label key={k} style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 4 }}>
               <input
@@ -191,12 +191,12 @@ export function HabitForm({ initial, onSubmit, onCancel, busy }: Props) {
                 if (f) handleFile(f);
               }}
             />
-            {upload.isPending && <p style={{ color: "#94a3b8", fontSize: 13 }}>Uploading…</p>}
+            {upload.isPending && <p style={{ color: "var(--wq-muted)", fontSize: 13 }}>Uploading…</p>}
             {uploadError && <p style={{ color: "#fca5a5", fontSize: 13 }}>{uploadError}</p>}
             {iconKey && !upload.isPending && (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <PresetIcon preset={{ icon_kind: "upload", icon_key: iconKey }} size={56} />
-                <span style={{ fontSize: 13, color: "#94a3b8" }}>Looks good — save to attach.</span>
+                <span style={{ fontSize: 13, color: "var(--wq-muted)" }}>Looks good — save to attach.</span>
               </div>
             )}
           </div>

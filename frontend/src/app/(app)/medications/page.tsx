@@ -14,7 +14,7 @@ import { changeSummary, doseText, durationText, formatDay } from "@/lib/medicati
 import type { Medication } from "@/lib/schemas";
 
 const card: React.CSSProperties = {
-  border: "1px solid #1e293b",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 10,
   padding: "10px 12px",
   display: "block",
@@ -24,8 +24,8 @@ const card: React.CSSProperties = {
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -34,23 +34,23 @@ const primaryBtn: React.CSSProperties = {
 const ghostBtn: React.CSSProperties = {
   padding: "6px 10px",
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #334155",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 13,
 };
 
 const field: React.CSSProperties = {
   padding: "8px 10px",
-  background: "#0f172a",
-  color: "#e2e8f0",
-  border: "1px solid #334155",
+  background: "var(--wq-surface)",
+  color: "var(--wq-text)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 14,
   width: "100%",
 };
 
-const label: React.CSSProperties = { color: "#94a3b8", fontSize: 12, display: "block", marginBottom: 4 };
+const label: React.CSSProperties = { color: "var(--wq-muted)", fontSize: 12, display: "block", marginBottom: 4 };
 
 function MedRow({ med, today }: { med: Medication; today: string }) {
   const dose = doseText(med);
@@ -58,12 +58,12 @@ function MedRow({ med, today }: { med: Medication; today: string }) {
     <Link href={`/medications/detail?id=${med.id}`} style={card}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
         <strong style={{ fontSize: 15 }}>{med.name}</strong>
-        <span style={{ color: "#64748b", fontSize: 12 }}>
+        <span style={{ color: "var(--wq-muted-2)", fontSize: 12 }}>
           {med.change_count} {med.change_count === 1 ? "entry" : "entries"}
         </span>
       </div>
-      {dose && <div style={{ color: "#cbd5e1", fontSize: 14, marginTop: 2 }}>{dose}</div>}
-      <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
+      {dose && <div style={{ color: "var(--wq-text-2)", fontSize: 14, marginTop: 2 }}>{dose}</div>}
+      <div style={{ color: "var(--wq-muted-2)", fontSize: 12, marginTop: 4 }}>
         {med.active
           ? `Since ${formatDay(med.started_on)} · ${durationText(med.started_on, null, today)}`
           : `${formatDay(med.started_on)} → ${formatDay(med.ended_on!)} · ${durationText(
@@ -74,7 +74,7 @@ function MedRow({ med, today }: { med: Medication; today: string }) {
         {med.reason ? ` · ${med.reason}` : ""}
       </div>
       {!med.active && med.stopped_reason && (
-        <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
+        <div style={{ color: "var(--wq-muted)", fontSize: 12, marginTop: 2 }}>
           Stopped: {med.stopped_reason}
         </div>
       )}
@@ -274,9 +274,9 @@ export default function MedicationsPage() {
         {showAdd && <AddForm onDone={() => setShowAdd(false)} />}
 
         {active.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : actives.length === 0 ? (
-          <p style={{ color: "#94a3b8", fontSize: 14 }}>
+          <p style={{ color: "var(--wq-muted)", fontSize: 14 }}>
             Nothing here yet. Add a medication to keep a record of what you take and how it
             changes.
           </p>
@@ -302,13 +302,13 @@ export default function MedicationsPage() {
           }}
         >
           <h2 className="text-lg font-semibold">Past medications</h2>
-          <span style={{ color: "#94a3b8", fontSize: 13 }}>
+          <span style={{ color: "var(--wq-muted)", fontSize: 13 }}>
             {pasts.length} · {showPast ? "hide" : "show"}
           </span>
         </button>
         {showPast &&
           (pasts.length === 0 ? (
-            <p style={{ color: "#94a3b8", fontSize: 14, marginTop: 10 }}>
+            <p style={{ color: "var(--wq-muted)", fontSize: 14, marginTop: 10 }}>
               Nothing stopped yet. Medications you stop move here — the history stays.
             </p>
           ) : (
@@ -333,11 +333,11 @@ export default function MedicationsPage() {
           }}
         >
           <h2 className="text-lg font-semibold">What changed, and when</h2>
-          <span style={{ color: "#94a3b8", fontSize: 13 }}>{showHistory ? "hide" : "show"}</span>
+          <span style={{ color: "var(--wq-muted)", fontSize: 13 }}>{showHistory ? "hide" : "show"}</span>
         </button>
         {showHistory &&
           (changes.length === 0 ? (
-            <p style={{ color: "#94a3b8", fontSize: 14, marginTop: 10 }}>
+            <p style={{ color: "var(--wq-muted)", fontSize: 14, marginTop: 10 }}>
               No changes recorded yet.
             </p>
           ) : (
@@ -353,15 +353,15 @@ export default function MedicationsPage() {
             >
               {changes.map((c) => (
                 <li key={c.id} style={{ fontSize: 14 }}>
-                  <span style={{ color: "#64748b", fontSize: 12 }}>
+                  <span style={{ color: "var(--wq-muted-2)", fontSize: 12 }}>
                     {formatDay(c.effective_on)}
                   </span>{" "}
-                  <Link href={`/medications/detail?id=${c.medication_id}`} style={{ color: "#10b981" }}>
+                  <Link href={`/medications/detail?id=${c.medication_id}`} style={{ color: "var(--wq-accent)" }}>
                     {c.medication_name}
                   </Link>{" "}
-                  <span style={{ color: "#cbd5e1" }}>— {changeSummary(c)}</span>
+                  <span style={{ color: "var(--wq-text-2)" }}>— {changeSummary(c)}</span>
                   {c.note && (
-                    <div style={{ color: "#94a3b8", fontSize: 13 }}>{c.note}</div>
+                    <div style={{ color: "var(--wq-muted)", fontSize: 13 }}>{c.note}</div>
                   )}
                 </li>
               ))}

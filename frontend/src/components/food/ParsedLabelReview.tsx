@@ -145,7 +145,7 @@ export function ParsedLabelReview({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <p style={{ fontSize: 13, color: "#cbd5e1", margin: 0 }}>
+      <p style={{ fontSize: 13, color: "var(--wq-text-2)", margin: 0 }}>
         Review the values we read from your label and fix anything that looks off.
         OCR isn&apos;t perfect — your edits are what we save.
       </p>
@@ -159,7 +159,7 @@ export function ParsedLabelReview({
             maxHeight: 160,
             objectFit: "contain",
             borderRadius: 6,
-            border: "1px solid #1e293b",
+            border: "1px solid var(--wq-surface-2)",
             alignSelf: "flex-start",
           }}
         />
@@ -240,7 +240,7 @@ export function ParsedLabelReview({
 
       {rescaleOpen ? (
         <div style={rescaleBox}>
-          <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>
+          <p style={{ fontSize: 12, color: "var(--wq-muted)", margin: 0 }}>
             Current: {servingG === "" ? "—" : `${servingG} ${unitLabel}`}
             {kcal !== "" ? ` · ${kcal} kcal` : ""}
             {protein.trim() ? ` · P ${protein}` : ""}
@@ -270,7 +270,7 @@ export function ParsedLabelReview({
               Rescale
             </button>
           </div>
-          <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>
+          <p style={{ fontSize: 11, color: "var(--wq-muted-2)", margin: 0 }}>
             Multiplies kcal, macros, and all nutrient values by the new/old ratio.
           </p>
         </div>
@@ -356,13 +356,13 @@ export function ParsedLabelReview({
       <details
         open={panelOpen}
         style={{
-          border: "1px solid #1e293b",
+          border: "1px solid var(--wq-surface-2)",
           borderRadius: 6,
           padding: 10,
-          background: "#0b1220",
+          background: "var(--wq-bg)",
         }}
       >
-        <summary style={{ cursor: "pointer", color: "#cbd5e1", fontSize: 13 }}>
+        <summary style={{ cursor: "pointer", color: "var(--wq-text-2)", fontSize: 13 }}>
           Nutrients ({parsedNutrientCount} read from label · {filledNutrientCount} set)
         </summary>
         <div
@@ -385,7 +385,7 @@ export function ParsedLabelReview({
             const value = nutrients[key as keyof NutrientPanel] ?? "";
             return (
               <label key={key}>
-                <span style={{ display: "block", color: "#94a3b8" }}>
+                <span style={{ display: "block", color: "var(--wq-muted)" }}>
                   {meta.label} ({meta.unit})
                   {parsedFromLabel.has(key) ? (
                     <span style={fromLabelChip}> ✓</span>
@@ -414,7 +414,7 @@ export function ParsedLabelReview({
           alignSelf: "flex-start",
           background: "transparent",
           border: "none",
-          color: "#64748b",
+          color: "var(--wq-muted-2)",
           fontSize: 12,
           cursor: "pointer",
           padding: 0,
@@ -425,12 +425,12 @@ export function ParsedLabelReview({
       {showRaw ? (
         <pre
           style={{
-            background: "#020617",
-            border: "1px solid #1e293b",
+            background: "var(--wq-bg)",
+            border: "1px solid var(--wq-surface-2)",
             borderRadius: 6,
             padding: 8,
             fontSize: 11,
-            color: "#64748b",
+            color: "var(--wq-muted-2)",
             maxHeight: 160,
             overflow: "auto",
             whiteSpace: "pre-wrap",
@@ -482,17 +482,17 @@ function toNumOrNull(v: string): number | null {
 const fieldLabel: React.CSSProperties = {
   display: "block",
   fontSize: 12,
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   marginBottom: 4,
 };
 
 const fromLabelChip: React.CSSProperties = {
-  color: "#10b981",
+  color: "var(--wq-accent)",
   fontWeight: 600,
 };
 
 const hintStyle: React.CSSProperties = {
-  color: "#64748b",
+  color: "var(--wq-muted-2)",
   fontWeight: "normal",
   fontSize: 12,
 };
@@ -500,10 +500,10 @@ const hintStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 14,
 };
 
@@ -511,7 +511,7 @@ const linkBtn: React.CSSProperties = {
   alignSelf: "flex-start",
   background: "transparent",
   border: "none",
-  color: "#10b981",
+  color: "var(--wq-accent)",
   fontSize: 12,
   cursor: "pointer",
   padding: 0,
@@ -522,15 +522,15 @@ const rescaleBox: React.CSSProperties = {
   flexDirection: "column",
   gap: 8,
   padding: 10,
-  background: "#0b1220",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
 };
 
 function primaryBtn(disabled: boolean): React.CSSProperties {
   return {
-    background: disabled ? "#1e293b" : "#10b981",
-    color: disabled ? "#64748b" : "white",
+    background: disabled ? "var(--wq-surface-2)" : "var(--wq-accent)",
+    color: disabled ? "var(--wq-muted-2)" : "white",
     border: "none",
     borderRadius: 6,
     padding: "10px 14px",
@@ -543,8 +543,8 @@ function primaryBtn(disabled: boolean): React.CSSProperties {
 function secondaryBtn(disabled: boolean): React.CSSProperties {
   return {
     background: "transparent",
-    color: disabled ? "#64748b" : "#10b981",
-    border: "1px solid #10b981",
+    color: disabled ? "var(--wq-muted-2)" : "var(--wq-accent)",
+    border: "1px solid var(--wq-accent)",
     borderRadius: 6,
     padding: "10px 14px",
     fontSize: 14,
@@ -555,8 +555,8 @@ function secondaryBtn(disabled: boolean): React.CSSProperties {
 
 const ghostBtn: React.CSSProperties = {
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #1e293b",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
   padding: "10px 14px",
   fontSize: 14,

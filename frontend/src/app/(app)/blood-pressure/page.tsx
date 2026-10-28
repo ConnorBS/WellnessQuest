@@ -10,8 +10,8 @@ import type { BloodPressureEntry } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -29,8 +29,8 @@ const dangerBtn: React.CSSProperties = {
 const subtleBtn: React.CSSProperties = {
   padding: "4px 8px",
   background: "transparent",
-  color: "#cbd5e1",
-  border: "1px solid #334155",
+  color: "var(--wq-text-2)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 12,
 };
@@ -63,14 +63,14 @@ export default function BloodPressurePage() {
           History
         </h2>
         {hasTarget && (
-          <p style={{ color: "#cbd5e1", fontSize: 13, marginBottom: 12 }}>
+          <p style={{ color: "var(--wq-text-2)", fontSize: 13, marginBottom: 12 }}>
             Target: <strong>{target!.target_systolic}/{target!.target_diastolic}</strong> mmHg
           </p>
         )}
         {history.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : !history.data || history.data.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No entries yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No entries yet.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             {history.data.map((e) => (
@@ -81,7 +81,7 @@ export default function BloodPressurePage() {
                   alignItems: "center",
                   justifyContent: "space-between",
                   padding: "8px 0",
-                  borderBottom: "1px solid #1e293b",
+                  borderBottom: "1px solid var(--wq-surface-2)",
                   gap: 8,
                 }}
               >
@@ -92,10 +92,10 @@ export default function BloodPressurePage() {
                     </span>
                     <BPCategoryChip systolic={e.systolic} diastolic={e.diastolic} />
                     {e.pulse != null && (
-                      <span style={{ color: "#94a3b8", fontSize: 12 }}>· {e.pulse} bpm</span>
+                      <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>· {e.pulse} bpm</span>
                     )}
                   </div>
-                  <span style={{ color: "#94a3b8", fontSize: 12 }}>
+                  <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
                     {new Date(e.occurred_at).toLocaleString(undefined, {
                       weekday: "short",
                       month: "short",

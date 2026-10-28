@@ -137,8 +137,8 @@ export default function IntegrationsPage() {
 
   const inputStyle: React.CSSProperties = {
     padding: 8,
-    background: "#0f172a",
-    border: "1px solid #334155",
+    background: "var(--wq-surface)",
+    border: "1px solid var(--wq-border)",
     color: "inherit",
   };
 
@@ -208,7 +208,7 @@ export default function IntegrationsPage() {
           </label>
           <fieldset
             style={{
-              border: "1px solid #334155",
+              border: "1px solid var(--wq-border)",
               borderRadius: 8,
               padding: 8,
               display: "flex",
@@ -216,7 +216,7 @@ export default function IntegrationsPage() {
               gap: 6,
             }}
           >
-            <legend style={{ fontSize: 13, color: "#94a3b8" }}>
+            <legend style={{ fontSize: 13, color: "var(--wq-muted)" }}>
               Entities to import (leave blank to skip)
             </legend>
             <label>
@@ -260,7 +260,7 @@ export default function IntegrationsPage() {
           </label>
           <fieldset
             style={{
-              border: "1px solid #334155",
+              border: "1px solid var(--wq-border)",
               borderRadius: 8,
               padding: 8,
               display: "flex",
@@ -268,7 +268,7 @@ export default function IntegrationsPage() {
               gap: 6,
             }}
           >
-            <legend style={{ fontSize: 13, color: "#94a3b8" }}>
+            <legend style={{ fontSize: 13, color: "var(--wq-muted)" }}>
               Outbound webhook events
             </legend>
             {DEFAULT_EVENTS.map((ev) => (
@@ -286,8 +286,8 @@ export default function IntegrationsPage() {
             type="submit"
             style={{
               padding: "8px 12px",
-              background: "#10b981",
-              color: "#0b1220",
+              background: "var(--wq-accent)",
+              color: "var(--wq-on-accent)",
               border: 0,
               borderRadius: 8,
             }}
@@ -305,7 +305,7 @@ export default function IntegrationsPage() {
           Configured
         </h2>
         {items.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>None yet.</p>
+          <p style={{ color: "var(--wq-muted)" }}>None yet.</p>
         ) : (
           <ul
             style={{
@@ -328,7 +328,7 @@ export default function IntegrationsPage() {
               >
                 <span>
                   {i.name}{" "}
-                  <span style={{ color: "#94a3b8", fontSize: 12 }}>
+                  <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
                     · {i.kind} {i.enabled ? "" : "(disabled)"}
                   </span>
                 </span>

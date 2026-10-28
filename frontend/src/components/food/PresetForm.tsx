@@ -43,16 +43,16 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: 8,
   marginTop: 4,
-  background: "#0f172a",
-  border: "1px solid #334155",
+  background: "var(--wq-surface)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   color: "inherit",
 };
 
 const buttonStyle: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -61,8 +61,8 @@ const buttonStyle: React.CSSProperties = {
 const secondaryButtonStyle: React.CSSProperties = {
   padding: "8px 12px",
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #334155",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
 };
 
@@ -227,7 +227,7 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
       </label>
 
       <label>
-        Brand <span style={{ color: "#64748b", fontWeight: "normal", fontSize: 12 }}>(optional)</span>
+        Brand <span style={{ color: "var(--wq-muted-2)", fontWeight: "normal", fontSize: 12 }}>(optional)</span>
         <input
           type="text"
           maxLength={120}
@@ -283,7 +283,7 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
           style={{
             background: "transparent",
             border: "none",
-            color: "#10b981",
+            color: "var(--wq-accent)",
             fontSize: 12,
             cursor: "pointer",
             padding: 0,
@@ -299,12 +299,12 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
               gap: 8,
               padding: 10,
               marginTop: 6,
-              background: "#0b1220",
-              border: "1px solid #1e293b",
+              background: "var(--wq-bg)",
+              border: "1px solid var(--wq-surface-2)",
               borderRadius: 6,
             }}
           >
-            <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>
+            <p style={{ fontSize: 12, color: "var(--wq-muted)", margin: 0 }}>
               Current: {servingG.trim() === "" ? "—" : `${servingG} ${unitLabel}`} ·{" "}
               {kcal} kcal
               {protein.trim() ? ` · P ${protein}` : ""}
@@ -348,7 +348,7 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
                 Rescale
               </button>
             </div>
-            <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>
+            <p style={{ fontSize: 11, color: "var(--wq-muted-2)", margin: 0 }}>
               Multiplies kcal, macros, and all nutrient values by the new/old ratio.
             </p>
           </div>
@@ -410,13 +410,13 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
       <details
         open={Object.values(nutrients).some((v) => v != null)}
         style={{
-          border: "1px solid #1e293b",
+          border: "1px solid var(--wq-surface-2)",
           borderRadius: 6,
           padding: 10,
-          background: "#0b1220",
+          background: "var(--wq-bg)",
         }}
       >
-        <summary style={{ cursor: "pointer", fontSize: 13, color: "#cbd5e1" }}>
+        <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--wq-text-2)" }}>
           Full nutrient panel ({Object.values(nutrients).filter((v) => v != null).length} set)
         </summary>
         <div
@@ -433,7 +433,7 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
             if (!meta) return null;
             return (
               <label key={key}>
-                <span style={{ display: "block", color: "#94a3b8" }}>
+                <span style={{ display: "block", color: "var(--wq-muted)" }}>
                   {meta.label} ({meta.unit})
                 </span>
                 <input
@@ -453,7 +453,7 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
       </details>
 
       <label>
-        Default meal <span style={{ color: "#64748b", fontWeight: "normal", fontSize: 12 }}>(optional)</span>
+        Default meal <span style={{ color: "var(--wq-muted-2)", fontWeight: "normal", fontSize: 12 }}>(optional)</span>
         <select
           value={meal}
           onChange={(e) => setMeal(e.target.value as MealType | "")}
@@ -469,7 +469,7 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
 
       <div>
         <div style={{ display: "flex", gap: 12, marginBottom: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 14, color: "#94a3b8" }}>Icon:</span>
+          <span style={{ fontSize: 14, color: "var(--wq-muted)" }}>Icon:</span>
           {(["builtin", "upload", "none"] as const).map((k) => (
             <label key={k} style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 4 }}>
               <input
@@ -501,12 +501,12 @@ export function PresetForm({ initial, onSubmit, onCancel, busy }: Props) {
               }}
               style={{ fontSize: 14 }}
             />
-            {upload.isPending && <p style={{ color: "#94a3b8", fontSize: 13 }}>Uploading…</p>}
+            {upload.isPending && <p style={{ color: "var(--wq-muted)", fontSize: 13 }}>Uploading…</p>}
             {uploadError && <p style={{ color: "#fca5a5", fontSize: 13 }}>{uploadError}</p>}
             {iconKey && !upload.isPending && (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <PresetIcon preset={{ icon_kind: "upload", icon_key: iconKey }} size={56} />
-                <span style={{ fontSize: 13, color: "#94a3b8" }}>Looks good — save to attach.</span>
+                <span style={{ fontSize: 13, color: "var(--wq-muted)" }}>Looks good — save to attach.</span>
               </div>
             )}
           </div>

@@ -69,8 +69,8 @@ export default function ChangePasswordPage() {
     width: "100%",
     padding: 10,
     marginTop: 4,
-    background: "#0f172a",
-    border: "1px solid #334155",
+    background: "var(--wq-surface)",
+    border: "1px solid var(--wq-border)",
     color: "inherit",
     borderRadius: 8,
   };

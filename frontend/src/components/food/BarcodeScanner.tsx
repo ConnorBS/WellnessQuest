@@ -79,8 +79,8 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#0f172a",
-          border: "1px solid #1e293b",
+          background: "var(--wq-surface)",
+          border: "1px solid var(--wq-surface-2)",
           borderRadius: 12,
           padding: 16,
           width: "100%",
@@ -104,7 +104,7 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
             aria-label="Close"
             style={{
               background: "transparent",
-              color: "#94a3b8",
+              color: "var(--wq-muted)",
               border: "none",
               fontSize: 20,
             }}
@@ -140,11 +140,11 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
               <div
                 style={{
                   padding: 10,
-                  border: "1px solid #1e293b",
+                  border: "1px solid var(--wq-surface-2)",
                   borderRadius: 6,
-                  background: "#0b1220",
+                  background: "var(--wq-bg)",
                   fontSize: 12,
-                  color: "#cbd5e1",
+                  color: "var(--wq-text-2)",
                   display: "flex",
                   flexDirection: "column",
                   gap: 4,
@@ -153,7 +153,7 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
                 {!isSecure ? (
                   <>
                     <strong style={{ color: "#fcd34d" }}>HTTPS required for live scan.</strong>
-                    <span style={{ color: "#94a3b8" }}>
+                    <span style={{ color: "var(--wq-muted)" }}>
                       Browsers only expose the camera over HTTPS (or
                       <code style={{ margin: "0 4px" }}>localhost</code>). You&apos;re on plain
                       HTTP, so live scanning is blocked at the browser layer regardless of
@@ -166,7 +166,7 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
                     <strong style={{ color: "#fcd34d" }}>
                       This browser doesn&apos;t expose BarcodeDetector.
                     </strong>
-                    <span style={{ color: "#94a3b8" }}>
+                    <span style={{ color: "var(--wq-muted)" }}>
                       Chrome / Edge / Samsung Internet on Android support it. Firefox and
                       Safari don&apos;t yet. Type the barcode from the package below.
                     </span>
@@ -188,10 +188,10 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
               style={{
                 width: "100%",
                 padding: "8px 10px",
-                background: "#020617",
-                border: "1px solid #1e293b",
+                background: "var(--wq-bg)",
+                border: "1px solid var(--wq-surface-2)",
                 borderRadius: 6,
-                color: "#e2e8f0",
+                color: "var(--wq-text)",
                 fontSize: 14,
               }}
             />
@@ -199,7 +199,7 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
               type="button"
               onClick={submitTyped}
               style={{
-                background: "#10b981",
+                background: "var(--wq-accent)",
                 color: "white",
                 border: "none",
                 borderRadius: 6,
@@ -307,11 +307,11 @@ function CameraScanner({
         style={{
           width: "100%",
           maxHeight: "60vh",
-          background: "#020617",
+          background: "var(--wq-bg)",
           borderRadius: 8,
         }}
       />
-      <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 6 }}>
+      <p style={{ fontSize: 12, color: "var(--wq-muted)", marginTop: 6 }}>
         {scanning ? "Hold a barcode in view…" : "Starting camera…"}
       </p>
     </div>
@@ -322,9 +322,9 @@ function tabStyle(active: boolean): React.CSSProperties {
   return {
     flex: 1,
     padding: "6px 10px",
-    background: active ? "#1e293b" : "transparent",
-    color: active ? "#e2e8f0" : "#94a3b8",
-    border: "1px solid #1e293b",
+    background: active ? "var(--wq-surface-2)" : "transparent",
+    color: active ? "var(--wq-text)" : "var(--wq-muted)",
+    border: "1px solid var(--wq-surface-2)",
     borderRadius: 6,
     cursor: "pointer",
     fontSize: 13,

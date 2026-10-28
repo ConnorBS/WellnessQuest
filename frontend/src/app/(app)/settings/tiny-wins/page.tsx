@@ -13,8 +13,8 @@ import { todayLocalIso } from "@/lib/day-context";
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -23,8 +23,8 @@ const primaryBtn: React.CSSProperties = {
 const subtleBtn: React.CSSProperties = {
   padding: "4px 8px",
   background: "transparent",
-  color: "#cbd5e1",
-  border: "1px solid #334155",
+  color: "var(--wq-text-2)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 12,
 };
@@ -66,7 +66,7 @@ export default function TinyWinsSettingsPage() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 8 }}>
           Tiny wins list
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 12 }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 13, marginBottom: 12 }}>
           These self-care items appear on your daily Tiny wins checklist. Make them yours —
           rename, remove, reorder, or add your own. Removing keeps past check-ins intact.
         </p>
@@ -91,9 +91,9 @@ export default function TinyWinsSettingsPage() {
         </div>
 
         {list.isLoading ? (
-          <p style={{ color: "#94a3b8" }}>Loading…</p>
+          <p style={{ color: "var(--wq-muted)" }}>Loading…</p>
         ) : items.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No items yet — add one above.</p>
+          <p style={{ color: "var(--wq-muted)" }}>No items yet — add one above.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             {items.map((it, i) => (
@@ -104,7 +104,7 @@ export default function TinyWinsSettingsPage() {
                   alignItems: "center",
                   gap: 8,
                   padding: "6px 0",
-                  borderBottom: "1px solid #1e293b",
+                  borderBottom: "1px solid var(--wq-surface-2)",
                 }}
               >
                 <div style={{ display: "flex", flexDirection: "column" }}>

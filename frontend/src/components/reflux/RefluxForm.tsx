@@ -18,8 +18,8 @@ interface Props {
 
 const primaryBtn: React.CSSProperties = {
   padding: "10px 14px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 600,
@@ -47,9 +47,9 @@ export function SeverityPicker({
               flex: 1,
               padding: "10px 4px",
               borderRadius: 6,
-              border: selected ? `2px solid ${meta.color}` : "1px solid #334155",
+              border: selected ? `2px solid ${meta.color}` : "1px solid var(--wq-border)",
               background: selected ? `${meta.color}33` : "transparent",
-              color: "#e2e8f0",
+              color: "var(--wq-text)",
               fontSize: 13,
               cursor: "pointer",
             }}
@@ -85,9 +85,9 @@ export function TriggerPicker({
             style={{
               padding: "6px 10px",
               borderRadius: 999,
-              border: selected ? "2px solid #10b981" : "1px solid #334155",
-              background: selected ? "#10b98122" : "transparent",
-              color: "#e2e8f0",
+              border: selected ? "2px solid var(--wq-accent)" : "1px solid var(--wq-border)",
+              background: selected ? "var(--wq-accent)22" : "transparent",
+              color: "var(--wq-text)",
               fontSize: 12,
               cursor: "pointer",
             }}
@@ -138,14 +138,14 @@ export function RefluxForm({ onSaved }: Props) {
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div>
-        <span style={{ color: "#94a3b8", fontSize: 12 }}>How bad is it?</span>
+        <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>How bad is it?</span>
         <div style={{ marginTop: 6 }}>
           <SeverityPicker value={severity} onChange={setSeverity} />
         </div>
       </div>
 
       <div>
-        <span style={{ color: "#94a3b8", fontSize: 12 }}>
+        <span style={{ color: "var(--wq-muted)", fontSize: 12 }}>
           Anything from the usual suspects beforehand?
         </span>
         <div style={{ marginTop: 6 }}>

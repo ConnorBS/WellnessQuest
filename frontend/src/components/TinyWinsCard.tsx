@@ -17,7 +17,7 @@ export function TinyWinsCard() {
     <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
       <header className="flex items-baseline justify-between" style={{ gap: 8 }}>
         <h2 className="text-lg font-semibold">Tiny wins</h2>
-        <Link href="/tiny-wins" style={{ fontSize: 13, color: "#10b981" }}>
+        <Link href="/tiny-wins" style={{ fontSize: 13, color: "var(--wq-accent)" }}>
           See all →
         </Link>
       </header>
@@ -26,14 +26,14 @@ export function TinyWinsCard() {
       ) : total === 0 ? (
         <p className="mt-3 text-sm text-slate-400">
           No items yet —{" "}
-          <Link href="/settings/tiny-wins" style={{ color: "#10b981" }}>
+          <Link href="/settings/tiny-wins" style={{ color: "var(--wq-accent)" }}>
             add a few
           </Link>
           .
         </p>
       ) : (
         <>
-          <p style={{ color: "#94a3b8", fontSize: 13, marginTop: 6 }}>
+          <p style={{ color: "var(--wq-muted)", fontSize: 13, marginTop: 6 }}>
             {done} of {total} done · every one counts 💙
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8 }}>
@@ -48,13 +48,13 @@ export function TinyWinsCard() {
                   disabled={toggle.isPending}
                   onChange={() => toggle.mutate({ id: i.id, date: viewedDay })}
                 />
-                <span style={{ color: i.done ? "#64748b" : "#e2e8f0", textDecoration: i.done ? "line-through" : "none" }}>
+                <span style={{ color: i.done ? "var(--wq-muted-2)" : "var(--wq-text)", textDecoration: i.done ? "line-through" : "none" }}>
                   {i.label}
                 </span>
               </label>
             ))}
             {total > 4 && (
-              <Link href="/tiny-wins" style={{ color: "#10b981", fontSize: 12, marginTop: 2 }}>
+              <Link href="/tiny-wins" style={{ color: "var(--wq-accent)", fontSize: 12, marginTop: 2 }}>
                 +{total - 4} more
               </Link>
             )}

@@ -16,8 +16,8 @@ interface Props {
 
 const primaryBtn: React.CSSProperties = {
   padding: "10px 14px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 600,
@@ -27,10 +27,10 @@ const textarea: React.CSSProperties = {
   width: "100%",
   minHeight: 96,
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 15,
   lineHeight: 1.5,
   fontFamily: "inherit",
@@ -68,7 +68,7 @@ export function JournalComposer({ date, dateHint, autoFocus, onSaved }: Props) {
       style={{ display: "flex", flexDirection: "column", gap: 8 }}
     >
       {dateHint && (
-        <p style={{ color: "#94a3b8", fontSize: 12, margin: 0 }}>{dateHint}</p>
+        <p style={{ color: "var(--wq-muted)", fontSize: 12, margin: 0 }}>{dateHint}</p>
       )}
       <textarea
         aria-label="Journal note"
@@ -85,7 +85,7 @@ export function JournalComposer({ date, dateHint, autoFocus, onSaved }: Props) {
         <button type="submit" style={primaryBtn} disabled={add.isPending}>
           {add.isPending ? "Saving…" : "Save note"}
         </button>
-        <span style={{ color: "#64748b", fontSize: 12 }}>
+        <span style={{ color: "var(--wq-muted-2)", fontSize: 12 }}>
           {trimmed.length}/{JOURNAL_BODY_MAX}
         </span>
       </div>

@@ -128,8 +128,8 @@ export function WaterLogModal({ onClose }: Props) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#0f172a",
-          border: "1px solid #1e293b",
+          background: "var(--wq-surface)",
+          border: "1px solid var(--wq-surface-2)",
           borderRadius: 12,
           padding: 16,
           width: "100%",
@@ -153,7 +153,7 @@ export function WaterLogModal({ onClose }: Props) {
             aria-label="Close"
             style={{
               background: "transparent",
-              color: "#94a3b8",
+              color: "var(--wq-muted)",
               border: "none",
               fontSize: 20,
               cursor: "pointer",
@@ -166,7 +166,7 @@ export function WaterLogModal({ onClose }: Props) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <label>
             <span style={labelStyle}>
-              Name <span style={{ color: "#64748b" }}>(optional)</span>
+              Name <span style={{ color: "var(--wq-muted-2)" }}>(optional)</span>
             </span>
             <input
               type="text"
@@ -217,7 +217,7 @@ export function WaterLogModal({ onClose }: Props) {
               <span
                 style={{
                   fontSize: 11,
-                  color: "#64748b",
+                  color: "var(--wq-muted-2)",
                   display: "block",
                   marginTop: 4,
                 }}
@@ -240,7 +240,7 @@ export function WaterLogModal({ onClose }: Props) {
               alignItems: "center",
               gap: 8,
               fontSize: 13,
-              color: "#cbd5e1",
+              color: "var(--wq-text-2)",
               cursor: "pointer",
             }}
           >
@@ -276,8 +276,8 @@ export function WaterLogModal({ onClose }: Props) {
             disabled={!valid || add.isPending}
             data-testid="water-log-submit"
             style={{
-              background: !valid || add.isPending ? "#1e293b" : "#10b981",
-              color: !valid || add.isPending ? "#64748b" : "white",
+              background: !valid || add.isPending ? "var(--wq-surface-2)" : "var(--wq-accent)",
+              color: !valid || add.isPending ? "var(--wq-muted-2)" : "white",
               border: "none",
               borderRadius: 6,
               padding: "10px 14px",
@@ -308,16 +308,16 @@ function formatLogError(err: unknown): string {
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 12,
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   marginBottom: 4,
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 10px",
-  background: "#020617",
-  border: "1px solid #1e293b",
+  background: "var(--wq-bg)",
+  border: "1px solid var(--wq-surface-2)",
   borderRadius: 6,
-  color: "#e2e8f0",
+  color: "var(--wq-text)",
   fontSize: 14,
 };

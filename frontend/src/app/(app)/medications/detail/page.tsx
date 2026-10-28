@@ -20,8 +20,8 @@ import type { MedicationDetail } from "@/lib/schemas";
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 12px",
-  background: "#10b981",
-  color: "#0b1220",
+  background: "var(--wq-accent)",
+  color: "var(--wq-on-accent)",
   border: 0,
   borderRadius: 6,
   fontWeight: 500,
@@ -30,8 +30,8 @@ const primaryBtn: React.CSSProperties = {
 const ghostBtn: React.CSSProperties = {
   padding: "6px 10px",
   background: "transparent",
-  color: "#94a3b8",
-  border: "1px solid #334155",
+  color: "var(--wq-muted)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 13,
 };
@@ -47,16 +47,16 @@ const dangerBtn: React.CSSProperties = {
 
 const field: React.CSSProperties = {
   padding: "8px 10px",
-  background: "#0f172a",
-  color: "#e2e8f0",
-  border: "1px solid #334155",
+  background: "var(--wq-surface)",
+  color: "var(--wq-text)",
+  border: "1px solid var(--wq-border)",
   borderRadius: 6,
   fontSize: 14,
   width: "100%",
 };
 
 const label: React.CSSProperties = {
-  color: "#94a3b8",
+  color: "var(--wq-muted)",
   fontSize: 12,
   display: "block",
   marginBottom: 4,
@@ -390,13 +390,13 @@ function MedicationDetail() {
   const today = todayLocalIso();
 
   if (q.isLoading) {
-    return <p style={{ color: "#94a3b8" }}>Loading…</p>;
+    return <p style={{ color: "var(--wq-muted)" }}>Loading…</p>;
   }
   if (q.isError || !q.data) {
     return (
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-        <p style={{ color: "#94a3b8" }}>That medication isn&apos;t here.</p>
-        <Link href="/medications" style={{ color: "#10b981", fontSize: 13 }}>
+        <p style={{ color: "var(--wq-muted)" }}>That medication isn&apos;t here.</p>
+        <Link href="/medications" style={{ color: "var(--wq-accent)", fontSize: 13 }}>
           ← Back to medications
         </Link>
       </section>
@@ -409,7 +409,7 @@ function MedicationDetail() {
   return (
     <>
       <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-        <Link href="/medications" style={{ color: "#10b981", fontSize: 13 }}>
+        <Link href="/medications" style={{ color: "var(--wq-accent)", fontSize: 13 }}>
           ← Medications
         </Link>
         <header style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 8 }}>
@@ -419,8 +419,8 @@ function MedicationDetail() {
               fontSize: 12,
               padding: "2px 8px",
               borderRadius: 999,
-              color: med.active ? "#0b1220" : "#cbd5e1",
-              background: med.active ? "#10b981" : "#334155",
+              color: med.active ? "#0b1220" : "var(--wq-text-2)",
+              background: med.active ? "var(--wq-accent)" : "var(--wq-border)",
             }}
           >
             {med.active ? "Taking now" : "Past"}
@@ -436,43 +436,43 @@ function MedicationDetail() {
             marginTop: 12,
           }}
         >
-          <dt style={{ color: "#94a3b8" }}>Dose</dt>
+          <dt style={{ color: "var(--wq-muted)" }}>Dose</dt>
           <dd>{dose ?? "—"}</dd>
           {med.form && (
             <>
-              <dt style={{ color: "#94a3b8" }}>Form</dt>
+              <dt style={{ color: "var(--wq-muted)" }}>Form</dt>
               <dd>{med.form}</dd>
             </>
           )}
           {med.reason && (
             <>
-              <dt style={{ color: "#94a3b8" }}>For</dt>
+              <dt style={{ color: "var(--wq-muted)" }}>For</dt>
               <dd>{med.reason}</dd>
             </>
           )}
           {med.prescriber && (
             <>
-              <dt style={{ color: "#94a3b8" }}>Prescriber</dt>
+              <dt style={{ color: "var(--wq-muted)" }}>Prescriber</dt>
               <dd>{med.prescriber}</dd>
             </>
           )}
-          <dt style={{ color: "#94a3b8" }}>Started</dt>
+          <dt style={{ color: "var(--wq-muted)" }}>Started</dt>
           <dd>{formatDay(med.started_on)}</dd>
           {med.ended_on && (
             <>
-              <dt style={{ color: "#94a3b8" }}>Stopped</dt>
+              <dt style={{ color: "var(--wq-muted)" }}>Stopped</dt>
               <dd>
                 {formatDay(med.ended_on)}
                 {med.stopped_reason ? ` · ${med.stopped_reason}` : ""}
               </dd>
             </>
           )}
-          <dt style={{ color: "#94a3b8" }}>{med.active ? "Taking for" : "Taken for"}</dt>
+          <dt style={{ color: "var(--wq-muted)" }}>{med.active ? "Taking for" : "Taken for"}</dt>
           <dd>{durationText(med.started_on, med.ended_on, today)}</dd>
         </dl>
 
         {med.notes && (
-          <p style={{ color: "#cbd5e1", fontSize: 14, marginTop: 10, whiteSpace: "pre-wrap" }}>
+          <p style={{ color: "var(--wq-text-2)", fontSize: 14, marginTop: 10, whiteSpace: "pre-wrap" }}>
             {med.notes}
           </p>
         )}
@@ -538,7 +538,7 @@ function MedicationDetail() {
         <h2 className="text-lg font-semibold" style={{ marginBottom: 4 }}>
           History
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 10 }}>
+        <p style={{ color: "var(--wq-muted)", fontSize: 13, marginBottom: 10 }}>
           Newest first. Every dose and schedule change stays here.
         </p>
         <ul
@@ -555,7 +555,7 @@ function MedicationDetail() {
             <li
               key={c.id}
               style={{
-                borderLeft: "2px solid #334155",
+                borderLeft: "2px solid var(--wq-border)",
                 paddingLeft: 10,
                 display: "flex",
                 justifyContent: "space-between",
@@ -564,13 +564,13 @@ function MedicationDetail() {
             >
               <div>
                 <div style={{ fontSize: 14 }}>
-                  <span style={{ color: "#e2e8f0" }}>{changeSummary(c)}</span>
+                  <span style={{ color: "var(--wq-text)" }}>{changeSummary(c)}</span>
                 </div>
-                <div style={{ color: "#64748b", fontSize: 12 }}>
+                <div style={{ color: "var(--wq-muted-2)", fontSize: 12 }}>
                   {formatDay(c.effective_on)} · {changeLabel(c.kind)}
                 </div>
                 {c.note && (
-                  <div style={{ color: "#94a3b8", fontSize: 13, marginTop: 2 }}>{c.note}</div>
+                  <div style={{ color: "var(--wq-muted)", fontSize: 13, marginTop: 2 }}>{c.note}</div>
                 )}
               </div>
               {c.kind !== "started" && (
@@ -595,7 +595,7 @@ function MedicationDetail() {
 // `useSearchParams` needs a Suspense boundary to prerender under static export.
 export default function MedicationDetailPage() {
   return (
-    <Suspense fallback={<p style={{ color: "#94a3b8" }}>Loading…</p>}>
+    <Suspense fallback={<p style={{ color: "var(--wq-muted)" }}>Loading…</p>}>
       <MedicationDetail />
     </Suspense>
   );

@@ -41,9 +41,11 @@ admin API below.
 | GET | `/me` | — | `MeOut` |
 | PATCH | `/me` | `MePatchIn` | `MeOut` |
 
-`MeOut`: `{ id, email, display_name, role, xp_total, level, timezone, show_weight_card, show_bp_card, weight_unit, must_change_password, disabled, equipped_title, title_hidden, weight_titles_opt_out, bp_titles_opt_out, show_bp_category, pending_title_unlocks }`. `disabled` is meaningful on `/admin/users` listings; it's always `false` on `/me` (a disabled user can't authenticate to call it).
+`MeOut`: `{ id, email, display_name, role, xp_total, level, timezone, show_weight_card, show_bp_card, weight_unit, must_change_password, disabled, equipped_title, title_hidden, weight_titles_opt_out, bp_titles_opt_out, show_bp_category, features, feature_order, ui_prefs, pending_title_unlocks }`. `disabled` is meaningful on `/admin/users` listings; it's always `false` on `/me` (a disabled user can't authenticate to call it).
 
-`MePatchIn`: `{ show_weight_card?, show_bp_card?, weight_unit?, title_hidden?, weight_titles_opt_out?, bp_titles_opt_out?, show_bp_category? }` (where `weight_unit` is `"kg"` or `"lb"`).
+`MePatchIn`: `{ show_weight_card?, show_bp_card?, weight_unit?, title_hidden?, weight_titles_opt_out?, bp_titles_opt_out?, show_bp_category?, ui_prefs? }` (where `weight_unit` is `"kg"` or `"lb"`).
+
+`ui_prefs` is the user's appearance settings (Settings → Appearance): `{ theme: { background?, card?, border?, accent?, text?, muted? }, card_colors: { <feature_key>: "#rrggbb" }, hidden_sections: ["xp_bar" | "streaks" | "quick_log" | "version_footer"] }`. Colours are `#rrggbb` only; unset slots come back `null` on read and may be omitted on write. `card_colors` keys must be feature keys. PATCHing `ui_prefs` **replaces** the whole object (it is not merged), so send the complete shape; omit the field to leave it alone. Unknown keys anywhere in it are a 422.
 
 `equipped_title` (nullable) and entries in `pending_title_unlocks` are `TitleSummary` shapes: `{ id, slug, name, rarity, category }`.
 
